@@ -7,11 +7,14 @@ import ApiRouter from './routes';
 import CliHelper from 'interactive-cli-helper';
 import Errors, { ErrorType, ApiError } from './Errors';
 import { sendError } from './helpers';
+import { Database } from './Entities/CouchHelper';
 
 commander
   .version(VERSION)
-  .option('-c, --couchdb-url <url>', 'Couch DB URL', Number, 5984)
+  .option('-c, --couchdb-url <url>', 'Couch DB URL', String, 'http://localhost:5984')
   .option('-p, --port <port>', 'Emit port', Number, 4123)
+  .option('--wipe-init')
+  .option('--init-db')
   .option('-l, --log-level <logLevel>', 'Log level [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--file-log-level <logLevel>', 'Log level (written to file) [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--log-file <logFile>', 'File log level')
@@ -30,6 +33,20 @@ if (commander.logFile) {
       eol: "\n", 
       format: FORMAT_FILE 
   }));
+}
+
+if (commander.couchdbUrl) {
+  Database.refresh(commander.couchdbUrl);
+}
+
+if (commander.wipeInit) {
+  logger.info("Wiping databases and creating them again");
+  Database.wipeAndCreate();
+}
+
+if (commander.initDb) {
+  logger.info("Creating all databases");
+  Database.createAll();
 }
 
 app.use('/api', ApiRouter);

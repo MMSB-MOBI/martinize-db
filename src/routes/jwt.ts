@@ -21,7 +21,7 @@ export default jwt({
       .catch(() => done(null, true));
   }
 }).unless(
-  { path: ["/api/molecule/list", "/api/user/login", "/api"] }
+  { path: ["/api/molecule/list", "/api/user/login", "/api/user/create", "/api"] }
 );
 
 // Extends Express request

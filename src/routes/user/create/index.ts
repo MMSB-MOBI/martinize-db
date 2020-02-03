@@ -12,6 +12,7 @@ CreateUserRouter.post('/', (req, res) => {
     Errors.throw(ErrorType.MissingParameters);
   } 
 
+  // TODO CHECK VALIDITY OF ALL DATA
   const { username, password, email, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string }; 
   
   (async () => {

@@ -44,8 +44,8 @@ export default class CouchHelper {
   /**
    * Link the given url to collections.
    */
-  protected refresh(url: string) {
-    this.link = nano(url);
+  refresh(url: string) {
+    this.link = nano({ url, requestDefaults: { proxy: null } });
 
     this.dbs = {
       molecule: new MoleculeDatabase(this.link.use(CouchHelper.MOLECULE_COLLECTION)),
@@ -100,4 +100,4 @@ export default class CouchHelper {
   }
 }
 
-export const Database = new CouchHelper("http://localhost:5984/martinize");
+export const Database = new CouchHelper("http://localhost:5984");
