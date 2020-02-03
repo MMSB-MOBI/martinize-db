@@ -5,7 +5,7 @@ import UserRouter from './user';
 import cookieParser from 'cookie-parser';
 import jwt from './jwt';
 
-const ApiRouter = Router();
+const ApiRouter = ();
 ApiRouter.use(cors());
 ApiRouter.use(bodyParser.urlencoded());
 ApiRouter.use(bodyParser.json());
@@ -14,7 +14,5 @@ ApiRouter.use(cookieParser());
 ApiRouter.use(jwt);
 
 ApiRouter.use('/user', UserRouter);
-
-
 
 export default ApiRouter;

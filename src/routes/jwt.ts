@@ -1,5 +1,7 @@
 import jwt from 'express-jwt';
 import { KEYS } from '../constants';
+import { COUCH_HELPER } from '../Entities/CouchHelper';
+import { JSONWebToken } from '../types';
 
 export default jwt({
   getToken: function fromHeaderOrQuerystring(req) {
@@ -12,11 +14,19 @@ export default jwt({
   },
   secret: KEYS.PRIVATE,
   credentialsRequired: true,
-  isRevoked: (req, payload, done) => {
-    isTokenInvalid(payload.jti, req, payload)
-      .then(is_revoked => { done(null, is_revoked); })
-      .catch(e => { logger.error("Unable to check token validity", e); done(e); });
+  isRevoked: (_, payload, done) => {
+    // Get the token from string and call done(null, is_revoked)
+    COUCH_HELPER.token.get(payload.jti as string)
+      .then(() => done(null, false))
+      .catch(() => done(null, true));
   }
 }).unless(
-  { path: ["/api/user/request.json", "/api/users/access.json", "/api/callback_twitter", "/api", "/api/deleted_count.json"] }
+  { path: ["/api/molecule/list", "/api/user/login", "/api"] }
 );
+
+// Extends Express request
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: JSONWebToken;
+  }
+}

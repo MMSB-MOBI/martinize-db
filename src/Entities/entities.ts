@@ -1,6 +1,11 @@
 import { GoTerms, UserRole } from '../types';
 
-export interface BaseMolecule {
+export interface BaseCouchDocument {
+  _id?: string;
+  _rev?: string;
+}
+
+export interface BaseMolecule extends BaseCouchDocument {
   /** Molecule snowflake ID */
   id: string;
   /** Molecule name (free text) */
@@ -40,7 +45,7 @@ export interface Molecule extends BaseMolecule {
 
 export interface StashedMolecule extends BaseMolecule {}
 
-export interface User {
+export interface User extends BaseCouchDocument {
   /** User snowflake ID */
   id: string;
   /** User unique e-mail address */
@@ -55,8 +60,8 @@ export interface User {
   role: UserRole;
 }
 
-export interface Token {
-  /** JTI UUID (this is not a snowflake ID) */
+export interface Token extends BaseCouchDocument {
+  /** JTI UUID snowflake */
   id: string;
   /** <User.id> who own this token */
   user_id: string;

@@ -5,6 +5,8 @@ import logger, { FORMAT_FILE } from './logger';
 import Winston from 'winston';
 import ApiRouter from './routes';
 import CliHelper from 'interactive-cli-helper';
+import Errors, { ErrorType, ApiError } from './Errors';
+import { sendError } from './helpers';
 
 commander
   .version(VERSION)
@@ -31,6 +33,20 @@ if (commander.logFile) {
 }
 
 app.use('/api', ApiRouter);
+
+// Catch API errors
+app.use('/api', (err: any, _: express.Request, res: express.Response, next: Function) => {
+  if (err.name === 'UnauthorizedError') {
+    logger.debug("Token identification error: " + err.name);
+    Errors.send(ErrorType.TokenInvalid, res);
+  }
+  else if (err instanceof ApiError) {
+    sendError(err, res);
+  }
+  else {
+    next(err);
+  }
+});
 
 app.listen(commander.port, () => {
   logger.info(`Martinize Database Server version ${VERSION} is listening on port ${commander.port}.`);
