@@ -1,6 +1,6 @@
 import jwt from 'express-jwt';
 import { KEYS } from '../constants';
-import { COUCH_HELPER } from '../Entities/CouchHelper';
+import { Database } from '../Entities/CouchHelper';
 import { JSONWebToken } from '../types';
 
 export default jwt({
@@ -12,11 +12,11 @@ export default jwt({
     }
     return null;
   },
-  secret: KEYS.PRIVATE,
+  secret: KEYS.PUBLIC,
   credentialsRequired: true,
   isRevoked: (_, payload, done) => {
     // Get the token from string and call done(null, is_revoked)
-    COUCH_HELPER.token.get(payload.jti as string)
+    Database.token.get(payload.jti as string)
       .then(() => done(null, false))
       .catch(() => done(null, true));
   }

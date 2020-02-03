@@ -3,6 +3,7 @@ import { Molecule, StashedMolecule, User, Token } from './entities';
 import TokenDatabase from './TokenDatabase';
 import MoleculeDatabase from './MoleculeDatabase';
 import UserDatabase from './UserDatabase';
+import StashedMoleculeDatabase from './StashedMoleculeDatabase';
 
 export class CouchDatabase<T> {
   constructor(protected collection: nano.DocumentScope<T>) {}
@@ -14,7 +15,7 @@ export class CouchDatabase<T> {
 
 interface Databases {
   molecule: MoleculeDatabase;
-  stashed: CouchDatabase<StashedMolecule>;
+  stashed: StashedMoleculeDatabase;
   user: UserDatabase;
   token: TokenDatabase;
 }
@@ -48,7 +49,7 @@ export default class CouchHelper {
 
     this.dbs = {
       molecule: new MoleculeDatabase(this.link.use(CouchHelper.MOLECULE_COLLECTION)),
-      stashed: new CouchDatabase<StashedMolecule>(this.link.use(CouchHelper.STASHED_MOLECULE_COLLECTION)),
+      stashed: new StashedMoleculeDatabase(this.link.use(CouchHelper.STASHED_MOLECULE_COLLECTION)),
       user: new UserDatabase(this.link.use(CouchHelper.USER_COLLECTION)),
       token: new TokenDatabase(this.link.use(CouchHelper.TOKEN_COLLECTION)),
     };
@@ -99,4 +100,4 @@ export default class CouchHelper {
   }
 }
 
-export const COUCH_HELPER = new CouchHelper("http://localhost:5984/martinize");
+export const Database = new CouchHelper("http://localhost:5984/martinize");

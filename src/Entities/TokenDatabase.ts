@@ -21,6 +21,14 @@ export default class TokenDatabase {
     return this.find({ selector: { user_id } });
   }
 
+  async userFromToken(token: Token | string) {
+    try {
+      const t = await this.get(typeof token === 'string' ? token : token.id);
+      return t.user_id;
+    } catch (e) { }
+    return undefined;
+  }
+
   async exists(token: Token | string) {
     try {
       await this.get(typeof token === 'string' ? token : token.id);

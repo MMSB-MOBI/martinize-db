@@ -10,6 +10,10 @@ export interface BaseMolecule extends BaseCouchDocument {
   id: string;
   /** Molecule name (free text) */
   name: string;
+  /** Molecule short alias */
+  alias: string;
+  /** Mol formula */
+  formula: string;
   /** Molecule version (free text) */
   version: string;
   /** Category, should be a GO Term */

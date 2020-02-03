@@ -36,6 +36,11 @@ app.use('/api', ApiRouter);
 
 // Catch API errors
 app.use('/api', (err: any, _: express.Request, res: express.Response, next: Function) => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
   if (err.name === 'UnauthorizedError') {
     logger.debug("Token identification error: " + err.name);
     Errors.send(ErrorType.TokenInvalid, res);
