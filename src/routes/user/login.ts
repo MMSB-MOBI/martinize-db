@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { errorCatcher, generateSnowflake, signToken } from '../../../helpers';
-import Errors, { ErrorType } from '../../../Errors';
-import { Database } from '../../../Entities/CouchHelper';
-import { Token } from '../../../Entities/entities';
+import { errorCatcher, generateSnowflake, signToken, methodNotAllowed } from '../../helpers';
+import Errors, { ErrorType } from '../../Errors';
+import { Database } from '../../Entities/CouchHelper';
+import { Token } from '../../Entities/entities';
 
 const LoginUserRouter = Router();
 
@@ -47,5 +47,7 @@ LoginUserRouter.post('/', (req, res) => {
     });
   })().catch(errorCatcher(res));
 });
+
+LoginUserRouter.all('/', methodNotAllowed('POST'));
 
 export default LoginUserRouter;

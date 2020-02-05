@@ -1,41 +1,9 @@
-import nano from "nano";
 import { User } from "./entities";
 import bcrypt from 'bcrypt';
 import { Database } from "./CouchHelper";
+import AbstractDatabase from "./AbstractDatabase";
 
-export default class UserDatabase {
-  constructor(protected _db: nano.DocumentScope<User>) {}
-
-  /**
-   * Warning: By default, {query.limit} is 25 !
-   */
-  async find(query: nano.MangoQuery) {
-    const res = await this._db.find(query);
-    return res.docs;
-  }
-
-  async findOne(query: nano.MangoQuery) {
-    const res = await this._db.find({ ...query, limit: 1 });
-    return res.docs;
-  }
-
-  save(user: User) {
-    return this._db.insert({ _id: user.id, ...user });
-  }
-
-  async get(id: string) {
-    return this._db.get(id);
-  }
-
-  async exists(user: User | string) {
-    try {
-      await this.get(typeof user === 'string' ? user : user.id);
-    } catch (e) {
-      return false;
-    }
-    return true;
-  }
-
+export default class UserDatabase extends AbstractDatabase<User> {
   /** Get the user related to given token. undefined if it doesn't exists. */
   async fromToken(jti: string) {
     try {
@@ -79,9 +47,5 @@ export default class UserDatabase {
     }
 
     return bcrypt.compare(input_password, user.password);
-  }
-
-  get db() {
-    return this._db;
   }
 }

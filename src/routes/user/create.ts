@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import Errors, { ErrorType } from '../../../Errors';
-import { errorCatcher, generateSnowflake, sanitize, signToken } from '../../../helpers';
-import { Database } from '../../../Entities/CouchHelper';
-import { UserRole } from '../../../types';
-import { User, Token } from '../../../Entities/entities';
+import Errors, { ErrorType } from '../../Errors';
+import { errorCatcher, generateSnowflake, signToken, sanitize, methodNotAllowed } from '../../helpers';
+import { Database } from '../../Entities/CouchHelper';
+import { UserRole } from '../../types';
+import { User, Token } from '../../Entities/entities';
 
 const CreateUserRouter = Router();
 
@@ -67,10 +67,12 @@ CreateUserRouter.post('/', (req, res) => {
     const jwt = await signToken({ user_id: token.user_id, created_at: token.created_at }, token.id);
 
     res.json({
-      created: true,
+      created: sanitize({ ...user, password: null }),
       token: jwt
     });
   })().catch(errorCatcher(res));
 });
+
+CreateUserRouter.all('/', methodNotAllowed('POST'));
 
 export default CreateUserRouter;

@@ -1,15 +1,6 @@
 import nano from "nano";
 import { StashedMolecule } from "./entities";
+import AbstractDatabase from "./AbstractDatabase";
 
-export default class MoleculeDatabase {
-  constructor(protected _db: nano.DocumentScope<StashedMolecule>) {}
-
-  async find(query: nano.MangoQuery) {
-    const res = await this._db.find(query);
-    return res.docs;
-  }
-
-  get db() {
-    return this._db;
-  }
+export default class MoleculeDatabase extends AbstractDatabase<StashedMolecule> {
 }

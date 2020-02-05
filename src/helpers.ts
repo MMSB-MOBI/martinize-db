@@ -5,7 +5,7 @@ import Errors, { ApiError, ErrorType } from "./Errors";
 import Express from 'express';
 import { TokenPayload } from "./types";
 import JsonWebToken from 'jsonwebtoken';
-import { KEYS } from "./constants";
+import { KEYS, UPLOAD_ROOT_DIR } from "./constants";
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -16,7 +16,7 @@ export function isMolecule(e: BaseMolecule) : e is Molecule {
 }
 
 export function generateSnowflake() {
-  return simpleflake().toString(10);
+  return simpleflake(undefined, undefined, Date.UTC(2020, 0, 1)).toString(10);
 }
 
 export function sendError(error: ApiError, res: Express.Response) {
@@ -36,7 +36,7 @@ export function errorCatcher(res: Express.Response) {
       return sendError(err, res);
     }
 
-    logger.error("Unknown error", err);
+    logger.error("Unknown error: ", err);
     return sendError(Errors.make(ErrorType.Server), res);
   };
 }
@@ -75,4 +75,18 @@ export function signToken(payload: TokenPayload, id: string) {
       }
     );
   }) as Promise<string>;
+}
+
+export function methodNotAllowed(allow: string | string[]) {
+  return (_: any, res: Express.Response) => {
+      res.setHeader('Allow', typeof allow === 'string' ? allow : allow.join(', '));
+      Errors.throw(ErrorType.InvalidMethod);
+  };
+}
+
+export function getNameAndPathOfUploadedFile(name: string) : [string, string] {
+  const file_name = name.includes('/') ? name.split('/').pop()! : name;
+  const file_path = UPLOAD_ROOT_DIR + file_name;
+
+  return [file_name, file_path];
 }
