@@ -3,8 +3,9 @@ import { MOLECULE_ROOT_DIR, UPLOAD_ROOT_DIR } from '../constants';
 import logger from '../logger';
 import { getNameAndPathOfUploadedFile, generateSnowflake } from '../helpers';
 import JSZip from 'jszip';
+import md5File from 'md5-file/promise';
 
-export default new class MoleculeOrganizer {
+export const MoleculeOrganizer = new class MoleculeOrganizer {
   constructor() {
     try {
       fs.mkdirSync(MOLECULE_ROOT_DIR);
@@ -12,14 +13,15 @@ export default new class MoleculeOrganizer {
   }
 
   /**
-   * Get a ZIP, read by JSZip
-   * @param file_id 
+   * Get a ZIP, read by JSZip.
+   * 
+   * If the save doesn't exists, returns `undefined`.
    */
   async get(file_id: string) : Promise<[JSZip, MoleculeSaveInfo] | undefined> {
     if (await this.exists(file_id)) {
-      const infos: MoleculeSaveInfo = JSON.parse(await FsPromise.readFile(MOLECULE_ROOT_DIR + file_id + ".json", "utf-8"));
+      const infos: MoleculeSaveInfo = JSON.parse(await FsPromise.readFile(this.getInfoFilenameFor(file_id), "utf-8"));
 
-      const zip_buffer = await FsPromise.readFile(MOLECULE_ROOT_DIR + file_id + ".zip");
+      const zip_buffer = await FsPromise.readFile(this.getFilenameFor(file_id));
       const zip = await JSZip.loadAsync(zip_buffer);
       
       return [
@@ -27,6 +29,23 @@ export default new class MoleculeOrganizer {
         infos
       ];
     }
+  }
+
+  /**
+   * Get the ZIP filename full path.
+   *
+   * You can use it in express in order to make the client download ZIP
+   * ```ts
+   * const filename = MoleculeOrganizer.getFilenameFor("139284920");
+   * res.download(filename);
+   * ```
+   */
+  getFilenameFor(file_id: string) {
+    return MOLECULE_ROOT_DIR + file_id + ".zip";
+  }
+
+  protected getInfoFilenameFor(file_id: string) {
+    return MOLECULE_ROOT_DIR + file_id + ".json";
   }
 
   /**
@@ -50,7 +69,7 @@ export default new class MoleculeOrganizer {
   }
 
   async exists(file_id: string) {
-    return FsPromise.access(file_id + ".zip", fs.constants.F_OK).then(() => true).catch(() => false);
+    return FsPromise.access(this.getFilenameFor(file_id), fs.constants.F_OK).then(() => true).catch(() => false);
   }
   
   /**
@@ -59,8 +78,8 @@ export default new class MoleculeOrganizer {
   async remove(file_id: string) {
     try {
       await Promise.all([
-        FsPromise.unlink(MOLECULE_ROOT_DIR + file_id + ".zip"),
-        FsPromise.unlink(MOLECULE_ROOT_DIR + file_id + ".json")
+        FsPromise.unlink(this.getFilenameFor(file_id)),
+        FsPromise.unlink(this.getInfoFilenameFor(file_id))
       ]);
     } catch {}
   }
@@ -69,6 +88,8 @@ export default new class MoleculeOrganizer {
    * Check, compress and save a zipped version of the given ITP and PDB file.
    * 
    * Returns a save information.
+   * 
+   * TODO make support of GRO files
    */
   async save(itp_file: string, pdb_file: string) : Promise<MoleculeSave> {
     logger.debug("Saving ", itp_file, " and ", pdb_file);
@@ -81,9 +102,8 @@ export default new class MoleculeOrganizer {
 
     // Compressing and saving
     const save_id = generateSnowflake();
-    const root_name = MOLECULE_ROOT_DIR + save_id;
-    const zip_name = root_name + ".zip";
-    const info_name = root_name + ".json";
+    const zip_name = this.getFilenameFor(save_id);
+    const info_name = this.getInfoFilenameFor(save_id);
     const pdb_name = pdb_fn.split('.')[0] + '.pdb';
     const itp_name = itp_fn.split('.')[0] + '.itp';
 
@@ -96,7 +116,7 @@ export default new class MoleculeOrganizer {
 
     await new Promise((resolve, reject) => {
       zip
-        .generateNodeStream({ streamFiles: true })
+        .generateNodeStream({ streamFiles: true, compression: "DEFLATE", compressionOptions: { level: 6 } })
         .pipe(fs.createWriteStream(zip_name))
         .on('finish', () => {
           resolve();
@@ -105,6 +125,10 @@ export default new class MoleculeOrganizer {
           reject(e);
         });
     });
+
+    // Calculate hash
+    const hash = await md5File(zip_name);
+
 
     // TODO write better infos of the ZIP in the JSON
     const infos: MoleculeSaveInfo = {
@@ -117,6 +141,7 @@ export default new class MoleculeOrganizer {
         name: itp_name
       },
       type: "pdb",
+      hash
     };
 
     await FsPromise.writeFile(info_name, JSON.stringify(infos));
@@ -129,6 +154,8 @@ export default new class MoleculeOrganizer {
   }
 };
 
+export default MoleculeOrganizer;
+
 export interface FileSaveInfo {
   size: number;
   name: string;
@@ -139,6 +166,7 @@ export interface MoleculeSaveInfo {
   itp: FileSaveInfo;
   gro?: FileSaveInfo;
   type: "pdb" | "gro";
+  hash: string;
 }
 
 export interface MoleculeSave {

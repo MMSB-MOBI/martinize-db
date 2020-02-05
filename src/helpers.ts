@@ -6,6 +6,7 @@ import Express from 'express';
 import { TokenPayload } from "./types";
 import JsonWebToken from 'jsonwebtoken';
 import { KEYS, UPLOAD_ROOT_DIR } from "./constants";
+import { Database } from "./Entities/CouchHelper";
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -89,4 +90,55 @@ export function getNameAndPathOfUploadedFile(name: string) : [string, string] {
   const file_path = UPLOAD_ROOT_DIR + file_name;
 
   return [file_name, file_path];
+}
+
+export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = false) {
+  // Must check every thing: if field exists
+  if ([
+    molecule.id,
+    molecule.name,
+    molecule.alias,
+    molecule.formula,
+    molecule.version,
+    molecule.category,
+    molecule.command_line,
+    molecule.martinize_version,
+    molecule.force_field
+  ].some(e => typeof e !== 'string')) {
+    throw { error: 'Required parameter is missing' };
+  }
+
+  // If parent is defined, check if it exists
+  let parent: Molecule | undefined;
+  if (molecule.parent && typeof molecule.parent === 'string') {
+    try {
+      parent = await Database.molecule.get(molecule.parent);
+    } catch (e) { 
+      throw { error: 'Failed to get parent', detail: e };
+    }
+  }
+  else {
+    molecule.parent = null;
+  }
+
+  if (parent) {
+    molecule.tree_id = parent.tree_id;
+  }
+  else if (edit) {
+    if (!molecule.tree_id) {
+      throw { error: 'When you edit a molecule, it should have a tree ID' };
+    }
+  }
+  else {
+    molecule.tree_id = generateSnowflake();
+  }
+
+  if (edit) {
+    (molecule as Molecule).last_update = new Date().toISOString();
+  }
+
+  // TODO CHECK EVERYTHING ELSE
+
+
+  return molecule;
 }

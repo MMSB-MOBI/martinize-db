@@ -2,6 +2,9 @@ import jwt from 'express-jwt';
 import { KEYS } from '../constants';
 import { Database } from '../Entities/CouchHelper';
 import { JSONWebToken } from '../types';
+import nano from 'nano';
+import { User } from '../Entities/entities';
+import logger from '../logger';
 
 export default jwt({
   getToken: function fromHeaderOrQuerystring(req) {
@@ -14,10 +17,22 @@ export default jwt({
   },
   secret: KEYS.PUBLIC,
   credentialsRequired: true,
-  isRevoked: (_, payload, done) => {
+  isRevoked: (req, payload, done) => {
     // Get the token from string and call done(null, is_revoked)
     Database.token.get(payload.jti as string)
-      .then(() => done(null, false))
+      .then(() => Database.user.fromToken(payload.jti as string))
+      .then(user => {
+        req.full_user = user;
+        
+        if (!user) {
+          // Token is orphan !
+          logger.error("Orphan token ! This should not happen. ", payload);
+          done(null, true);
+        }
+        else {
+          done(null, false);
+        }
+      })
       .catch(() => done(null, true));
   }
 }).unless(
@@ -28,5 +43,6 @@ export default jwt({
 declare module 'express-serve-static-core' {
   interface Request {
     user?: JSONWebToken;
+    full_user?: (nano.DocumentGetResponse & User);
   }
 }

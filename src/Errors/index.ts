@@ -21,6 +21,8 @@ export enum ErrorType {
   UsernameExists,
   EmailExists,
   InvalidMethod,
+  TooManyFiles,
+  FileTooLarge,
 }
 
 const ErrorsToText = {
@@ -34,13 +36,15 @@ const ErrorsToText = {
   [ErrorType.InvalidPassword]: [403, "Invalid password"],
   [ErrorType.Format]: [400, "Parameter format is invalid"],
   [ErrorType.MissingParameters]: [400, "Missing parameters"],
+  [ErrorType.TooManyFiles]: [400, "Too many files specified"],
+  [ErrorType.FileTooLarge]: [400, "Sended file is too large"],
   [ErrorType.UsernameExists]: [409, "Username already exists"],
   [ErrorType.EmailExists]: [409, "Email already exists"],
   [ErrorType.InvalidMethod]: [405, "Method not allowed"],
 };
 
 export default new class Errors {
-  send(code: ErrorType, res: Express.Response) {
+  send(code: ErrorType, res: Express.Response, additionnal?: object) {
     if (res.headersSent) {
       return this.throw(code);
     }
@@ -49,7 +53,8 @@ export default new class Errors {
 
     res.status(http_code).json({
       code,
-      message
+      message,
+      ...(additionnal || {})
     });
   }
 
@@ -57,12 +62,13 @@ export default new class Errors {
    * Throw the given error.
    * If you're in a promise, make sure the error is correctly catched and sent !
    */
-  throw(code: ErrorType) : never {
+  throw(code: ErrorType, additionnal?: object) : never {
     const [http_code, message] = ErrorsToText[code] as [number, string];
 
     throw new ApiError(String(http_code), {
       code,
-      message
+      message,
+      ...(additionnal || {})
     });
   }
 
@@ -70,12 +76,13 @@ export default new class Errors {
    * Make the given error.
    * If you're in a promise, make sure the error is correctly catched and sent !
    */
-  make(code: ErrorType) : ApiError {
+  make(code: ErrorType, additionnal?: object) : ApiError {
     const [http_code, message] = ErrorsToText[code] as [number, string];
 
     return new ApiError(String(http_code), {
       code,
-      message
+      message,
+      ...(additionnal || {})
     });
   }
 };

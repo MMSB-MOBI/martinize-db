@@ -63,8 +63,8 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
     return res.docs;
   }
 
-  save(token: T) {
-    return this._db.insert({ _id: token.id, ...token });
+  save(element: T) {
+    return this._db.insert({ _id: element.id, ...element });
   }
 
   get(id: string) {

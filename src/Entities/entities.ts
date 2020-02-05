@@ -26,7 +26,7 @@ export interface BaseMolecule extends BaseCouchDocument {
   hash: string;
   /** Reference to <User.id> owner/curator of this mol */
   owner: string;
-  /** Filepath to ZIP file containing `.itp` and `.gro`/`.pdb` files */
+  /** ID of related file containing `.itp` and `.gro`/`.pdb` files */
   files: string;
   /** Free comment text. */
   comments: string;
