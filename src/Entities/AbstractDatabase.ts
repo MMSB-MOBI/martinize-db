@@ -6,7 +6,7 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
 
   /** Get all documents in the database */
   async all() {
-    const res = await this._db.list();
+    const res = await this._db.list({ include_docs: true });
     return res.rows.map(d => d.doc).filter(d => d) as (T & nano.Document)[];
   }
 

@@ -55,6 +55,10 @@ export default class CouchHelper {
     };
   }
 
+  ping() {
+    return this.link.db.list();
+  }
+
   get molecule() {
     return this.dbs.molecule;
   }

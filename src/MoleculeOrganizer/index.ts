@@ -1,5 +1,5 @@
 import fs, { promises as FsPromise } from 'fs';
-import { MOLECULE_ROOT_DIR, UPLOAD_ROOT_DIR } from '../constants';
+import { MOLECULE_ROOT_DIR } from '../constants';
 import logger from '../logger';
 import { getNameAndPathOfUploadedFile, generateSnowflake } from '../helpers';
 import JSZip from 'jszip';
@@ -81,6 +81,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         FsPromise.unlink(this.getFilenameFor(file_id)),
         FsPromise.unlink(this.getInfoFilenameFor(file_id))
       ]);
+      logger.debug("Removed save ID #" + file_id);
     } catch {}
   }
 
@@ -89,13 +90,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * 
    * Returns a save information.
    * 
-   * TODO make support of GRO files
+   * TODO make support of GRO files & verification of ITP+PDB
    */
-  async save(itp_file: string, pdb_file: string) : Promise<MoleculeSave> {
-    logger.debug("Saving ", itp_file, " and ", pdb_file);
-
-    const [itp_fn, itp_fp] = getNameAndPathOfUploadedFile(itp_file);
-    const [pdb_fn, pdb_fp] = getNameAndPathOfUploadedFile(pdb_file);
+  async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File) : Promise<MoleculeSave> {
+    logger.debug("Saving ", itp_files, " and ", pdb_file);
 
     // TODO check ITP and PDB
     // ----------------------
@@ -104,14 +102,25 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const save_id = generateSnowflake();
     const zip_name = this.getFilenameFor(save_id);
     const info_name = this.getInfoFilenameFor(save_id);
-    const pdb_name = pdb_fn.split('.')[0] + '.pdb';
-    const itp_name = itp_fn.split('.')[0] + '.itp';
 
+    const pdb_name = pdb_file.originalname.split('.')[0] + '.pdb';
+
+    // Create ZIP
     const zip = new JSZip();
-    const itp_content = await FsPromise.readFile(itp_fp);
-    zip.file(itp_name, itp_content);
 
-    const pdb_content = await FsPromise.readFile(pdb_fp);
+    let itp_files_info: FileSaveInfo[] = [];
+    for (const file of itp_files) {
+      const itp_name = file.originalname.split('.')[0] + '.itp';
+      const itp_content = await FsPromise.readFile(file.path);
+      zip.file(itp_name, itp_content);
+
+      itp_files_info.push({
+        size: itp_content.length,
+        name: itp_name,
+      });
+    }
+
+    const pdb_content = await FsPromise.readFile(pdb_file.path);
     zip.file(pdb_name, pdb_content);
 
     await new Promise((resolve, reject) => {
@@ -136,10 +145,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         size: pdb_content.length,
         name: pdb_name
       },
-      itp: {
-        size: itp_content.length,
-        name: itp_name
-      },
+      itp: itp_files_info,
       type: "pdb",
       hash
     };
@@ -163,7 +169,7 @@ export interface FileSaveInfo {
 
 export interface MoleculeSaveInfo {
   pdb?: FileSaveInfo;
-  itp: FileSaveInfo;
+  itp: FileSaveInfo[];
   gro?: FileSaveInfo;
   type: "pdb" | "gro";
   hash: string;

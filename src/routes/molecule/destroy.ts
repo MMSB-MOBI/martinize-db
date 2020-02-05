@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { errorCatcher } from '../../helpers';
+import { errorCatcher, methodNotAllowed } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
 import Errors, { ErrorType } from '../../Errors';
 import MoleculeOrganizer from '../../MoleculeOrganizer';
@@ -29,5 +29,7 @@ DestroyMoleculeRouter.delete('/:id', (req, res) => {
     res.send();
   })().catch(errorCatcher(res));
 });
+
+DestroyMoleculeRouter.all('/', methodNotAllowed(['DELETE']))
 
 export default DestroyMoleculeRouter;

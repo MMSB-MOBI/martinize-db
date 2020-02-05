@@ -22,6 +22,7 @@ commander
 
 const app = express();
 
+// Parse CLI args
 if (commander.logLevel) {
   logger.level = commander.logLevel;
 }
@@ -49,10 +50,11 @@ if (commander.initDb) {
   Database.createAll();
 }
 
+// Register API router
 app.use('/api', ApiRouter);
 
 // Catch API errors
-app.use('/api', (err: any, _: express.Request, res: express.Response, next: Function) => {
+app.use('/api', (err: any, req: express.Request, res: express.Response, next: Function) => {
   if (res.headersSent) {
     next(err);
     return;
@@ -65,14 +67,14 @@ app.use('/api', (err: any, _: express.Request, res: express.Response, next: Func
   else if (err instanceof ApiError) {
     sendError(err, res);
   }
+  // @ts-ignore
+  else if (req.field) {
+    // @ts-ignore
+    Errors.send(ErrorType.Format, res, { field: req.field });
+  }
   else {
     next(err);
   }
-});
-
-app.listen(commander.port, () => {
-  logger.info(`Martinize Database Server version ${VERSION} is listening on port ${commander.port}.`);
-  startCli();
 });
 
 function startCli() {
@@ -87,3 +89,13 @@ function startCli() {
   CLI.listen();
 }
 
+async function main() {
+  await Database.ping();
+
+  app.listen(commander.port, () => {
+    logger.info(`Martinize Database Server version ${VERSION} is listening on port ${commander.port}.`);
+    startCli();
+  });
+}
+
+main();

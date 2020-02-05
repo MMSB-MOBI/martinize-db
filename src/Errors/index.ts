@@ -23,6 +23,7 @@ export enum ErrorType {
   InvalidMethod,
   TooManyFiles,
   FileTooLarge,
+  InvalidMoleculeFiles,
 }
 
 const ErrorsToText = {
@@ -38,6 +39,7 @@ const ErrorsToText = {
   [ErrorType.MissingParameters]: [400, "Missing parameters"],
   [ErrorType.TooManyFiles]: [400, "Too many files specified"],
   [ErrorType.FileTooLarge]: [400, "Sended file is too large"],
+  [ErrorType.InvalidMoleculeFiles]: [400, "Sended molecule files (ITP, PDB/GRO) are incorrect"],
   [ErrorType.UsernameExists]: [409, "Username already exists"],
   [ErrorType.EmailExists]: [409, "Email already exists"],
   [ErrorType.InvalidMethod]: [405, "Method not allowed"],

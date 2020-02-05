@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { errorCatcher, sanitize } from '../../helpers';
+import { errorCatcher, sanitize, methodNotAllowed } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
 
 const ListMoleculeRouter = Router();
@@ -14,5 +14,7 @@ ListMoleculeRouter.get('/', (req, res) => {
     res.json(all_accepted_mols.map(m => sanitize(m)));
   })().catch(errorCatcher(res));
 });
+
+ListMoleculeRouter.all('/', methodNotAllowed('GET'))
 
 export default ListMoleculeRouter;

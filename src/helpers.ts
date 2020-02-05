@@ -7,6 +7,7 @@ import { TokenPayload } from "./types";
 import JsonWebToken from 'jsonwebtoken';
 import { KEYS, UPLOAD_ROOT_DIR } from "./constants";
 import { Database } from "./Entities/CouchHelper";
+import { unlink } from "fs";
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -24,11 +25,35 @@ export function sendError(error: ApiError, res: Express.Response) {
   res.status(Number(error.message)).json(error.data);
 }
 
+export function cleanMulterFiles(req: Express.Request) {
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      for (const file of req.files) {
+        unlink(file.path, () => {});
+      }
+    }
+    else {
+      for (const files of Object.values(req.files)) {
+        for (const file of files) {
+          unlink(file.path, () => {});
+        }
+      }
+    }
+  }
+  if (req.file) {
+    unlink(req.file.path, () => {});
+  }
+}
+
 /**
  * Create a closure to catch an ApiError that occurs in a Promise.
  */
-export function errorCatcher(res: Express.Response) {
+export function errorCatcher(res: Express.Response, req?: Express.Request) {
   return function(err: any) {
+    if (req) {
+      cleanMulterFiles(req);
+    }
+  
     if (res.headersSent) {
       return;
     }
@@ -37,7 +62,13 @@ export function errorCatcher(res: Express.Response) {
       return sendError(err, res);
     }
 
-    logger.error("Unknown error: ", err);
+    if (err instanceof Error) {
+      logger.error("During request handling, the following error occured: " + err + "\n" + err.stack);
+    }
+    else {
+      logger.error("Unknown error: ", err);
+    }
+    
     return sendError(Errors.make(ErrorType.Server), res);
   };
 }
@@ -137,7 +168,8 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
     (molecule as Molecule).last_update = new Date().toISOString();
   }
 
-  // TODO CHECK EVERYTHING ELSE
+  // TODO CHECK EVERYTHING ELSE except hash & files parameters, 
+  // because file isn't necessary saved
 
 
   return molecule;

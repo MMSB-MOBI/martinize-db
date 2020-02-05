@@ -53,8 +53,24 @@ export default class MoleculeVersionTree {
     }
   }
 
+  append(molecule: BaseMolecule) {
+    return this.root.append(molecule);
+  }
+
+  appendAt(molecule: BaseMolecule, predicate: (el: BaseMolecule) => boolean) : MoleculeNode<BaseMolecule> | undefined {
+    return this.root.appendAt(molecule, predicate);
+  }
+
+  find(predicate: (el: BaseMolecule) => boolean) : MoleculeNode<BaseMolecule> | undefined {
+    return this.root.find(predicate);
+  }
+
   get root() {
     return this._root;
+  }
+
+  get flat() {
+    return this.root.flat;
   }
 }
 
@@ -104,6 +120,10 @@ export class MoleculeNode<T> {
 
   get children() {
     return this._children;
+  }
+
+  get flat() : T[] {
+    return [this._content, ...this.children.map(c => c.flat).reduce((acc, val) => { acc.push(...val); return acc; }, [])]
   }
 }
 

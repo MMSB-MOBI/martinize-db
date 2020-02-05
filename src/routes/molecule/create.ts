@@ -1,13 +1,25 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, generateSnowflake, verifyAndCompleteMolecule } from '../../helpers';
+import { methodNotAllowed, errorCatcher, generateSnowflake, verifyAndCompleteMolecule, cleanMulterFiles } from '../../helpers';
 import Uploader, { MAX_FILE_SIZE } from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
-import MoleculeOrganizer from '../../MoleculeOrganizer';
+import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
 import { Molecule, BaseMolecule, StashedMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 
 const CreateMoleculeRouter = Router();
+
+// Middleware that wipe uploaded files after request
+CreateMoleculeRouter.use((req, res, next) => {
+  function after() {
+    // Response is sended
+    cleanMulterFiles(req);
+    res.removeListener('finish', after);
+  }
+
+  res.once('finish', after);
+  next();
+});
 
 /**
  * Create a new molecule.
@@ -17,9 +29,11 @@ const CreateMoleculeRouter = Router();
  * Expect file `itp=itp_file`, `pdb=pdb_file`, `gro=gro_file`.
  * You must specify an ITP, and at least one PDB or one GRO file.
  * 
+ * // TODO REMOVE FIELD DATA AFTER REQUEST
+ * 
  */
 CreateMoleculeRouter.post('/', Uploader.fields([
-  { name: 'itp', maxCount: 1 }, 
+  { name: 'itp', maxCount: 99 }, 
   { name: 'gro', maxCount: 1 },
   { name: 'pdb', maxCount: 1 },
 ]), (req, res) => {
@@ -27,9 +41,9 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     return Errors.throw(ErrorType.MissingParameters);
   }
 
-  const { itp, gro, pdb } = req.files;
+  let { itp, gro, pdb } = req.files;
 
-  if (gro.length && pdb.length) {
+  if (gro && gro.length && pdb &&  pdb.length) {
     return Errors.throw(ErrorType.TooManyFiles);
   }
 
@@ -37,9 +51,13 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     return Errors.throw(ErrorType.MissingParameters);
   }
 
+  if (!pdb) {
+    pdb = [];
+  }
+
   let pdb_file = pdb[0];
 
-  if (gro.length) {
+  if (gro && gro.length) {
     pdb_file = gro[0];
 
     // TODO convert gro to pdb ! (?)
@@ -62,9 +80,6 @@ CreateMoleculeRouter.post('/', Uploader.fields([
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const save = await MoleculeOrganizer.save(itp[0].filename, pdb_file.filename);
-
-    
     const b = req.body;
     // Create the molecule
     let molecule: BaseMolecule = {
@@ -76,9 +91,9 @@ CreateMoleculeRouter.post('/', Uploader.fields([
       category: b.category,
       parent: b.parent,
       tree_id: "",
-      hash: save.infos.hash,
+      hash: "",
       owner: logged_user.id,
-      files: save.id,
+      files: "",
       comments: b.comments,
       created_at: new Date().toISOString(),
       command_line: b.command_line,
@@ -98,8 +113,19 @@ CreateMoleculeRouter.post('/', Uploader.fields([
       return Errors.throw(ErrorType.Format, e);
     }
 
-    let response: nano.DocumentInsertResponse;
+    // Save the molecule in ZIP format
+    let save: MoleculeSave;
+    try {
+      save = await MoleculeOrganizer.save(itp, pdb_file);
+    } catch (e) {
+      return Errors.throw(ErrorType.InvalidMoleculeFiles, e);
+    }
+
+    molecule.hash = save.infos.hash;
+    molecule.files = save.id;
+
     // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
+    let response: nano.DocumentInsertResponse;
     if (logged_user.role === "admin" || true) {
       response = await Database.molecule.save(molecule as Molecule);
     }
