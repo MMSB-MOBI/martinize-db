@@ -26,10 +26,10 @@ export default class CouchHelper {
   // @ts-ignore
   protected dbs: Databases;
 
-  protected static readonly MOLECULE_COLLECTION = "molecule";
-  protected static readonly STASHED_MOLECULE_COLLECTION = "stashed";
-  protected static readonly USER_COLLECTION = "user";
-  protected static readonly TOKEN_COLLECTION = "token";
+  static readonly MOLECULE_COLLECTION = "molecule";
+  static readonly STASHED_MOLECULE_COLLECTION = "stashed";
+  static readonly USER_COLLECTION = "user";
+  static readonly TOKEN_COLLECTION = "token";
   protected static readonly DBS = [
     "molecule",
     "stashed",

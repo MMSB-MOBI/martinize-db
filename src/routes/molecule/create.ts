@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, generateSnowflake, verifyAndCompleteMolecule, cleanMulterFiles } from '../../helpers';
+import { methodNotAllowed, errorCatcher, generateSnowflake, verifyAndCompleteMolecule, cleanMulterFiles, isDebugMode } from '../../helpers';
 import Uploader, { MAX_FILE_SIZE } from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
@@ -101,7 +101,11 @@ CreateMoleculeRouter.post('/', Uploader.fields([
       force_field: b.force_field,
     };
 
-    if (logged_user.role === "admin") {
+    // Check the user role
+    const user_role = isDebugMode() ? "admin" : logged_user.role;
+
+    // If logged user is admin, set the required parameters
+    if (user_role === "admin") {
       (molecule as Molecule).last_update = new Date().toISOString();
       (molecule as Molecule).approved_by = logged_user.id;
     }
@@ -126,7 +130,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
 
     // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
     let response: nano.DocumentInsertResponse;
-    if (logged_user.role === "admin" || true) {
+    if (user_role === "admin" || true) {
       response = await Database.molecule.save(molecule as Molecule);
     }
     else {

@@ -85,6 +85,14 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     } catch {}
   }
 
+  async removeAll() {
+    const dir = await FsPromise.readdir(MOLECULE_ROOT_DIR);
+
+    for (const file of dir) {
+      await FsPromise.unlink(MOLECULE_ROOT_DIR + file);
+    }
+  }
+
   /**
    * Check, compress and save a zipped version of the given ITP and PDB file.
    * 

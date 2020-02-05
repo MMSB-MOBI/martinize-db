@@ -7,7 +7,10 @@ import ApiRouter from './routes';
 import CliHelper from 'interactive-cli-helper';
 import Errors, { ErrorType, ApiError } from './Errors';
 import { sendError } from './helpers';
-import { Database } from './Entities/CouchHelper';
+import CouchHelper, { Database } from './Entities/CouchHelper';
+import MoleculeOrganizer from './MoleculeOrganizer';
+import { Molecule } from './Entities/entities';
+import MOLECULE_CLI from './cli/molecule_cli';
 
 commander
   .version(VERSION)
@@ -85,6 +88,9 @@ function startCli() {
     CLI.onclose!();
     process.exit(0);
   });
+
+  CLI.addSubListener('molecule', MOLECULE_CLI);
+  
 
   CLI.listen();
 }
