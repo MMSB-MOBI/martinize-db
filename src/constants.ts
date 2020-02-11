@@ -19,3 +19,4 @@ export { KEYS };
 
 export const MOLECULE_ROOT_DIR = __dirname + "/../molecules/";
 export const UPLOAD_ROOT_DIR = __dirname + "/../uploads/";
+export const SETTINGS_FILE = __dirname + "/../settings.json";

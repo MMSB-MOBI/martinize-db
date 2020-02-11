@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import jwt from './jwt';
 import Errors, { ErrorType } from '../Errors';
 import MoleculeRouter from './molecule';
+import SettingsRouter from './settings';
 
 const ApiRouter = Router();
 ApiRouter.use(cors());
@@ -15,8 +16,10 @@ ApiRouter.use(cookieParser());
 
 ApiRouter.use(jwt);
 
+// Subscribe to sub routers
 ApiRouter.use('/user', UserRouter);
 ApiRouter.use('/molecule', MoleculeRouter);
+ApiRouter.use('/settings', SettingsRouter);
 
 // Catch all API invalid routes
 ApiRouter.use(() => {
