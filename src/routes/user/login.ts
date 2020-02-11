@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { errorCatcher, generateSnowflake, signToken, methodNotAllowed } from '../../helpers';
+import { errorCatcher, generateSnowflake, signToken, methodNotAllowed, sanitize } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
-import { Token } from '../../Entities/entities';
+import { Token, User } from '../../Entities/entities';
 
 const LoginUserRouter = Router();
 
@@ -18,7 +18,13 @@ LoginUserRouter.post('/', (req, res) => {
       Errors.throw(ErrorType.MissingParameters);
     }
 
-    const user = await Database.user.fromUsername(username);
+    let user: User | undefined;
+    if (username.includes("@")) {
+      user = await Database.user.fromEmail(username);
+    }
+    else {
+      user = await Database.user.fromUsername(username);
+    }
 
     if (!user) {
       return Errors.throw(ErrorType.UserNotFound);
@@ -43,7 +49,8 @@ LoginUserRouter.post('/', (req, res) => {
     const jwt = await signToken({ user_id: token.user_id, created_at: token.created_at }, token.id);
 
     res.json({
-      token: jwt
+      token: jwt,
+      user: sanitize(user)
     });
   })().catch(errorCatcher(res));
 });

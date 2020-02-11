@@ -11,6 +11,7 @@ import CouchHelper, { Database } from './Entities/CouchHelper';
 import MoleculeOrganizer from './MoleculeOrganizer';
 import { Molecule } from './Entities/entities';
 import MOLECULE_CLI from './cli/molecule_cli';
+import USER_CLI from './cli/user_cli';
 
 commander
   .version(VERSION)
@@ -70,7 +71,7 @@ app.use('/api', (err: any, req: express.Request, res: express.Response, next: Fu
   else if (err instanceof ApiError) {
     sendError(err, res);
   }
-  // @ts-ignore
+  // @ts-ignore Invalid field in request
   else if (req.field) {
     // @ts-ignore
     Errors.send(ErrorType.Format, res, { field: req.field });
@@ -90,7 +91,7 @@ function startCli() {
   });
 
   CLI.addSubListener('molecule', MOLECULE_CLI);
-  
+  CLI.addSubListener('user', USER_CLI);
 
   CLI.listen();
 }

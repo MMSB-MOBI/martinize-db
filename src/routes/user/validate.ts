@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { errorCatcher, generateSnowflake, signToken, methodNotAllowed, sanitize } from '../../helpers';
+import { errorCatcher, methodNotAllowed, sanitize } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
-import { Token } from '../../Entities/entities';
 
 const ValidateUserRouter = Router();
 

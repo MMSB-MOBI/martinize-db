@@ -19,7 +19,7 @@ MOLECULE_CLI.addSubListener('get', rest => {
   rest = rest.trim();
 
   if (!rest) {
-    return `Please specify a molecule id or "all".`;
+    return `Please specify a molecule id.`;
   }
 
   try {
