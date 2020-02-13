@@ -21,6 +21,8 @@ interface Filters {
   /* Search modificators */
   is_regex?: string;
   combine?: "0" | "false" | "1" | "true";
+  skip?: string;
+  limit?: string;
 }
 
 ListMoleculeRouter.get('/', (req, res) => {
@@ -37,7 +39,9 @@ ListMoleculeRouter.get('/', (req, res) => {
       martinize_versions,
       name: molecule_name,
       alias,
-      combine: __as_version_tree__
+      combine: __as_version_tree__,
+      skip,
+      limit,
     } = req.query as Partial<Filters>;
 
     const with_regex = is_regex === "true" || is_regex === "1";
@@ -122,6 +126,19 @@ ListMoleculeRouter.get('/', (req, res) => {
     
     if (selectors.length) {
       query.selector = { $and: selectors };
+    }
+
+    if (skip) {
+      if (Number(skip) > 0) {
+        query.skip = Number(skip);
+      }
+    }
+    if (limit) {
+      const l = Number(limit);
+
+      if (l > 0 && l <= 200) {
+        query.limit = l;
+      }
     }
 
     const response = await SearchWorker.query(query, bulk_request);

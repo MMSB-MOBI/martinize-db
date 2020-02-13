@@ -63,7 +63,7 @@ export const SearchWorker = new class SearchWorker {
           if (worker_occ[0] <= 0) {
             logger.silly(`Child worker ${worker_id} has no search task left: it will be killed in ${MINUTES_BEFORE_WORKER_KILL} minutes.`);
             // Timeout to kill worker
-            this.killWorker(worker_id);
+            this.assignKillTimeout(worker_id);
           }
         }
         if (msg.type === "error") {
@@ -84,7 +84,7 @@ export const SearchWorker = new class SearchWorker {
     let selected_worker_id: string;
     if (!this.workers.size) {
       // Spawn a new worker
-      selected_worker_id = this.instanciate();
+      selected_worker_id = this.spawn();
     }
     else {
       const smaller_worker_occupied = [...this.workers_occupation.entries()].reduce((prev, val) => prev[1][0] < val[1][0] ? prev : val);
@@ -95,7 +95,7 @@ export const SearchWorker = new class SearchWorker {
         smaller_worker_occupied[1][0] > MAX_REQUEST_PER_WORKER_THRESHOLD
       ) {
         logger.debug("Spawing a new worker due to load balancing.")
-        selected_worker_id = this.instanciate();
+        selected_worker_id = this.spawn();
       } 
       else {
         selected_worker_id = smaller_worker_occupied[0];
@@ -115,27 +115,10 @@ export const SearchWorker = new class SearchWorker {
     return [selected_worker, selected_worker_occ, selected_worker_id];
   }
 
-  protected killWorker(id: string) {
-    const selected_occ = this.workers_occupation.get(id)!;
-
-    if (selected_occ[1]) {
-      clearTimeout(selected_occ[1]);
-      selected_occ[1] = undefined;
-    }
-
-    selected_occ[1] = setTimeout(() => {
-      const worker = this.workers.get(id)!;
-
-      this.workers.delete(id);
-      this.workers_occupation.delete(id);
-
-      worker.terminate();
-
-      logger.verbose("Worker killed : " + id);
-    }, MINUTES_BEFORE_WORKER_KILL * 60 * 1000);
-  }
-
-  protected instanciate() {
+  /**
+   * Spawn a new worker. This does not initialize timeout for killing him.
+   */
+  spawn(with_log = true) {
     const worker_id = simpleflake().toString();
     const worker = new Worker(__dirname + '/worker.js', {
       workerData: { 
@@ -145,11 +128,29 @@ export const SearchWorker = new class SearchWorker {
       }
     });
 
-    logger.debug(`Worker ${worker_id} has been spawned.`);
+    if (with_log)
+      logger.debug(`Worker ${worker_id} has been spawned.`);
     
     this.workers.set(worker_id, worker);
     this.workers_occupation.set(worker_id, [0, undefined]);
     return worker_id;
+  }
+
+  assignKillTimeout(worker_id: string) {
+    const selected_occ = this.workers_occupation.get(worker_id);
+
+    if (selected_occ) {
+      // Remove the previous timeout
+      if (selected_occ[1]) {
+        clearTimeout(selected_occ[1]);
+        selected_occ[1] = undefined;
+      }
+  
+      selected_occ[1] = setTimeout(() => {
+        this.kill(worker_id);
+        logger.verbose("Worker killed : " + worker_id);
+      }, MINUTES_BEFORE_WORKER_KILL * 60 * 1000);
+    }
   }
 
   protected sendMessageToWorkers(message: WorkerSendMessage) {
@@ -164,6 +165,30 @@ export const SearchWorker = new class SearchWorker {
 
   clearCache() {
     this.sendMessageToWorkers({ type: "clean" });
+  }
+
+  kill(id: string) {
+    const worker = this.workers.get(id)!;
+
+    if (worker) {
+      const occ = this.workers_occupation.get(id);
+      if (occ && occ[1]) {
+        clearTimeout(occ[1]);
+      }
+
+      this.workers.delete(id);
+      this.workers_occupation.delete(id);
+  
+      worker.terminate();
+    }
+  }
+
+  get available() {
+    return Object.fromEntries(this.workers_occupation.entries());
+  }
+
+  exists(id: string) {
+    return this.workers.has(id);
   }
 }();
 

@@ -109,7 +109,7 @@ async function startNewSearch(msg: WorkerStartTask) {
 
   // Molecule tree is okay
   const skip = msg.query.skip || 0;
-  const limit = msg.query.limit || 200;
+  const limit = msg.query.limit || 25;
 
   Cache[query_hash] = molecule_tree;
 

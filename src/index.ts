@@ -12,6 +12,7 @@ import MoleculeOrganizer from './MoleculeOrganizer';
 import { Molecule } from './Entities/entities';
 import MOLECULE_CLI from './cli/molecule_cli';
 import USER_CLI from './cli/user_cli';
+import WORKER_CLI from './cli/worker_cli';
 
 commander
   .version(VERSION)
@@ -92,6 +93,7 @@ function startCli() {
 
   CLI.addSubListener('molecule', MOLECULE_CLI);
   CLI.addSubListener('user', USER_CLI);
+  CLI.addSubListener('worker', WORKER_CLI);
 
   CLI.listen();
 }
