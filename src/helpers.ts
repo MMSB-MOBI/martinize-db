@@ -174,3 +174,12 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
 
   return molecule;
 }
+
+export function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+export function withRegex(text: string, is_regex: boolean, flags = "i") {
+  const search_text = is_regex ? text : escapeRegExp(text);
+  return { $regex: `(?${flags})${search_text}` };
+}

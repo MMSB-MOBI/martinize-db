@@ -9,7 +9,7 @@ export default class MoleculeDatabase extends AbstractDatabase<Molecule> {
    * If any molecule have this tree id, returns `undefined`
    */
   async moleculeTreeOf(tree_id: string) {
-    const mols = await this.find({ limit: 999, selector: { tree_id } });
+    const mols = await this.find({ limit: 999999, selector: { tree_id } });
 
     if (mols.length) {
       return new MoleculeVersionTree(mols);

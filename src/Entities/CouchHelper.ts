@@ -1,9 +1,9 @@
 import nano from 'nano';
-import { Molecule, StashedMolecule, User, Token } from './entities';
 import TokenDatabase from './TokenDatabase';
 import MoleculeDatabase from './MoleculeDatabase';
 import UserDatabase from './UserDatabase';
 import StashedMoleculeDatabase from './StashedMoleculeDatabase';
+import { COUCH_URL } from '../constants';
 
 export class CouchDatabase<T> {
   constructor(protected collection: nano.DocumentScope<T>) {}
@@ -104,4 +104,4 @@ export default class CouchHelper {
   }
 }
 
-export const Database = new CouchHelper("http://localhost:5984");
+export const Database = new CouchHelper(COUCH_URL);
