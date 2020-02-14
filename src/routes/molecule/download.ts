@@ -25,7 +25,7 @@ DownloadMoleculeRouter.get('/', (req, res) => {
 
     // todo check filename
 
-    res.download(MoleculeOrganizer.getFilenameFor(id), filename);
+    res.download(MoleculeOrganizer.getFilenameFor(id), filename || undefined);
   })().catch(errorCatcher(res));
 });
 
