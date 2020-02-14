@@ -1,1 +1,37 @@
-{"martinize_versions":["2.6","3.0"],"force_fields":["elnedyn","elnedyn22","elnedyn22p","martini22","martini22p","martini304","martini30b32","martini30dev","universal"],"category_tree":{"GO:0001":{"name":"Molecular","children":{}}}}
+{
+  "martinize_versions": [
+    "2.6",
+    "3.0"
+  ],
+  "force_fields": [
+    "elnedyn",
+    "elnedyn22",
+    "elnedyn22p",
+    "martini22",
+    "martini22p",
+    "martini304",
+    "martini30b32",
+    "martini30dev",
+    "universal"
+  ],
+  "category_tree": {
+    "GO:0001": {
+      "name": "Molecular",
+      "children": {
+        "GO:0002": {
+          "name": "Test Go 2",
+          "children": {}
+        },
+        "GO:0003": {
+          "name": "Test Go 3",
+          "children": {
+            "GO:0004": {
+              "name": "Test Go 4",
+              "children": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}
