@@ -36,7 +36,16 @@ export default jwt({
       .catch(() => done(null, true));
   }
 }).unless(
-  { path: ["/api/molecule/list", "/api/user/login", "/api/user/create", "/api", { url: "/api/settings", methods: ['GET'] }] }
+  { path: [
+    "/api/molecule/list", 
+    "/api/user/login", 
+    "/api/user/create", 
+    "/api", 
+    { url: "/api/settings", methods: ['GET'] },
+    "/api/molecule",
+    "/api/molecule/download",
+    "/api/molecule/get",
+  ] }
 );
 
 // Extends Express request
