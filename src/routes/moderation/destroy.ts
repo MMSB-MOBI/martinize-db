@@ -20,12 +20,12 @@ DestroyStashedRouter.delete('/:id', (req, res) => {
       return Errors.throw(ErrorType.Forbidden);
     }
 
+    if (user.role !== "admin") {
+      return Errors.throw(ErrorType.Forbidden);
+    }
+
     try {
       const mol = await Database.stashed.get(id);
-
-      if (user.role !== "admin" && user.id !== mol.owner) {
-        return Errors.throw(ErrorType.Forbidden);
-      }
 
       // Delete attached ZIP
       await MoleculeOrganizer.remove(mol.files);

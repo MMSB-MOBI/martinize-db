@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, generateSnowflake, verifyAndCompleteMolecule, cleanMulterFiles, isDebugMode } from '../../helpers';
-import Uploader, { MAX_FILE_SIZE } from '../Uploader';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, isDebugMode } from '../../helpers';
+import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
-import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
-import { Molecule, BaseMolecule, StashedMolecule } from '../../Entities/entities';
+import { Molecule, StashedMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 import checkCreateOrEditRequest from './checkCreateEditRequest';
@@ -45,7 +44,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
 
     // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
     let response: nano.DocumentInsertResponse;
-    if (user_role === "admin" || true) {
+    if (user_role === "admin") {
       response = await Database.molecule.save(molecule as Molecule);
     }
     else {

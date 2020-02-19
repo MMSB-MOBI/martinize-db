@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { errorCatcher, sanitize, methodNotAllowed, escapeRegExp } from '../../helpers';
+import { errorCatcher, sanitize, methodNotAllowed } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 import Errors, { ErrorType } from '../../Errors';
@@ -9,6 +9,10 @@ const GetStashedRouter = Router();
 
 GetStashedRouter.get('/', (req, res) => {
   (async () => {
+    if (req.full_user!.role !== "admin") {
+      return Errors.throw(ErrorType.Forbidden);
+    }
+
     const { version } = req.query;
 
     const selector: any = {};

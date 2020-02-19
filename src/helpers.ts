@@ -162,6 +162,16 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
   }
   
   if (edit) {
+    // TODO check the original !
+    try {
+      const original = await Database[(stashed ? "stashed" : "molecule")].get(molecule.id);
+      molecule.id = original.id;
+      molecule._rev = original._rev;
+      molecule.tree_id = original.tree_id;
+    } catch (e) {
+      throw { error: 'Unable to find original molecule' };
+    }
+    
     if (!molecule.tree_id) {
       throw { error: 'When you edit a molecule, it should have a tree ID' };
     }

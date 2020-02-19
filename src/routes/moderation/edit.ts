@@ -1,5 +1,5 @@
 import { Router, Request } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize } from '../../helpers';
 import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import { StashedMolecule, User } from '../../Entities/entities';
@@ -43,12 +43,12 @@ EditStashedRouter.post('/', Uploader.fields([
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const molecule = await checkCreateOrEditRequest(req, true);
+    const molecule = await checkCreateOrEditRequest(req, true, true);
 
     let response = await Database.stashed.save(molecule as StashedMolecule);
 
     if (response.ok) {
-      res.json(molecule);
+      res.json(sanitize(molecule));
     }
     else {
       return Errors.throw(ErrorType.Server);

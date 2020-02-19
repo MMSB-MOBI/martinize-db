@@ -68,8 +68,8 @@ export default async function checkCreateOrEditRequest(req: Request, edit = fals
     version: b.version,
     category: b.category,
     parent: b.parent,
-    tree_id: "",
-    hash: "",
+    tree_id: b.tree_id ?? "",
+    hash: b.hash ?? "",
     owner: logged_user.id,
     files: "",
     comments: b.comments,
@@ -79,8 +79,19 @@ export default async function checkCreateOrEditRequest(req: Request, edit = fals
     force_field: b.force_field,
   };
 
+  if (b.parent === "null") {
+    molecule.parent = null;
+  }
+
   if (edit && b.files && typeof b.files === 'string') {
     molecule.files = b.files;
+  }
+
+  if (edit) {
+    // Make some check todo more
+    if (!molecule.id || !molecule.files || !molecule.hash) {
+      return Errors.throw(ErrorType.MissingParameters);
+    }
   }
 
   // Check the user role

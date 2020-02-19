@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, isDebugMode } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, isDebugMode, sanitize } from '../../helpers';
 import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import { Molecule } from '../../Entities/entities';
@@ -46,7 +46,7 @@ EditMoleculeRouter.post('/', Uploader.fields([
     let response = await Database.molecule.save(molecule as Molecule);
 
     if (response.ok) {
-      res.json(molecule);
+      res.json(sanitize(molecule));
     }
     else {
       return Errors.throw(ErrorType.Server);
