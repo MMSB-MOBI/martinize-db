@@ -4,12 +4,10 @@ import { Database } from '../../Entities/CouchHelper';
 import Errors, { ErrorType } from '../../Errors';
 import MoleculeOrganizer from '../../MoleculeOrganizer';
 
-const DestroyMoleculeRouter = Router();
+const DestroyStashedRouter = Router();
 
-DestroyMoleculeRouter.delete('/:id', (req, res) => {
+DestroyStashedRouter.delete('/:id', (req, res) => {
   (async () => {
-    // TODO MAKE SEARCH
-    // For now, it only returns every molecule
     const id = req.params.id;
 
     if (!id || typeof id !== 'string') {
@@ -23,7 +21,7 @@ DestroyMoleculeRouter.delete('/:id', (req, res) => {
     }
 
     try {
-      const mol = await Database.molecule.get(id);
+      const mol = await Database.stashed.get(id);
 
       if (user.role !== "admin" && user.id !== mol.owner) {
         return Errors.throw(ErrorType.Forbidden);
@@ -31,7 +29,7 @@ DestroyMoleculeRouter.delete('/:id', (req, res) => {
 
       // Delete attached ZIP
       await MoleculeOrganizer.remove(mol.files);
-      await Database.molecule.delete(mol);
+      await Database.stashed.delete(mol);
     } catch (e) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
@@ -40,6 +38,6 @@ DestroyMoleculeRouter.delete('/:id', (req, res) => {
   })().catch(errorCatcher(res));
 });
 
-DestroyMoleculeRouter.all('/', methodNotAllowed(['DELETE']))
+DestroyStashedRouter.all('/', methodNotAllowed(['DELETE']))
 
-export default DestroyMoleculeRouter;
+export default DestroyStashedRouter;

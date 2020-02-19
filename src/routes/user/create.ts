@@ -13,7 +13,7 @@ CreateUserRouter.post('/', (req, res) => {
   } 
 
   // TODO CHECK VALIDITY OF ALL DATA
-  const { username, password, email, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string }; 
+  let { username, password, email, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string }; 
   
   (async () => {
     let role: UserRole = "curator"; 
@@ -21,6 +21,9 @@ CreateUserRouter.post('/', (req, res) => {
     if (!username || !password || !email) {
       return Errors.throw(ErrorType.MissingParameters);
     }
+
+    username = username.toLowerCase();
+    email = email.toLowerCase();
 
     if (req.user) {
       const user = await Database.user.fromToken(req.user.jti);

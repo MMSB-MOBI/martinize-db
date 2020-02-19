@@ -14,10 +14,20 @@ export interface BaseMolecule extends BaseCouchDocument {
   alias: string;
   /** Mol formula */
   formula: string;
-  /** Molecule version (free text) */
-  version: string;
   /** Category, should be a GO Term */
   category: keyof typeof GoTerms;
+  /** Molecule version (free text) */
+  version: string;
+  /** Free comment text. */
+  comments: string;
+  /** String version of the used command line (other parameters) */
+  command_line: string;
+  /** Martinize version used to generate files */
+  martinize_version: string;
+  /** Force field version */
+  force_field: string;
+  /** Stringified ISO date of creation date */
+  created_at: string;
   /** Molecule parent version. If string, ref to <Molecule.id> */
   parent: null | string;
   /** Tree snowflake ID. Shared between parent and children */
@@ -28,16 +38,6 @@ export interface BaseMolecule extends BaseCouchDocument {
   owner: string;
   /** ID of related file containing `.itp` and `.gro`/`.pdb` files */
   files: string;
-  /** Free comment text. */
-  comments: string;
-  /** Stringified ISO date of creation date */
-  created_at: string;
-  /** String version of the used command line (other parameters) */
-  command_line: string;
-  /** Martinize version used to generate files */
-  martinize_version: string;
-  /** Force field version */
-  force_field: string;
 }
 
 export interface Molecule extends BaseMolecule {

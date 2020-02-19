@@ -8,6 +8,7 @@ import JsonWebToken from 'jsonwebtoken';
 import { KEYS, UPLOAD_ROOT_DIR } from "./constants";
 import { Database } from "./Entities/CouchHelper";
 import { unlink } from "fs";
+import MoleculeOrganizer from "./MoleculeOrganizer";
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -123,7 +124,7 @@ export function getNameAndPathOfUploadedFile(name: string) : [string, string] {
   return [file_name, file_path];
 }
 
-export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = false) {
+export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = false, stashed = false) {
   // Must check every thing: if field exists
   if ([
     molecule.id,
@@ -154,8 +155,13 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
 
   if (parent) {
     molecule.tree_id = parent.tree_id;
+    molecule.name = parent.name;
+    molecule.alias = parent.alias;
+    molecule.formula = parent.formula;
+    molecule.category = parent.category;
   }
-  else if (edit) {
+  
+  if (edit) {
     if (!molecule.tree_id) {
       throw { error: 'When you edit a molecule, it should have a tree ID' };
     }
@@ -164,12 +170,21 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
     molecule.tree_id = generateSnowflake();
   }
 
-  if (edit) {
+  if (edit && !stashed) {
     (molecule as Molecule).last_update = new Date().toISOString();
   }
 
   // TODO CHECK EVERYTHING ELSE except hash & files parameters, 
   // because file isn't necessary saved
+  if (molecule.files) {
+    // Check if file exists
+    const exists = await MoleculeOrganizer.exists(molecule.files);
+    if (!exists) {
+      throw { error: "Specified file not found. Has it been deleted ?" };
+    }
+
+    molecule.hash = await MoleculeOrganizer.hash(molecule.files);
+  }
 
 
   return molecule;

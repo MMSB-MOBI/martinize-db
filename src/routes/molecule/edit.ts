@@ -1,17 +1,15 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, generateSnowflake, verifyAndCompleteMolecule, cleanMulterFiles, isDebugMode } from '../../helpers';
-import Uploader, { MAX_FILE_SIZE } from '../Uploader';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, isDebugMode } from '../../helpers';
+import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
-import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
-import { Molecule, BaseMolecule, StashedMolecule } from '../../Entities/entities';
+import { Molecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
-import nano = require('nano');
 import checkCreateOrEditRequest from './checkCreateEditRequest';
 
-const CreateMoleculeRouter = Router();
+const EditMoleculeRouter = Router();
 
 // Middleware that wipe uploaded files after request
-CreateMoleculeRouter.use((req, res, next) => {
+EditMoleculeRouter.use((req, res, next) => {
   function after() {
     // Response is sended
     cleanMulterFiles(req);
@@ -32,25 +30,20 @@ CreateMoleculeRouter.use((req, res, next) => {
  * 
  * 
  */
-CreateMoleculeRouter.post('/', Uploader.fields([
+EditMoleculeRouter.post('/', Uploader.fields([
   { name: 'itp', maxCount: 99 }, 
   { name: 'gro', maxCount: 1 },
   { name: 'pdb', maxCount: 1 },
 ]), (req, res) => {
+  // Saving the file
   (async () => {
-    const molecule = await checkCreateOrEditRequest(req);
+    const molecule = await checkCreateOrEditRequest(req, true);
 
     const logged_user = req.full_user!;
     const user_role = isDebugMode() ? "admin" : logged_user.role;
 
     // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
-    let response: nano.DocumentInsertResponse;
-    if (user_role === "admin" || true) {
-      response = await Database.molecule.save(molecule as Molecule);
-    }
-    else {
-      response = await Database.stashed.save(molecule as StashedMolecule);
-    }
+    let response = await Database.molecule.save(molecule as Molecule);
 
     if (response.ok) {
       res.json(molecule);
@@ -61,6 +54,6 @@ CreateMoleculeRouter.post('/', Uploader.fields([
   })().catch(errorCatcher(res));
 });
 
-CreateMoleculeRouter.all('/', methodNotAllowed(['POST']));
+EditMoleculeRouter.all('/', methodNotAllowed(['POST']));
 
-export default CreateMoleculeRouter;
+export default EditMoleculeRouter;

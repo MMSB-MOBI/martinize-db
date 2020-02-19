@@ -12,11 +12,13 @@ LoginUserRouter.post('/', (req, res) => {
       Errors.throw(ErrorType.MissingParameters);
     } 
 
-    const { username, password } = req.body as { username: string, password: string };
+    let { username, password } = req.body as { username: string, password: string };
 
     if (!username || !password) {
       Errors.throw(ErrorType.MissingParameters);
     }
+
+    username = username.toLowerCase();
 
     let user: User | undefined;
     if (username.includes("@")) {

@@ -71,6 +71,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
   async exists(file_id: string) {
     return FsPromise.access(this.getFilenameFor(file_id), fs.constants.F_OK).then(() => true).catch(() => false);
   }
+
+  hash(file_id: string) {
+    return md5File(this.getFilenameFor(file_id));
+  }
   
   /**
    * Remove a save.

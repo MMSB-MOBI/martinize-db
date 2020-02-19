@@ -7,6 +7,7 @@ import jwt from './jwt';
 import Errors, { ErrorType } from '../Errors';
 import MoleculeRouter from './molecule';
 import SettingsRouter from './settings';
+import ModerationRouter from './moderation';
 
 const ApiRouter = Router();
 ApiRouter.use(cors());
@@ -20,6 +21,7 @@ ApiRouter.use(jwt);
 ApiRouter.use('/user', UserRouter);
 ApiRouter.use('/molecule', MoleculeRouter);
 ApiRouter.use('/settings', SettingsRouter);
+ApiRouter.use('/moderation', ModerationRouter);
 
 // Catch all API invalid routes
 ApiRouter.use(() => {

@@ -17,6 +17,7 @@ interface Filters {
   martinize_versions?: string;
   name?: string;
   alias?: string;
+  owner?: string;
 
   /* Search modificators */
   is_regex?: string;
@@ -34,6 +35,7 @@ ListMoleculeRouter.get('/', (req, res) => {
       version, 
       q: free_text, 
       author, 
+      owner,
       categories, 
       is_regex,
       martinize_versions,
@@ -96,6 +98,11 @@ ListMoleculeRouter.get('/', (req, res) => {
 
       selectors.push({
         owner: { $in: users_id }
+      });
+    }
+    if (owner) {
+      selectors.push({
+        owner
       });
     }
     if (categories) {

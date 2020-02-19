@@ -75,6 +75,11 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
     return this._db.destroy(element._id!, element._rev!);
   }
 
+  async count() {
+    const info = await this._db.info();
+    return info.doc_count;
+  }
+
   async exists(element: T | string) {
     try {
       await this.get(typeof element === 'string' ? element : element.id);
