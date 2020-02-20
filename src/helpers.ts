@@ -153,6 +153,7 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
     molecule.parent = null;
   }
 
+  // Erase the properties by parent's one.
   if (parent) {
     molecule.tree_id = parent.tree_id;
     molecule.name = parent.name;
@@ -163,8 +164,10 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
   
   if (edit) {
     // TODO check the original !
+    const db = stashed ? "stashed" : "molecule";
+
     try {
-      const original = await Database[(stashed ? "stashed" : "molecule")].get(molecule.id);
+      const original = await Database[db].get(molecule.id);
       molecule.id = original.id;
       molecule._rev = original._rev;
       molecule.tree_id = original.tree_id;

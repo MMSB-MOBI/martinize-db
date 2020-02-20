@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, isDebugMode } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles } from '../../helpers';
 import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import { Molecule, StashedMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 import checkCreateOrEditRequest from './checkCreateEditRequest';
+import { DISABLE_MODERATION_PROCESS } from '../../constants';
 
 const CreateMoleculeRouter = Router();
 
@@ -40,7 +41,8 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     const molecule = await checkCreateOrEditRequest(req);
 
     const logged_user = req.full_user!;
-    const user_role = isDebugMode() ? "admin" : logged_user.role;
+    
+    const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
 
     // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
     let response: nano.DocumentInsertResponse;

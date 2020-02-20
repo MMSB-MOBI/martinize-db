@@ -24,3 +24,4 @@ export const COUCH_URL = "http://localhost:5984";
 export const MINUTES_BEFORE_WORKER_KILL = 2;
 export const MAX_POOL_SIZE = 10;
 export const MAX_REQUEST_PER_WORKER_THRESHOLD = 3;
+export const DISABLE_MODERATION_PROCESS = false;

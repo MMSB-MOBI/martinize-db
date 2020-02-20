@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, isDebugMode, sanitize } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize } from '../../helpers';
 import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
-import { Molecule } from '../../Entities/entities';
+import { Molecule, StashedMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import checkCreateOrEditRequest from './checkCreateEditRequest';
+import nano = require('nano');
+import { DISABLE_MODERATION_PROCESS } from '../../constants';
 
 const EditMoleculeRouter = Router();
 
@@ -37,13 +39,17 @@ EditMoleculeRouter.post('/', Uploader.fields([
 ]), (req, res) => {
   // Saving the file
   (async () => {
+    if (!req.full_user || req.full_user.role !== "admin") {
+      return Errors.throw(ErrorType.Forbidden);
+    }
+
     const molecule = await checkCreateOrEditRequest(req, true);
 
     const logged_user = req.full_user!;
-    const user_role = isDebugMode() ? "admin" : logged_user.role;
+    const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
 
-    // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
-    let response = await Database.molecule.save(molecule as Molecule);
+    // Save the edited molecule
+    const response = await Database.molecule.save(molecule as Molecule);
 
     if (response.ok) {
       res.json(sanitize(molecule));

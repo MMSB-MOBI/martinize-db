@@ -2,8 +2,10 @@ import { Request } from 'express';
 import Errors, { ErrorType } from '../../Errors';
 import { MAX_FILE_SIZE } from '../Uploader';
 import { BaseMolecule, Molecule } from '../../Entities/entities';
-import { generateSnowflake, isDebugMode, verifyAndCompleteMolecule } from '../../helpers';
+import { generateSnowflake, verifyAndCompleteMolecule } from '../../helpers';
 import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
+import logger from '../../logger';
+import { DISABLE_MODERATION_PROCESS } from '../../constants';
 
 export default async function checkCreateOrEditRequest(req: Request, edit = false, stashed = false) {
   if (!req.files || Array.isArray(req.files)) {
@@ -95,7 +97,7 @@ export default async function checkCreateOrEditRequest(req: Request, edit = fals
   }
 
   // Check the user role
-  const user_role = isDebugMode() ? "admin" : logged_user.role;
+  const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
 
   // If logged user is admin, set the required parameters
   if (user_role === "admin" && !stashed) {
@@ -119,6 +121,16 @@ export default async function checkCreateOrEditRequest(req: Request, edit = fals
     } catch (e) {
       return Errors.throw(ErrorType.InvalidMoleculeFiles, e);
     }
+
+    // Remove the old files, if they exists
+    if (molecule.files) {
+      try {
+        await MoleculeOrganizer.remove(molecule.files);
+      } catch (e) {
+        logger.error("Unable to remove file", e);
+      }
+    }
+
     molecule.hash = save.infos.hash;
     molecule.files = save.id;
   }
