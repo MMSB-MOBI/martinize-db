@@ -2,6 +2,7 @@ import { User } from "./entities";
 import bcrypt from 'bcrypt';
 import { Database } from "./CouchHelper";
 import AbstractDatabase from "./AbstractDatabase";
+import { withRegex } from "../helpers";
 
 export default class UserDatabase extends AbstractDatabase<User> {
   /** Get the user related to given token. undefined if it doesn't exists. */
@@ -15,12 +16,12 @@ export default class UserDatabase extends AbstractDatabase<User> {
   }
 
   async fromUsername(username: string) : Promise<User | undefined> {
-    const res = await this.findOne({ selector: { name: username } });
+    const res = await this.findOne({ selector: { name: withRegex(username, false, "i", true) } });
     return res[0];
   }
   
   async fromEmail(email: string) : Promise<User | undefined> {
-    const res = await this.findOne({ selector: { email } });
+    const res = await this.findOne({ selector: { email: withRegex(email, false, "i", true) } });
     return res[0];
   }
 

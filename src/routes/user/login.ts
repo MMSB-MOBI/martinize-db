@@ -18,8 +18,6 @@ LoginUserRouter.post('/', (req, res) => {
       Errors.throw(ErrorType.MissingParameters);
     }
 
-    username = username.toLowerCase();
-
     let user: User | undefined;
     if (username.includes("@")) {
       user = await Database.user.fromEmail(username);

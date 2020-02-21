@@ -22,9 +22,6 @@ CreateUserRouter.post('/', (req, res) => {
       return Errors.throw(ErrorType.MissingParameters);
     }
 
-    username = username.toLowerCase();
-    email = email.toLowerCase();
-
     if (req.user) {
       const user = await Database.user.fromToken(req.user.jti);
 

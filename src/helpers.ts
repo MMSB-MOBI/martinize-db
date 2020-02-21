@@ -207,7 +207,12 @@ export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-export function withRegex(text: string, is_regex: boolean, flags = "i") {
-  const search_text = is_regex ? text : escapeRegExp(text);
+export function withRegex(text: string, is_regex: boolean, flags = "i", strict_match = false) {
+  let search_text = is_regex ? text : escapeRegExp(text);
+
+  if (strict_match) {
+    search_text = "^" + search_text + "$";
+  }
+
   return { $regex: `(?${flags})${search_text}` };
 }
