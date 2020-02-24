@@ -224,7 +224,9 @@ export class MoleculeChecker {
     // Set the right parent
     if (!mol.parent) {
       mol.parent = null;
-      mol.tree_id = generateSnowflake();
+      if (!mol.tree_id) {
+        mol.tree_id = generateSnowflake();
+      }
     }
 
     // Check the parent-linked fields (copy from them only if molecule is not parented)
@@ -259,13 +261,12 @@ export class MoleculeChecker {
 
     body.version = body.version.trim();
     this.checkVersion(body.version);
+    mol.version = body.version;
 
     // Check if version exists in tree_id
     if (await this.versionExistsInTreeId(mol.tree_id!, mol.version!, mol.id!)) {
       return Errors.throw(ErrorType.VersionAlreadyExists);
     }
-
-    mol.version = body.version;
 
     // Copy comments + command line
     mol.comments = body.comments || "";

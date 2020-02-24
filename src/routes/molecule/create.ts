@@ -41,6 +41,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     const logged_user = req.full_user!;
     
     const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
+    const force_moderation = req.query.force_moderation === "1";
 
     // Insert the molecule
     let response: nano.DocumentInsertResponse;
@@ -48,7 +49,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
 
     const checker = new MoleculeChecker(req);
 
-    if (user_role === "admin") {
+    if (user_role === "admin" && !force_moderation) {
       // Inset directly in molecule db
       molecule = await checker.check();
       response = await Database.molecule.save(molecule as Molecule);

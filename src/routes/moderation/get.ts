@@ -32,13 +32,13 @@ GetStashedRouter.get('/', (req, res) => {
     const molecule = desired_molecule[0];
 
     // Find parent if any
-    const parent = molecule.parent ? await Database.molecule.find({ selector: { parent: molecule.parent }, limit: 1 }) : undefined;
+    const parent = molecule.parent ? await Database.molecule.find({ selector: { id: molecule.parent }, limit: 1 }) : undefined;
 
     let good_version: StashedMolecule = molecule;
   
     res.json({
       molecule: sanitize(good_version),
-      parent: parent ? sanitize(parent) : undefined
+      parent: parent && parent[0] ? sanitize(parent[0]) : undefined
     });
   })().catch(errorCatcher(res));
 });

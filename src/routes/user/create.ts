@@ -16,7 +16,7 @@ CreateUserRouter.post('/', (req, res) => {
   let { username, password, email, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string }; 
   
   (async () => {
-    let role: UserRole = "curator"; 
+    let role: UserRole = "admin"; 
 
     if (!username || !password || !email) {
       return Errors.throw(ErrorType.MissingParameters);
