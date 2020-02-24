@@ -4,7 +4,7 @@ import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import { StashedMolecule, User } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
-import checkCreateOrEditRequest from '../molecule/checkCreateEditRequest';
+import { MoleculeChecker } from '../molecule/MoleculeChecker';
 
 const EditStashedRouter = Router();
 
@@ -43,7 +43,8 @@ EditStashedRouter.post('/', Uploader.fields([
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const molecule = await checkCreateOrEditRequest(req, true, true);
+    const checker = new MoleculeChecker(req);
+    const molecule = await checker.checkStashedEdition();
 
     let response = await Database.stashed.save(molecule as StashedMolecule);
 

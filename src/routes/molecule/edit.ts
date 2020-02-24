@@ -4,9 +4,7 @@ import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import { Molecule, StashedMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
-import checkCreateOrEditRequest from './checkCreateEditRequest';
-import nano = require('nano');
-import { DISABLE_MODERATION_PROCESS } from '../../constants';
+import { MoleculeChecker } from './MoleculeChecker';
 
 const EditMoleculeRouter = Router();
 
@@ -43,10 +41,27 @@ EditMoleculeRouter.post('/', Uploader.fields([
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const molecule = await checkCreateOrEditRequest(req, true);
+    const checker = new MoleculeChecker(req);
+    const molecule = await checker.checkEdition();
 
-    const logged_user = req.full_user!;
-    const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
+    if (molecule.parent === null) {
+      // Should refresh all the possible childs with name, alias, formula, category
+
+      const children = (await Database.molecule.find({ limit: 99999, selector: { tree_id: molecule.tree_id } })).filter(m => m.id !== molecule.id);
+
+      const saves: Promise<any>[] = [];
+
+      for (const child of children) {
+        child.name = molecule.name;
+        child.alias = molecule.alias;
+        child.formula = molecule.formula;
+        child.category = molecule.category;
+
+        saves.push(Database.molecule.save(child));
+      }
+
+      await Promise.all(saves);
+    }
 
     // Save the edited molecule
     const response = await Database.molecule.save(molecule as Molecule);

@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize } from '../../helpers';
 import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
-import { Molecule, StashedMolecule } from '../../Entities/entities';
+import { Molecule, StashedMolecule, BaseMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
-import checkCreateOrEditRequest from './checkCreateEditRequest';
 import { DISABLE_MODERATION_PROCESS } from '../../constants';
+import { MoleculeChecker } from './MoleculeChecker';
 
 const CreateMoleculeRouter = Router();
 
@@ -38,23 +38,28 @@ CreateMoleculeRouter.post('/', Uploader.fields([
   { name: 'pdb', maxCount: 1 },
 ]), (req, res) => {
   (async () => {
-    const molecule = await checkCreateOrEditRequest(req);
-
     const logged_user = req.full_user!;
     
     const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
 
-    // Insert the molecule NOT STASHED //// TODO DEBUG REMOVE ////
+    // Insert the molecule
     let response: nano.DocumentInsertResponse;
+    let molecule: BaseMolecule;
+
+    const checker = new MoleculeChecker(req);
+
     if (user_role === "admin") {
+      // Inset directly in molecule db
+      molecule = await checker.check();
       response = await Database.molecule.save(molecule as Molecule);
     }
     else {
+      molecule = await checker.checkStashed();
       response = await Database.stashed.save(molecule as StashedMolecule);
     }
 
     if (response.ok) {
-      res.json(molecule);
+      res.json(sanitize(molecule));
     }
     else {
       return Errors.throw(ErrorType.Server);

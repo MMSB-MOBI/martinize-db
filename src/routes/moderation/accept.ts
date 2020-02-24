@@ -28,7 +28,7 @@ AcceptModerationRouter.post('/', (req, res) => {
     const molecule = sanitize({ ...original }) as StashedMolecule;
 
     const full = molecule as Molecule;
-    full.last_update = new Date().toISOString();
+    full.last_update = full.created_at;
     full.approved_by = user.id;
 
     // Add in full

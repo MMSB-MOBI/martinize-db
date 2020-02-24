@@ -130,7 +130,6 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
     molecule.id,
     molecule.name,
     molecule.alias,
-    molecule.formula,
     molecule.version,
     molecule.category,
     molecule.command_line,
