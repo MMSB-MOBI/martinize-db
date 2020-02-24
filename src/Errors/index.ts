@@ -38,6 +38,10 @@ export enum ErrorType {
   InvalidMartinizeVersion,
   InvalidForceField,
   MoleculeNotFound,
+
+  /** When user updates his informations */
+  InvalidUsername,
+  InvalidEmail,
 }
 
 const ErrorsToText = {
@@ -66,6 +70,8 @@ const ErrorsToText = {
   [ErrorType.InvalidMoleculeFiles]: [400, "Sended molecule files (ITP, PDB/GRO) are incorrect"],
   [ErrorType.InvalidForceField]: [400, "Unknown force field"],
   [ErrorType.InvalidMartinizeVersion]: [400, "Martinize version does not exists"],
+  [ErrorType.InvalidUsername]: [400, "Username contains illegal characters or is less than 2 characters long"],
+  [ErrorType.InvalidEmail]: [400, "Email address is invalid"],
   [ErrorType.UsernameExists]: [409, "Username already exists"],
   [ErrorType.EmailExists]: [409, "Email already exists"],
   [ErrorType.InvalidMethod]: [405, "Method not allowed"],

@@ -4,6 +4,7 @@ import { errorCatcher, generateSnowflake, signToken, sanitize, methodNotAllowed 
 import { Database } from '../../Entities/CouchHelper';
 import { UserRole } from '../../types';
 import { User, Token } from '../../Entities/entities';
+import { USERNAME_REGEX, EMAIL_REGEX } from '../../constants';
 
 const CreateUserRouter = Router();
 
@@ -40,6 +41,13 @@ CreateUserRouter.post('/', (req, res) => {
     const user2 = await Database.user.fromEmail(email!);
     if (user2) {
       Errors.throw(ErrorType.EmailExists);
+    }
+
+    if (!username.match(USERNAME_REGEX)) {
+      return Errors.throw(ErrorType.InvalidUsername);
+    }
+    if (!email.match(EMAIL_REGEX)) {
+      return Errors.throw(ErrorType.InvalidEmail);
     }
 
     const user: User = {

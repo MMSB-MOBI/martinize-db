@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { errorCatcher, methodNotAllowed, sanitize } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
+import { USERNAME_REGEX, EMAIL_REGEX } from '../../constants';
 
 const UpdateUserRouter = Router();
 
@@ -20,6 +21,10 @@ UpdateUserRouter.post('/', (req, res) => {
         return Errors.throw(ErrorType.UsernameExists);
       }
 
+      if (!username.match(USERNAME_REGEX)) {
+        return Errors.throw(ErrorType.InvalidUsername);
+      }
+
       user.name = username;
       changed = true;
     }
@@ -27,6 +32,9 @@ UpdateUserRouter.post('/', (req, res) => {
       const existant = await Database.user.fromEmail(email);
       if (existant && existant.id !== usr_id) {
         return Errors.throw(ErrorType.EmailExists);
+      }
+      if (!email.match(EMAIL_REGEX)) {
+        return Errors.throw(ErrorType.InvalidEmail);
       }
 
       user.email = email;

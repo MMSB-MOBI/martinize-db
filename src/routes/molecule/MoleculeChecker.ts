@@ -200,7 +200,9 @@ export class MoleculeChecker {
     let parent: Molecule | undefined = undefined;
     const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
 
-    mol.owner = this.req.full_user!.id;
+    if (!mol.owner) {
+      mol.owner = this.req.full_user!.id;
+    }
 
     const body = this.req.body;
 
