@@ -51,6 +51,7 @@ export function cleanMulterFiles(req: Express.Request) {
  */
 export function errorCatcher(res: Express.Response, req?: Express.Request) {
   return function(err: any) {
+
     if (req) {
       cleanMulterFiles(req);
     }
@@ -204,6 +205,10 @@ export async function verifyAndCompleteMolecule(molecule: BaseMolecule, edit = f
 
 export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+export function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export function withRegex(text: string, is_regex: boolean, flags = "i", strict_match = false) {
