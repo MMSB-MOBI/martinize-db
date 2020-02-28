@@ -5,7 +5,7 @@ import { Database } from '../../Entities/CouchHelper';
 
 const DestroyUserRouter = Router();
 
-DestroyUserRouter.get('/', (req, res) => {  
+DestroyUserRouter.delete('/', (req, res) => {  
   (async () => {
     if (!req.full_user || req.full_user.role !== "admin") {
       return Errors.throw(ErrorType.Forbidden);
@@ -22,6 +22,7 @@ DestroyUserRouter.get('/', (req, res) => {
     if (!to_delete_user) {
       return Errors.throw(ErrorType.UserNotFound);
     }
+    const user = await Database.user.get(id);
 
     // Get and Delete all stashed molecules + published molecules
     const stashed_for_user = await Database.stashed.find({
@@ -40,6 +41,8 @@ DestroyUserRouter.get('/', (req, res) => {
 
     await Promise.all(stashed_for_user.map(s => deleteMolecule(s.id, req.full_user!, true)));
     await Promise.all(molecule_for_user.map(s => deleteMolecule(s.id, req.full_user!, false, false)));
+
+    await Database.user.delete(user);
 
     res.json({
       deleted: true
