@@ -64,6 +64,8 @@ export interface User extends BaseCouchDocument {
   role: UserRole;
   /** Is approved or not */
   approved: boolean;
+  /** Lost token ID */
+  lost_token?: string;
 }
 
 export interface Token extends BaseCouchDocument {
