@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { errorCatcher, methodNotAllowed } from '../../helpers';
+import { errorCatcher, methodNotAllowed, deleteMolecule } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
 import Errors, { ErrorType } from '../../Errors';
 import MoleculeOrganizer from '../../MoleculeOrganizer';
@@ -23,50 +23,7 @@ DestroyMoleculeRouter.delete('/:id', (req, res) => {
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    try {
-      const mol = await Database.molecule.get(id);
-
-      if (user.role !== "admin" && user.id !== mol.owner) {
-        return Errors.throw(ErrorType.Forbidden);
-      }
-
-      // Recherche les versions attachées à cette molecule
-      const versions_attached = await Database.molecule.find({
-        limit: 99999,
-        selector: {
-          parent: mol.id,
-          tree_id: mol.tree_id,
-        },
-      });
-
-      // Met à jour les liens de parenté
-      if (versions_attached.length) {
-        if (mol.parent) {
-          // Every molecule will be attached to the new parent
-          for (const m of versions_attached) {
-            m.parent = mol.parent;
-          }
-        }
-        else {
-          // The first molecule will be the new parent for everyone
-          const first = versions_attached[0];
-          for (const other of versions_attached.slice(1)) {
-            other.parent = first.id;
-          }
-          first.parent = null;
-        }
-
-        // Save everyone
-        await Promise.all(versions_attached.map(v => Database.molecule.save(v)));
-        SearchWorker.clearCache();
-      }
-
-      // Delete attached ZIP
-      await MoleculeOrganizer.remove(mol.files);
-      await Database.molecule.delete(mol);
-    } catch (e) {
-      return Errors.throw(ErrorType.ElementNotFound);
-    }
+    await deleteMolecule(id, user, false, true);
 
     res.send();
   })().catch(errorCatcher(res));
