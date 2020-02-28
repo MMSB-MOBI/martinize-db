@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import Errors, { ErrorType } from '../../Errors';
-import { errorCatcher, generateSnowflake, signToken, sanitize, methodNotAllowed } from '../../helpers';
+import { errorCatcher, generateSnowflake, signToken, sanitize, methodNotAllowed, informAdminFromAskCreation } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
 import { UserRole } from '../../types';
 import { User, Token } from '../../Entities/entities';
 import { USERNAME_REGEX, EMAIL_REGEX } from '../../constants';
+import logger from '../../logger';
 
 const CreateUserRouter = Router();
 
@@ -84,6 +85,9 @@ CreateUserRouter.post('/', (req, res) => {
       });
     }
     else {
+      // Inform administrators (do not wait)
+      informAdminFromAskCreation(user).catch(logger.error)
+
       res.json({
         created: sanitize({ ...user, password: null }),
         token: null

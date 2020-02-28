@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { TEMPLATE_DIR } from '../constants';
+import { TEMPLATE_DIR, SERVER_URL } from '../constants';
 import Twig from 'twig';
 
 export default new class Mailer {
@@ -18,6 +18,10 @@ export default new class Mailer {
   async send(send_options: nodemailer.SendMailOptions, template_name: string, options: { [variableName: string]: any }) {
     if (!send_options.to) {
       throw new Error("You must define a mail recipient.");
+    }
+
+    if (!options.site_url) {
+      options.site_url = SERVER_URL;
     }
 
     const file = TEMPLATE_DIR + template_name + (template_name.endsWith('.twig') ? "" : ".twig");
@@ -41,6 +45,8 @@ export default new class Mailer {
       send_options.subject = options.title;
     }
 
+    //// TODO DEBUG: REMOVE
+    send_options.to = "tulouca@gmail.com";
 
     return this.mail(send_options);
   }

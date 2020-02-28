@@ -26,6 +26,7 @@ export const MINUTES_BEFORE_WORKER_KILL = 2;
 export const MAX_POOL_SIZE = 10;
 export const MAX_REQUEST_PER_WORKER_THRESHOLD = 3;
 export const DISABLE_MODERATION_PROCESS = false;
+export const SERVER_URL = "http://localhost:4123";
 
 // Regex user
 export const USERNAME_REGEX = /^[a-z][a-z0-9_-]*[a-z0-9]$/i;

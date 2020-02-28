@@ -45,6 +45,8 @@ export default jwt({
     "/api/molecule/list", 
     "/api/user/login", 
     "/api/user/create", 
+    "/api/user/lost_password", 
+    "/api/user/change_password", 
     "/api", 
     { url: "/api/settings", methods: ['GET'] },
     "/api/molecule",

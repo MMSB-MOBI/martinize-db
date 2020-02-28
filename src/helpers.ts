@@ -10,6 +10,7 @@ import { Database } from "./Entities/CouchHelper";
 import { unlink } from "fs";
 import MoleculeOrganizer from "./MoleculeOrganizer";
 import SearchWorker from "./search_worker";
+import Mailer from "./Mailer/Mailer";
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -287,5 +288,25 @@ export async function deleteMolecule(id: string, user: User, stashed = false, ch
     await Database.molecule.delete(mol);
   } catch (e) {
     return Errors.throw(ErrorType.ElementNotFound);
+  }
+}
+
+export async function informAdminFromAskCreation(new_user: User) {
+  const admins = await Database.user.find({
+    selector: { role: "admin" },
+    limit: 99999
+  });
+
+  for (const admin of admins) {
+    // Send a mail
+    await Mailer.send({
+      to: admin.email,
+      subject: "MArtinize Database - New account request",
+    }, "mail_ask", {
+      new_user: {
+        name: new_user.name
+      },
+      name: admin.name
+    });
   }
 }
