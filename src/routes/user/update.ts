@@ -8,8 +8,21 @@ const UpdateUserRouter = Router();
 
 UpdateUserRouter.post('/', (req, res) => {
   (async () => {
-    const { username, old_password, password, email } = req.body;
-    const usr_id = req.full_user!.id;
+    const { username, old_password, password, email, approved } = req.body;
+    let usr_id = req.full_user!.id;
+    const usr_role = req.full_user!.role;
+
+    if (usr_role === "admin") {
+      if (req.body.id) {
+        usr_id = req.body.id;
+
+        const exists = await Database.user.exists(usr_id);
+
+        if (!exists) {
+          return Errors.throw(ErrorType.UserNotFound);
+        }
+      }
+    }
 
     let user = await Database.user.get(usr_id);
     let changed = false;
@@ -38,6 +51,10 @@ UpdateUserRouter.post('/', (req, res) => {
       }
 
       user.email = email;
+      changed = true;
+    }
+    if (approved && usr_role === "admin") {
+      user.approved = approved === 'true';
       changed = true;
     }
     if (old_password && password && typeof password === 'string' && typeof old_password === 'string') {
