@@ -5,6 +5,7 @@ import { JSONWebToken } from '../types';
 import nano from 'nano';
 import { User } from '../Entities/entities';
 import logger from '../logger';
+import Errors, { ErrorType } from '../Errors';
 
 export default jwt({
   getToken: function fromHeaderOrQuerystring(req) {
@@ -28,6 +29,10 @@ export default jwt({
           // Token is orphan !
           logger.error("Orphan token ! This should not happen. ", payload);
           done(null, true);
+        }
+        else if (!user.approved) {
+          // User is not approved yet; could not authentificate TODO test
+          done(Errors.make(ErrorType.UserNotApproved), true);
         }
         else {
           done(null, false);

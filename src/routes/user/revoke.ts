@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { errorCatcher, generateSnowflake, signToken, methodNotAllowed } from '../../helpers';
+import { errorCatcher, methodNotAllowed } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
 import { Token } from '../../Entities/entities';

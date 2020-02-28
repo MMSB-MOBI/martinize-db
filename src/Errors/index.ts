@@ -14,6 +14,7 @@ export enum ErrorType {
   TokenInvalid,
   InvalidPassword,
   Unallowed,
+  UserNotApproved,
 
   /** CLIENT ERRORS: Bad Request */
   Format = 301,
@@ -54,6 +55,7 @@ const ErrorsToText = {
   [ErrorType.Unallowed]: [403, "You don't have the right to do that"],
   [ErrorType.TokenInvalid]: [403, "Invalid or expired token"],
   [ErrorType.InvalidPassword]: [403, "Invalid password"],
+  [ErrorType.UserNotApproved]: [403, "Your account has not been approved yet"],
   [ErrorType.Format]: [400, "Parameter format is invalid"],
   [ErrorType.MissingParameters]: [400, "Missing parameters"],
   [ErrorType.MissingFiles]: [400, "Missing files attached to request, at least one ITP file and one PDB file is required"],

@@ -17,7 +17,8 @@ CreateUserRouter.post('/', (req, res) => {
   let { username, password, email, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string }; 
   
   (async () => {
-    let role: UserRole = "admin"; 
+    let role: UserRole = "curator"; 
+    let admin_logged = false;
 
     if (!username || !password || !email) {
       return Errors.throw(ErrorType.MissingParameters);
@@ -28,6 +29,7 @@ CreateUserRouter.post('/', (req, res) => {
 
       // If user is admin, allow all roles to be defined.
       if (user && user.role === 'admin') {
+        admin_logged = true;
         role = choosen_role as UserRole;
       }
     }
@@ -57,27 +59,36 @@ CreateUserRouter.post('/', (req, res) => {
       role,
       created_at: new Date().toISOString(),
       password: "",
+      approved: admin_logged,
     };
 
     // Register the user
     await Database.user.setOrChangePassword(user, password);
 
-    // Create a token for this user
-    const token: Token = {
-      id: generateSnowflake(),
-      user_id: user.id,
-      created_at: new Date().toISOString(),
-    }; 
-    
-    await Database.token.save(token);
-
-    // Create the encoded JSON Web Token
-    const jwt = await signToken({ user_id: token.user_id, created_at: token.created_at }, token.id);
-
-    res.json({
-      created: sanitize({ ...user, password: null }),
-      token: jwt
-    });
+    if (user.approved) {
+      // Create a token for this user
+      const token: Token = {
+        id: generateSnowflake(),
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+      }; 
+      
+      await Database.token.save(token);
+  
+      // Create the encoded JSON Web Token
+      const jwt = await signToken({ user_id: token.user_id, created_at: token.created_at }, token.id);
+  
+      res.json({
+        created: sanitize({ ...user, password: null }),
+        token: jwt
+      });
+    }
+    else {
+      res.json({
+        created: sanitize({ ...user, password: null }),
+        token: null
+      });
+    }
   })().catch(errorCatcher(res));
 });
 

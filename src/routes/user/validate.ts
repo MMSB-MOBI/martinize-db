@@ -12,6 +12,9 @@ ValidateUserRouter.get('/', (req, res) => {
     if (!user) {
       return Errors.throw(ErrorType.Forbidden);
     }
+    if (!user.approved) {
+      return Errors.throw(ErrorType.UserNotApproved);
+    }
 
     res.json(sanitize({ ...user, password: null }));
   })().catch(errorCatcher(res));

@@ -1,8 +1,16 @@
-import { CliListener } from "interactive-cli-helper";
+import CliHelper, { CliListener } from "interactive-cli-helper";
 import SearchWorker from "../search_worker";
 import { MINUTES_BEFORE_WORKER_KILL } from "../constants";
 
-const WORKER_CLI = new CliListener("Available commands are spawn, assign timeout, list, get, kill");
+const WORKER_CLI = new CliListener(
+  CliHelper.formatHelp("worker", {
+    spawn: 'Spawn a new worker',
+    'assign timeout <id>': 'Set a kill timeout for worker <id>',
+    list: 'List started workers',
+    'get <id>': 'Get details about worker <id>',
+    'kill <id>/all': 'Kill worker <id> / Kill all workers',
+  })
+);
 
 WORKER_CLI.addSubListener('spawn', () => {
   const id = SearchWorker.spawn(false);

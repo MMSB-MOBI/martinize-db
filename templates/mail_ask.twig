@@ -1,0 +1,18 @@
+{% extends "index.twig" %}
+
+{% block content %}
+  <p>
+    <strong>Dear {{ name }},</strong>
+  </p>
+  <br />
+
+  A new user <strong>"{{ new_user.name }}"</strong> has requested an account on Martinize Database.
+
+  <br />
+
+  Please go on <strong><a href="{{ site_url }}/users">Martinize Database website</a></strong> to approve this user.
+
+  <br />
+
+  <em>This e-mail is automatically sent to all MADb administrators. Please do not reply to this e-mail address.</em>
+{% endblock %}

@@ -1,21 +1,31 @@
-import { CliListener } from "interactive-cli-helper";
+import CliHelper, { CliListener } from "interactive-cli-helper";
 import CouchHelper, { Database } from "../Entities/CouchHelper";
 import MoleculeOrganizer from "../MoleculeOrganizer";
-import { Molecule } from "../Entities/entities";
+import { Molecule, StashedMolecule } from "../Entities/entities";
 
-const MOLECULE_CLI = new CliListener("Available commands are list, get, wipe");
+const MOLECULE_CLI = new CliListener(
+  CliHelper.formatHelp("molecule", {
+    list: 'List registred molecules',
+    'get <id>/all': 'Get details about molecule <id> / about all molecules',
+    'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
+  })
+);
 
 MOLECULE_CLI.addSubListener('list', async () => {
   const mols = await Database.molecule.all();
+  const stashed = await Database.stashed.all();
 
-  if (!mols.length) {
+  if (!mols.length && !stashed.length) {
     return `This server does not contain any molecule.`;
   }
 
-  return `Available molecules are \n- ${mols.map(m => m._id).join('\n- ')}`;
+  const normal = `Available molecules are \n- ${mols.map(m => m._id).join('\n- ')}`;
+  const stash = `Available stashed molecules are \n- ${stashed.map(m => m._id).join('\n- ')}`;
+
+  return (mols.length ? normal : "") + (mols.length && stashed.length ? "\n" : "") + (stashed.length ? stash : "");
 });
 
-MOLECULE_CLI.addSubListener('get', rest => {
+MOLECULE_CLI.addSubListener('get', async rest => {
   rest = rest.trim();
 
   if (!rest) {
@@ -28,7 +38,11 @@ MOLECULE_CLI.addSubListener('get', rest => {
     return `ID ${rest} is not valid, please enter a valid number.`;
   }
 
-  return Database.molecule.get(rest);
+  try {
+    return Database.molecule.get(rest);
+  } catch (e) {
+    return Database.stashed.get(rest);
+  }
 });
 
 MOLECULE_CLI.addSubListener('wipe', async rest => {
@@ -40,8 +54,10 @@ MOLECULE_CLI.addSubListener('wipe', async rest => {
 
   if (rest === "all") {
     await Database.delete(CouchHelper.MOLECULE_COLLECTION);
+    await Database.delete(CouchHelper.STASHED_MOLECULE_COLLECTION);
     await MoleculeOrganizer.removeAll();
     await Database.create(CouchHelper.MOLECULE_COLLECTION);
+    await Database.create(CouchHelper.STASHED_MOLECULE_COLLECTION);
     return `Molecule database is wiped`;
   }
 
@@ -51,16 +67,25 @@ MOLECULE_CLI.addSubListener('wipe', async rest => {
     return `ID ${rest} is not valid, please enter a valid number.`;
   }
 
-  let mol: Molecule;
+  let mol: Molecule | undefined = undefined;
+  let stash: StashedMolecule | undefined = undefined;
   try {
     mol = await Database.molecule.get(rest);
   } catch (e) {
-    return `Unable to get molecule (${rest})`;
+    try {
+      stash = await Database.stashed.get(rest);
+    } catch {
+      return `Unable to get molecule (${rest})`;
+    }
   }
 
   if (mol) {
     await MoleculeOrganizer.remove(mol.files);
     return Database.molecule.delete(mol);
+  }
+  else if (stash) {
+    await MoleculeOrganizer.remove(stash.files);
+    return Database.stashed.delete(stash);
   }
   return `Unable to find molecule.`
 });

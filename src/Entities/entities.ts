@@ -62,6 +62,8 @@ export interface User extends BaseCouchDocument {
   password: string;
   /** User role */
   role: UserRole;
+  /** Is approved or not */
+  approved: boolean;
 }
 
 export interface Token extends BaseCouchDocument {

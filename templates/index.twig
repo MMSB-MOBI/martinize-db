@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>{{ title }}</title>
+</head>
+
+<body style="
+    margin:0;
+    padding-top:0;
+    padding-bottom:0;
+    padding-right:0;
+    padding-left:0;
+    min-width:100%;">
+  <style type="text/css">
+    .header-img {
+      display: block;
+      max-height: 200px;
+      text-align: center;
+    }
+
+    * {
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-width: 100%;
+      font-family: ArialMT, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    table {
+      border-spacing: 0;
+      font-family: ArialMT, Helvetica, Arial, sans-serif;
+    }
+
+    a {
+      color: #00AFF5;
+      text-decoration: none !important;
+    }
+
+    a:hover {
+      text-decoration: underline !important;
+    }
+
+    img {
+      border: 0;
+    }
+
+    .wrapper {
+      width: 100%;
+      table-layout: fixed;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    .webkit {
+      max-width: 500px;
+    }
+
+    .outer {
+      margin: 0 auto;
+      padding: 24px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .center {
+      text-align: center;
+    }
+  </style>
+
+  <div class="wrapper center" style="width:100%; table-layout:fixed; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td width="100%">
+          <div class="webkit" style="max-width: 600px; margin: 0 auto;">
+            <table 
+              class="outer" 
+              align="center" 
+              cellpadding="0" 
+              cellspacing="0" 
+              border="0" 
+              style="border-spacing: 0; font-family: ArialMT, Helvetica, Arial, sans-serif; margin: 0 auto; padding: 24px; width: 100%; max-width: 500px;"
+            >
+              <!-- Logo -->
+              <tr>
+                <td>
+                  <table style="margin-bottom: 40px; width: 100%" width="100%">
+                    <tr>
+                      <td>
+                        <a href="{{ site_url }}" style="font-family:Helvetica, Arial, sans-serif; color:#0086BF;">
+                          <img src="{{ static_site_url }}/assets/logo.png" class="header-img" alt="MAD - MArtinize Database"
+                            height="100" style="display: block; margin: auto;" />
+                        </a>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <p style="
+                          color: #a7a7a7;
+                          font-size: 16px;
+                          line-height: 22px;
+                          margin-top: -3px;
+                          text-align: center;
+                          font-weight: 200;
+                          font-family: Helvetica Neue;
+                        ">
+                          MAD - MArtinize Database
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Contenu -->
+              <tr>
+                <td style="text-align: left;">
+                  <div style="margin-bottom: 20px; width: 100%" width="100%">
+                    {% block content %}{% endblock %}
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Divider -->
+              <tr>
+                <td>
+                  <table width="100%" style="margin-bottom: 20px; width: 100%;">
+                    <tr>
+                      <td width="100%">
+                        <div style="width:100%; height: 1px; background-color: #DDD;" color="#DDD" width="100%"></div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Petit logo -->
+      <tr>
+        <td style="text-align: center;">
+          <img src="{{ static_site_url }}/assets/logo-small.png" alt=""
+            style="display: block; width:29px; height: auto; margin-left: auto; margin-right: auto;  margin-bottom:10px;"
+            width="29px" height="auto">
+        </td>
+      </tr>
+
+      <!-- Lien vers les sites -->
+      <tr>
+        <td style="text-align: center; font-size: 13px;">
+          <a href="https://ibcp.fr/" target="_blank" style="color: #00AFF5;">
+            IBCP
+          </a>
+
+          <span style="color: #00AFF5;">|</span>
+          
+          <a href="{{ site_url }}" target="_blank" style="color: #00AFF5;">
+            MArtinize Database
+          </a>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>

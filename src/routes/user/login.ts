@@ -36,6 +36,10 @@ LoginUserRouter.post('/', (req, res) => {
       Errors.throw(ErrorType.InvalidPassword);
     }
 
+    if (!user.approved) {
+      return Errors.throw(ErrorType.UserNotApproved);
+    }
+
     // Create a token for this user
     const token: Token = {
       id: generateSnowflake(),
