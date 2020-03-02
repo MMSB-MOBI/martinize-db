@@ -127,17 +127,17 @@ async function startCli() {
     })
   );
 
-  console.log("Welcome to Martinize server CLI. For help, type \"help\".");
+  console.log("\nWelcome to Martinize server CLI. For help, type \"help\".");
 
   const db_exists = await Database.link.use(CouchHelper.USER_COLLECTION).info().catch(e => ({ not_found: true }));
   if ('not_found' in db_exists) {
-    console.log("\nThe database seems to be un-initialized. Please create all the databases by entering \"database create all\".");
-    console.log("\nOnce database is created, you can create an administrator account with \"user create\".");
+    console.log("\nWARN: The database seems to be un-initialized. Please create all the databases by entering \"database create all\".");
+    console.log("WARN: Once database is created, you can create an administrator account with \"user create\".");
   }
   else {
     const user_db = await Database.user.find({ selector: { role: 'admin' } });
     if (!user_db.length) {
-      console.log("\nServer doesn't seem to have an administrator account created. You can create an user with \"user create\".");
+      console.log("\nWARN: Server doesn't seem to have an administrator account created. You can create an user with \"user create\".");
     }
   }
 
