@@ -31,7 +31,7 @@ export default class CouchHelper {
   static readonly STASHED_MOLECULE_COLLECTION = "stashed";
   static readonly USER_COLLECTION = "user";
   static readonly TOKEN_COLLECTION = "token";
-  protected static readonly DBS = [
+  static readonly DBS = [
     "molecule",
     "stashed",
     "user",
@@ -83,7 +83,7 @@ export default class CouchHelper {
 
   async createAll() {
     for (const db of CouchHelper.DBS) {
-      logger.verbose(await this.create(db));
+      logger.silly(JSON.stringify(await this.create(db)));
     }
   }
 

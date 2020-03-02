@@ -6,7 +6,7 @@ import Winston from 'winston';
 import ApiRouter from './routes';
 import Errors, { ErrorType, ApiError } from './Errors';
 import { sendError } from './helpers';
-import { Database } from './Entities/CouchHelper';
+import CouchHelper, { Database } from './Entities/CouchHelper';
 import MOLECULE_CLI from './cli/molecule_cli';
 import USER_CLI from './cli/user_cli';
 import WORKER_CLI from './cli/worker_cli';
@@ -14,6 +14,7 @@ import { CLI } from './cli/cli';
 import MAIL_CLI from './cli/mail_cli';
 import StaticServer from './static_server';
 import CliHelper from 'interactive-cli-helper';
+import DATABASE_CLI from './cli/databases_cli';
 
 commander
   .version(VERSION)
@@ -102,7 +103,7 @@ logger.debug("Serving static website");
 app.use(StaticServer);
 
 
-function startCli() {
+async function startCli() {
   // Cli starter
   CLI.addSubListener('exit', () => {
     CLI.onclose!();
@@ -113,6 +114,7 @@ function startCli() {
   CLI.addSubListener('user', USER_CLI);
   CLI.addSubListener('worker', WORKER_CLI);
   CLI.addSubListener('mail', MAIL_CLI);
+  CLI.addSubListener('database', DATABASE_CLI);
   
   CLI.addSubListener(
     /^(\?|help)$/,  
@@ -126,6 +128,12 @@ function startCli() {
   );
 
   console.log("Welcome to Martinize server CLI. For help, type \"help\".");
+
+  const db_exists = await Database.link.use(CouchHelper.USER_COLLECTION).info().catch(e => ({ not_found: true }));
+  if ('not_found' in db_exists) {
+    console.log("The database seems to be un-initialized. Please create all the databases by entering \"database create all\".");
+  }
+
   CLI.listen();
 }
 

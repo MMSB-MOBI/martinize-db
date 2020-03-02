@@ -15,6 +15,5 @@ echo "Container is ready to be used. Server default port 4123 is redirected to h
 
 echo ""
 
-echo "Initialize the server inside the container with \"docker exec -it martinize_db bash docker_first_run.sh\"."
-echo "To restart container later, use \"docker exec -it martinize_db bash docker_start_server.sh\"."
+echo "Initialize the server inside the container with \"docker exec -it martinize_db bash docker_start_server.sh\"."
 echo "To stop, remove container and remove its image, run \"docker stop martinize_db && docker container rm martinize_db && docker rmi alkihis/martinize-db:1.0\"."
