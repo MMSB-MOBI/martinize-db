@@ -12,6 +12,7 @@ import USER_CLI from './cli/user_cli';
 import WORKER_CLI from './cli/worker_cli';
 import { CLI } from './cli/cli';
 import MAIL_CLI from './cli/mail_cli';
+import StaticServer from './static_server';
 import CliHelper from 'interactive-cli-helper';
 
 commander
@@ -20,6 +21,7 @@ commander
   .option('-p, --port <port>', 'Emit port', Number, 4123)
   .option('--wipe-init')
   .option('--init-db')
+  .option('--quit-after-init')
   .option('-l, --log-level <logLevel>', 'Log level [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--file-log-level <logLevel>', 'Log level (written to file) [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--log-file <logFile>', 'File log level')
@@ -47,12 +49,24 @@ if (commander.couchdbUrl) {
 
 if (commander.wipeInit) {
   logger.info("Wiping databases and creating them again");
-  Database.wipeAndCreate();
+  Database.wipeAndCreate()
+    .then(() => {
+      if (commander.quitAfterInit) {
+        logger.info("Exiting.");
+        process.exit(0);
+      }
+    })
 }
 
 if (commander.initDb) {
   logger.info("Creating all databases");
-  Database.createAll();
+  Database.createAll()
+    .then(() => {
+      if (commander.quitAfterInit) {
+        logger.info("Exiting.");
+        process.exit(0);
+      }
+    })
 }
 
 // Register API router
@@ -81,6 +95,12 @@ app.use('/api', (err: any, req: express.Request, res: express.Response, next: Fu
     next(err);
   }
 });
+
+// Serve the static folder
+logger.debug("Serving static website");
+// File should be in build/
+app.use(StaticServer);
+
 
 function startCli() {
   // Cli starter

@@ -4,6 +4,7 @@ import MoleculeDatabase from './MoleculeDatabase';
 import UserDatabase from './UserDatabase';
 import StashedMoleculeDatabase from './StashedMoleculeDatabase';
 import { COUCH_URL } from '../constants';
+import logger from '../logger';
 
 export class CouchDatabase<T> {
   constructor(protected collection: nano.DocumentScope<T>) {}
@@ -82,7 +83,7 @@ export default class CouchHelper {
 
   async createAll() {
     for (const db of CouchHelper.DBS) {
-      await this.create(db);
+      logger.verbose(await this.create(db));
     }
   }
 

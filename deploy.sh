@@ -5,7 +5,7 @@ cp -R $martinize_db_client_dir/* ./static/www
 
 mkdir deploy
 
-cp -R build templates package.json settings.json deploy/
+cp -R .keys build static templates package.json settings.json deploy/
 
 zip -r deploy.zip deploy
 
