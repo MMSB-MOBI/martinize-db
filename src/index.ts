@@ -133,6 +133,14 @@ async function startCli() {
   if ('not_found' in db_exists) {
     console.log("The database seems to be un-initialized. Please create all the databases by entering \"database create all\".");
   }
+  else {
+    const user_db = await Database.user.find({ selector: { role: 'admin' } });
+    if (!user_db.length) {
+      console.log("Server doesn't seem to have an administrator account created. You can create an user with \"user create\".");
+    }
+  }
+
+  console.log("");
 
   CLI.listen();
 }
