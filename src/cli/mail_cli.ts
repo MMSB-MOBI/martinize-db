@@ -13,7 +13,7 @@ const TEST_RECIPIENT = "tulouca@gmail.com";
 export const MAIL_CLI = new CliListener(
   CliHelper.formatHelp("mail", {
     "test-send": `Send a test mail to ${TEST_RECIPIENT}. Available templates: 'ask', 'created'.`,
-  })
+  }, "Command is incorrect. Type \"mail\" for help.")
 );
 
 MAIL_CLI.addSubListener('test-send', rest => {

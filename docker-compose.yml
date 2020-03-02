@@ -2,6 +2,7 @@ version: '3'
 services:
   db:
     image: couchdb:3
+    container_name: martinize_couch_db
     volumes:
       - db_data:/opt/couchdb/data
     restart: always

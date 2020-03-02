@@ -9,7 +9,7 @@ const WORKER_CLI = new CliListener(
     list: 'List started workers',
     'get <id>': 'Get details about worker <id>',
     'kill <id>/all': 'Kill worker <id> / Kill all workers',
-  })
+  }, "Command is incorrect. Type \"worker\" for help.")
 );
 
 WORKER_CLI.addSubListener('spawn', () => {

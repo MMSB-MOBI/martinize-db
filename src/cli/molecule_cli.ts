@@ -8,7 +8,7 @@ const MOLECULE_CLI = new CliListener(
     list: 'List registred molecules',
     'get <id>/all': 'Get details about molecule <id> / about all molecules',
     'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
-  })
+  }, "Command is incorrect. Type \"molecule\" for help.")
 );
 
 MOLECULE_CLI.addSubListener('list', async () => {

@@ -31,7 +31,11 @@ commander
 
 const app = express();
 
-// Parse CLI args
+
+/* ------------------ */
+/* - PARSE CLI ARGS - */
+/* ------------------ */
+
 if (commander.logLevel) {
   logger.level = commander.logLevel;
 }
@@ -47,7 +51,7 @@ if (commander.logFile) {
 
 if (commander.couchdbUrl) {
   let url = commander.couchdbUrl;
-  
+
   if (!url.startsWith('http://')) {
     if (process.env.COUCHDB_USER) {
       url = 'http://' + process.env.COUCHDB_USER + ':' + process.env.COUCHDB_PASSWORD + '@' + url;
@@ -83,6 +87,11 @@ if (commander.initDb) {
     })
 }
 
+
+/* ------------------------------ */
+/* - STARTING EXPRESS ENDPOINTS - */
+/* ------------------------------ */
+
 // Register API router
 app.use('/api', ApiRouter);
 
@@ -115,6 +124,10 @@ logger.debug("Serving static website");
 // File should be in build/
 app.use(StaticServer);
 
+
+/* -------------------------- */
+/* - COMMAND LINE INTERFACE - */
+/* -------------------------- */
 
 async function startCli() {
   // Cli starter
@@ -160,8 +173,41 @@ async function startCli() {
   CLI.listen();
 }
 
+
+/* -------------------------------------- */
+/* - HANDLE UNCATCHED REJECTED PROMISES - */
+/* -------------------------------------- */
+
+function propertiesValues(obj: any) {
+  const data = Object.getOwnPropertyDescriptors(obj);
+
+  for (const key in data) {
+    data[key] = data[key].value;
+  }
+
+  return data;
+}
+
+process.on('unhandledRejection', reason => {
+  const maximum_detail = typeof reason === 'object' && reason !== null ? JSON.stringify(propertiesValues(reason), null, 2)
+    : (reason ? reason : "No rejection content.");
+
+  logger.error("Unhandled rejected Promise handled: \n" + String(maximum_detail));
+});
+
+
+/* ------------------------------------------------- */
+/* - STARTING THE SERVER AND LISTENING TO REQUESTS - */
+/* ------------------------------------------------- */
+
 async function main() {
-  await Database.ping();
+  try {
+    await Database.ping();
+  } catch (e) {
+    logger.error("CouchDB is not running or is unreachable. You must start Couch or specify a valid database URL.");
+    console.log("Stack trace:", 'stack' in e ? e.stack : e);
+    process.exit(2);
+  }
 
   app.listen(commander.port, () => {
     logger.info(`Martinize Database Server version ${VERSION} is listening on port ${commander.port}.`);
@@ -170,3 +216,15 @@ async function main() {
 }
 
 main();
+
+
+/** MISC */
+// Nano Type definition for MangoSelector is incorrect. If any TSC warning, remove type `MangoSelector` in `nano.d.ts`.
+declare module 'nano' {
+  // @ts-ignore
+  interface MangoSelector {
+    // @ts-ignore
+    [K in MangoOperator]: MangoSelector | MangoValue | MangoValue[];
+    [name: string]: MangoSelector | MangoValue | MangoValue[];
+  }
+}

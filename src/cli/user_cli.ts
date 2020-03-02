@@ -13,7 +13,7 @@ const USER_CLI = new CliListener(
     create: 'Create a new user',
     'get <id>/all': 'Get details about user <id> / about all users',
     'wipe <id>/all': 'Delete registred user <id> / all users',
-  })
+  }, "Command is incorrect. Type \"user\" for help.")
 );
 
 USER_CLI.addSubListener('list', async () => {

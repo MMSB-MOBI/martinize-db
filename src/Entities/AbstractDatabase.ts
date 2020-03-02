@@ -89,6 +89,15 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
     return true;
   }
 
+  async isCreated() : Promise<boolean> {
+    try {
+      await this._db.info();
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
+
   get db() {
     return this._db;
   }

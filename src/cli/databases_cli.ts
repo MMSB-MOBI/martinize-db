@@ -1,11 +1,13 @@
 import CliHelper, { CliListener } from "interactive-cli-helper";
 import CouchHelper, { Database } from "../Entities/CouchHelper";
+import AbstractDatabase from "../Entities/AbstractDatabase";
 
 const DATABASE_CLI = new CliListener(
   CliHelper.formatHelp("database", {
     'create <name>/all': 'Create a single or all databases. Available names are: ' + CouchHelper.DBS.join(', ') + '.',
     'wipe <name>/all': 'Delete a single or all databases.',
-  })
+    info: 'Get a quick summary of MArtinize Database',
+  }, "Command is incorrect. Type \"database\" for help.")
 );
 
 DATABASE_CLI.addSubListener('create', async rest => {
@@ -42,6 +44,32 @@ DATABASE_CLI.addSubListener('wipe', async rest => {
   }
   await Database.delete(rest);
   return `Database ${rest} has been wiped.`;
+});
+
+DATABASE_CLI.addSubListener('info', async () => {
+  // Show: Database info (document count in each)
+  async function infoAbout(database: AbstractDatabase<any>) {
+    return {
+      count: await database.count().catch(e => 0),
+      created: await database.isCreated(),
+    };
+  }
+  
+  function formatInfo(name: string, infos: { count: number, created: boolean }) {
+    return `${name}\n\tcreated:\t${infos.created}\n\tdoc_count:\t${infos.count}`;
+  }
+
+  return '\n' + (
+    await Promise.all(
+      [
+        [CouchHelper.USER_COLLECTION, Database.user],
+        [CouchHelper.TOKEN_COLLECTION, Database.token],
+        [CouchHelper.MOLECULE_COLLECTION, Database.molecule],
+        [CouchHelper.STASHED_MOLECULE_COLLECTION, Database.stashed],
+      ]
+      .map(async e => formatInfo(e[0] as string, await infoAbout(e[1] as AbstractDatabase<any>)))
+    )
+  ).join('\n');
 });
 
 export default DATABASE_CLI;
