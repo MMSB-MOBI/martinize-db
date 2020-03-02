@@ -4,13 +4,14 @@ import nano = require('nano');
 import { Molecule } from '../Entities/entities';
 import logger from '../logger';
 import CouchHelper from '../Entities/CouchHelper';
-import { COUCH_URL, MINUTES_BEFORE_WORKER_KILL, MAX_POOL_SIZE, MAX_REQUEST_PER_WORKER_THRESHOLD } from '../constants';
+import { MINUTES_BEFORE_WORKER_KILL, MAX_POOL_SIZE, MAX_REQUEST_PER_WORKER_THRESHOLD, URLS } from '../constants';
 
 interface WorkerIncomingMessage {
   type: "search_end" | "error";
   uuid: string;
   molecules?: Molecule[];
   length?: number;
+  error?: any;
 }
 
 interface WorkerSendMessage {
@@ -67,7 +68,7 @@ export const SearchWorker = new class SearchWorker {
           }
         }
         if (msg.type === "error") {
-          reject();
+          reject(msg.error);
         }
       };
   
@@ -124,7 +125,7 @@ export const SearchWorker = new class SearchWorker {
       workerData: { 
         id: worker_id.toString(), 
         molecule_collection: CouchHelper.MOLECULE_COLLECTION,
-        couch_url: COUCH_URL,
+        couch_url: URLS.COUCH,
       }
     });
 

@@ -67,10 +67,13 @@ export function errorCatcher(res: Express.Response, req?: Express.Request) {
     }
 
     if (err instanceof Error) {
-      logger.error("During request handling, the following error occured: " + err + "\n" + err.stack);
+      logger.error("During request handling, the following error occurred: " + err + "\n" + err.stack);
+    }
+    else if (err) {
+      logger.error("Unknown error: ", JSON.stringify(Object.getOwnPropertyDescriptors(err)));
     }
     else {
-      logger.error("Unknown error: ", err);
+      logger.error("Unknown error (undefined)");
     }
     
     return sendError(Errors.make(ErrorType.Server), res);

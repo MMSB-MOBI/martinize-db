@@ -1,0 +1,22 @@
+version: '3'
+services:
+  db:
+    image: couchdb:2
+    volumes:
+      - db_data:/opt/couchdb/data
+    restart: always
+    expose:
+      - "5984"
+  martinize:
+    container_name: martinize_db
+    depends_on: 
+      - db
+    build: .
+    ports:
+      - "5000:4123"
+    environment: 
+      COUCHDB_HOST: http://db:5984
+    stdin_open: true
+    tty: true
+volumes: 
+  db_data: {}

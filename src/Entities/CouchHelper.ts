@@ -3,7 +3,7 @@ import TokenDatabase from './TokenDatabase';
 import MoleculeDatabase from './MoleculeDatabase';
 import UserDatabase from './UserDatabase';
 import StashedMoleculeDatabase from './StashedMoleculeDatabase';
-import { COUCH_URL } from '../constants';
+import { URLS } from '../constants';
 import logger from '../logger';
 
 export class CouchDatabase<T> {
@@ -105,4 +105,4 @@ export default class CouchHelper {
   }
 }
 
-export const Database = new CouchHelper(COUCH_URL);
+export const Database = new CouchHelper(URLS.COUCH);

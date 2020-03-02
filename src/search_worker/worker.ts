@@ -8,6 +8,7 @@ interface WorkerIncomingMessage {
   uuid: string;
   molecules?: Molecule[];
   length?: number;
+  error?: any;
 }
 
 interface WorkerSendMessage {
@@ -82,8 +83,8 @@ async function startNewSearch(msg: WorkerStartTask) {
     query.skip = 0;
 
     const molecules = await MOLECULE_DATABASE.find(query)
-      .catch(() => {
-        sendErrorMessage(task_id);
+      .catch((e: any) => {
+        sendErrorMessage(task_id, e);
       });
 
     if (!molecules) {
@@ -143,9 +144,10 @@ function sendEndMessage(task_id: string, molecules: Molecule[], full_length: num
   } as WorkerIncomingMessage);
 }
 
-function sendErrorMessage(task_id: string) {
+function sendErrorMessage(task_id: string, error: any) {
   parentPort!.postMessage({
     type: "error",
     uuid: task_id,
+    error
   } as WorkerIncomingMessage);
 }

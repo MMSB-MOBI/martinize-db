@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { TEMPLATE_DIR, SERVER_URL } from '../constants';
+import { TEMPLATE_DIR, URLS } from '../constants';
 import Twig from 'twig';
 
 export default new class Mailer {
@@ -21,7 +21,7 @@ export default new class Mailer {
     }
 
     if (!options.site_url) {
-      options.site_url = SERVER_URL;
+      options.site_url = URLS.SERVER;
     }
 
     const file = TEMPLATE_DIR + template_name + (template_name.endsWith('.twig') ? "" : ".twig");

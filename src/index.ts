@@ -1,6 +1,6 @@
 import express from 'express';
 import commander from 'commander';
-import { VERSION } from './constants';
+import { VERSION, URLS } from './constants';
 import logger, { FORMAT_FILE } from './logger';
 import Winston from 'winston';
 import ApiRouter from './routes';
@@ -18,7 +18,8 @@ import DATABASE_CLI from './cli/databases_cli';
 
 commander
   .version(VERSION)
-  .option('-c, --couchdb-url <url>', 'Couch DB URL', String, 'http://localhost:5984')
+  .option('-c, --couchdb-url <url>', 'Couch DB URL', String, process.env.COUCHDB_HOST || URLS.COUCH)
+  .option('--server-url <url>', 'Server URL', String, process.env.SERVER_URL || URLS.SERVER)
   .option('-p, --port <port>', 'Emit port', Number, 4123)
   .option('--wipe-init')
   .option('--init-db')
@@ -46,6 +47,7 @@ if (commander.logFile) {
 
 if (commander.couchdbUrl) {
   Database.refresh(commander.couchdbUrl);
+  URLS.COUCH = commander.couchdbUrl;
 }
 
 if (commander.wipeInit) {
@@ -123,6 +125,7 @@ async function startCli() {
       user: "Manage existing users, or create new ones.",
       worker: "View started search workers and kill existing instances.",
       mail: "Send test e-mails from defined templates.",
+      database: "Create and wipe Couch databases.",
       exit: "Stop the server.",
     })
   );
@@ -131,7 +134,7 @@ async function startCli() {
 
   const db_exists = await Database.link.use(CouchHelper.USER_COLLECTION).info().catch(e => ({ not_found: true }));
   if ('not_found' in db_exists) {
-    console.log("\nWARN: The database seems to be un-initialized. Please create all the databases by entering \"database create all\".");
+    console.log("\nWARN: The database seems to be un-initialized. Please create all databases by entering \"database create all\".");
     console.log("WARN: Once database is created, you can create an administrator account with \"user create\".");
   }
   else {

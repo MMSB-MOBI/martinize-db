@@ -1,8 +1,6 @@
-FROM couchdb:2.3
+FROM node:13
 
-RUN curl -sL https://deb.nodesource.com/setup_13.x | bash -
-
-RUN apt-get update && apt-get install -y unzip screen nodejs
+RUN apt-get update && apt-get install -y unzip screen
 
 COPY deploy.zip /
 COPY docker_start_server.sh /
