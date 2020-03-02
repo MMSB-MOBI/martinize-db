@@ -16,12 +16,14 @@ DATABASE_CLI.addSubListener('create', async rest => {
   }
 
   if (rest === "all") {
-    return Database.createAll();
+    await Database.createAll();
+    return "All databases has been created.";
   }
   if (!CouchHelper.DBS.includes(rest)) {
     return `This database name is not authorized. Available names are ${CouchHelper.DBS.join(', ')}.`;
   }
-  return Database.create(rest);
+  await Database.create(rest);
+  return `Database ${rest} has been created.`;
 });
 
 DATABASE_CLI.addSubListener('wipe', async rest => {
@@ -32,12 +34,14 @@ DATABASE_CLI.addSubListener('wipe', async rest => {
   }
 
   if (rest === "all") {
-    return Database.deleteAll();
+    await Database.deleteAll();
+    return "All databases has been wiped.";
   }
   if (!CouchHelper.DBS.includes(rest)) {
     return `This database name is not authorized. Available names are ${CouchHelper.DBS.join(', ')}.`;
   }
-  return Database.delete(rest);
+  await Database.delete(rest);
+  return `Database ${rest} has been wiped.`;
 });
 
 export default DATABASE_CLI;
