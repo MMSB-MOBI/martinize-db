@@ -46,8 +46,19 @@ if (commander.logFile) {
 }
 
 if (commander.couchdbUrl) {
-  Database.refresh(commander.couchdbUrl);
-  URLS.COUCH = commander.couchdbUrl;
+  let url = commander.couchdbUrl;
+  
+  if (!url.startsWith('http://')) {
+    if (process.env.COUCHDB_USER) {
+      url = 'http://' + process.env.COUCHDB_USER + ':' + process.env.COUCHDB_PASSWORD + '@' + url;
+    }
+    else {
+      url = 'http://' + url;
+    }
+  }
+
+  Database.refresh(url);
+  URLS.COUCH = url;
 }
 
 if (commander.wipeInit) {

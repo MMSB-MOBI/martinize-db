@@ -1,12 +1,15 @@
 version: '3'
 services:
   db:
-    image: couchdb:2
+    image: couchdb:3
     volumes:
       - db_data:/opt/couchdb/data
     restart: always
     expose:
       - "5984"
+    environment: 
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: admin
   martinize:
     container_name: martinize_db
     depends_on: 
@@ -15,7 +18,9 @@ services:
     ports:
       - "5000:4123"
     environment: 
-      COUCHDB_HOST: http://db:5984
+      COUCHDB_HOST: db:5984
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: admin
     stdin_open: true
     tty: true
 volumes: 

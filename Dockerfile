@@ -1,6 +1,6 @@
 FROM node:13
 
-RUN apt-get update && apt-get install -y unzip screen
+RUN apt-get update && apt-get install -y unzip screen vim
 
 COPY deploy.zip /
 COPY docker_start_server.sh /
