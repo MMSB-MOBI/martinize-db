@@ -31,7 +31,7 @@ export default jwt({
           done(null, true);
         }
         else if (!user.approved) {
-          // User is not approved yet; could not authentificate TODO test
+          // User is not approved yet
           done(Errors.make(ErrorType.UserNotApproved), true);
         }
         else {

@@ -28,7 +28,6 @@ UpdateUserRouter.post('/', (req, res) => {
     let changed = false;
 
     if (username && typeof username === 'string') {
-      // TODO check everything
       const existant = await Database.user.fromUsername(username);
       if (existant && existant.id !== usr_id) {
         return Errors.throw(ErrorType.UsernameExists);
