@@ -27,6 +27,7 @@ export default new class Mailer {
     const file = TEMPLATE_DIR + template_name + (template_name.endsWith('.twig') ? "" : ".twig");
 
     const content = await new Promise((resolve, reject) => {
+      // @ts-ignore Incorrect typedef for options
       Twig.renderFile(file, options, (err: Error, res: string) => {
         if (err) {
           reject(err);

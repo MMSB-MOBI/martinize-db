@@ -220,11 +220,9 @@ main();
 
 /** MISC */
 // Nano Type definition for MangoSelector is incorrect. If any TSC warning, remove type `MangoSelector` in `nano.d.ts`.
+// This should be soonly corrected, see https://github.com/apache/couchdb-nano/issues/211
 declare module 'nano' {
-  // @ts-ignore
-  interface MangoSelector {
-    // @ts-ignore
-    [K in MangoOperator]: MangoSelector | MangoValue | MangoValue[];
-    [name: string]: MangoSelector | MangoValue | MangoValue[];
+  type MangoSelector = {
+    [K in MangoOperator | string]: MangoSelector | MangoValue | MangoValue[];
   }
 }
