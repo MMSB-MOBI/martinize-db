@@ -6,7 +6,7 @@ const DATABASE_CLI = new CliListener(
   CliHelper.formatHelp("database", {
     'create <name>/all': 'Create a single or all databases. Available names are: ' + CouchHelper.DBS.join(', ') + '.',
     'wipe <name>/all': 'Delete a single or all databases.',
-    info: 'Get a quick summary of MArtinize Database',
+    info: 'Check existence of each database and show their document count.',
   }, "Command is incorrect. Type \"database\" for help.")
 );
 
