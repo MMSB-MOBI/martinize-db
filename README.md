@@ -154,6 +154,44 @@ You can now login on the [website](http://localhost:4123/) !
 
 ### Compile and prepare deployment
 
+You must have the `martinize-db-client` project on your computer.
+
+#### In project `martinize-db-client`
+
+Start the build of the website.
+
+```bash
+npm run build
+```
+
+#### In this project
+
+***This project must have been built at least one time with `tsc`. Make sure `build` folder exists.***
+
+Copy the content of build directory of `martinize-db-client` in `static/www`.
+Then, compile the required files in a directory, and zip them.
+
+```bash
+martinize_db_client_dir="../martinize-db-client/build"
+
+# Delete the existing website.
+rm -rf ./static/www/*
+# Replace it with content of current build
+cp -R $martinize_db_client_dir/* ./static/www
+
+# Copy the required files to a tmp folder
+mkdir deploy
+cp -R .keys build static templates package.json settings.json deploy/
+
+# Zip the folder
+zip -r deploy.zip deploy
+
+# Remove the temporary folder
+rm -rf deploy
+```
+
+You now have the required file `deploy.zip` in order to deploy with Docker! Follow instuctions of **`Deploy with Docker`** part.
+
 ### Deploy an already compiled version
 
 > In order to deploy, `docker` and `docker-compose` must be installed and configured properly.
@@ -165,13 +203,15 @@ Switch to branch `deploy` with `git`.
 git checkout deploy
 ```
 
-Ensure `deploy.zip` file and `build` folder are present in project directory.
+Ensure `deploy.zip` file is present in project directory.
 You can now skip to part **`Deploy with Docker`**.
 
 
 ### Deploy with Docker
 
 #### Create the containers
+
+`docker-compose` will do the job, following rules defined in the `docker-compose.yml` file.
 
 ```bash
 docker-compose up -d --build
