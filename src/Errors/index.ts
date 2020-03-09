@@ -43,6 +43,9 @@ export enum ErrorType {
   /** When user updates his informations */
   InvalidUsername,
   InvalidEmail,
+
+  /** MARTINIZE Errors */
+  MartinizeRunFailed = 401,
 }
 
 const ErrorsToText = {
@@ -77,6 +80,7 @@ const ErrorsToText = {
   [ErrorType.UsernameExists]: [409, "Username already exists"],
   [ErrorType.EmailExists]: [409, "Email already exists"],
   [ErrorType.InvalidMethod]: [405, "Method not allowed"],
+  [ErrorType.MartinizeRunFailed]: [400, "Martinize run failed"],
 };
 
 export default new class Errors {

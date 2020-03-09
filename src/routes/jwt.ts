@@ -52,6 +52,7 @@ export default jwt({
     "/api/molecule",
     "/api/molecule/download",
     "/api/molecule/get",
+    "/api/user/contact",
     /^\/api\/molecule\/representation\/.+$/,
   ] }
 );

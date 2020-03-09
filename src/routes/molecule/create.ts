@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize, informAdminFromNewMolecule } from '../../helpers';
 import Uploader from '../Uploader';
 import Errors, { ErrorType } from '../../Errors';
 import { Molecule, StashedMolecule, BaseMolecule } from '../../Entities/entities';
@@ -7,6 +7,7 @@ import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 import { DISABLE_MODERATION_PROCESS } from '../../constants';
 import { MoleculeChecker } from './MoleculeChecker';
+import logger from '../../logger';
 
 const CreateMoleculeRouter = Router();
 
@@ -57,6 +58,9 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     else {
       molecule = await checker.checkStashed();
       response = await Database.stashed.save(molecule as StashedMolecule);
+
+      // Inform moderators
+      informAdminFromNewMolecule(molecule as StashedMolecule, logged_user).catch(logger.error)
     }
 
     if (response.ok) {

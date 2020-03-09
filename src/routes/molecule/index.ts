@@ -6,6 +6,7 @@ import GetMoleculeRouter from './get';
 import DownloadMoleculeRouter from './download';
 import EditMoleculeRouter from './edit';
 import PdbGetterRouter from './pdb';
+import MartinizerRouter from './martinize';
 
 const MoleculeRouter = Router();
 
@@ -15,6 +16,7 @@ MoleculeRouter.use('/destroy', DestroyMoleculeRouter);
 MoleculeRouter.use('/edit', EditMoleculeRouter);
 MoleculeRouter.use('/download', DownloadMoleculeRouter);
 MoleculeRouter.use('/representation', PdbGetterRouter);
+MoleculeRouter.use('/martinize', MartinizerRouter);
 MoleculeRouter.use('/', GetMoleculeRouter);
 
 export default MoleculeRouter;

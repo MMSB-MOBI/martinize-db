@@ -1,0 +1,22 @@
+{% extends "index.twig" %}
+
+{% block content %}
+  <p>
+    <strong>Dear {{ name }},</strong>
+  </p>
+  <br />
+
+  User <strong>"{{ email }}"</strong> ask a question with contact form on Martinize Database.
+
+  <br />
+
+  <pre>{{ content }}</pre>
+
+  <br />
+
+  You can reply to him/her with the given e-mail address.
+
+  <br />
+
+  <em>This e-mail is automatically sent to all MADb administrators. Please do not reply to this e-mail address.</em>
+{% endblock %}

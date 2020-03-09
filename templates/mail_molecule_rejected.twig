@@ -1,0 +1,24 @@
+{% extends "index.twig" %}
+
+{% block content %}
+  <p>
+    <strong>Dear {{ name }},</strong>
+  </p>
+  <br />
+
+  <p>
+    Submitted molecule {{ molecule.name }} (alias {{ molecule.alias }}), version {{ molecule.version }} has been rejected by moderators.
+
+    <br />
+
+    To have more informations about this rejection, please contact administators on <strong><a href="{{ site_url }}/contact">Martinize Database website</a></strong>.
+  </p>
+  <br />
+
+  <p>
+    Thank you for your participation.
+  </p>
+  <br />
+
+  <em>This e-mail has been automatically sent by MADb. Please do not reply to this e-mail address.</em>
+{% endblock %}

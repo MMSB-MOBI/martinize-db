@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { errorCatcher, methodNotAllowed, deleteMolecule } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
 import Errors, { ErrorType } from '../../Errors';
-import MoleculeOrganizer from '../../MoleculeOrganizer';
+import Mailer from '../../Mailer/Mailer';
 
 const DestroyStashedRouter = Router();
 
@@ -24,7 +24,22 @@ DestroyStashedRouter.delete('/:id', (req, res) => {
       return Errors.throw(ErrorType.Forbidden);
     }
 
+    const molecule = await Database.stashed.get(id);
+    const owner = await Database.user.get(molecule.owner);
     await deleteMolecule(id, user, true);
+
+    // Inform user
+    await Mailer.send(
+      { 
+        to: owner.email, 
+        subject: "Molecule rejected - MArtinize Database" 
+      }, 
+      'mail_molecule_rejected',
+      {
+        name: owner.name,
+        molecule
+      }  
+    );
 
     res.send();
   })().catch(errorCatcher(res));

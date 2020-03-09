@@ -1,0 +1,18 @@
+{% extends "index.twig" %}
+
+{% block content %}
+  <p>
+    <strong>Dear {{ name }},</strong>
+  </p>
+  <br />
+
+  User <strong>"{{ submitter.name }}"</strong> submitted a new molecule ({{ molecule.name }}) on Martinize Database.
+
+  <br />
+
+  Please go on <strong><a href="{{ site_url }}/moderation">moderation page</a></strong> to view this new submission.
+
+  <br />
+
+  <em>This e-mail is automatically sent to all MADb administrators. Please do not reply to this e-mail address.</em>
+{% endblock %}

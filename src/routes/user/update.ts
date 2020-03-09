@@ -3,6 +3,7 @@ import { errorCatcher, methodNotAllowed, sanitize } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
 import { USERNAME_REGEX, EMAIL_REGEX } from '../../constants';
+import Mailer from '../../Mailer/Mailer';
 
 const UpdateUserRouter = Router();
 
@@ -26,6 +27,7 @@ UpdateUserRouter.post('/', (req, res) => {
 
     let user = await Database.user.get(usr_id);
     let changed = false;
+    let now_approved = false;
 
     if (username && typeof username === 'string') {
       const existant = await Database.user.fromUsername(username);
@@ -53,8 +55,11 @@ UpdateUserRouter.post('/', (req, res) => {
       changed = true;
     }
     if (approved && usr_role === "admin") {
-      user.approved = approved === 'true';
-      changed = true;
+      if (approved === 'true' && user.approved === false) {
+        now_approved = true;
+        user.approved = approved === 'true';
+        changed = true;
+      }
     }
     if (old_password && password && typeof password === 'string' && typeof old_password === 'string') {
       const is_valid = await Database.user.verifyPassword(user, old_password);
@@ -70,6 +75,20 @@ UpdateUserRouter.post('/', (req, res) => {
 
     if (changed) {
       await Database.user.save(user);
+    }
+
+    if (now_approved) {
+      // User is now approved, please send him an email
+      await Mailer.send({ 
+        to: user.email, 
+        subject: "MArtinize Database - " + user.name + ": Your account has been approved" 
+      }, 'mail_created', { 
+        title: user.name + ": Your account has been approved",
+        site_url: "http://localhost:3000",
+        new_user: {
+          name: user.name,
+        },
+      });
     }
 
     res.json(sanitize({ ...user, password: null }));

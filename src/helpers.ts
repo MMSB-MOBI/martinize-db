@@ -1,5 +1,5 @@
 import logger from "./logger";
-import { Molecule, BaseMolecule, User } from "./Entities/entities";
+import { Molecule, BaseMolecule, User, StashedMolecule } from "./Entities/entities";
 import { simpleflake } from 'simpleflakes';
 import Errors, { ApiError, ErrorType } from "./Errors";
 import Express from 'express';
@@ -232,6 +232,44 @@ export async function informAdminFromAskCreation(new_user: User) {
         name: new_user.name
       },
       name: admin.name
+    });
+  }
+}
+
+export async function informAdminFromNewMolecule(new_molecule: StashedMolecule, submitter: User) {
+  const admins = await Database.user.find({
+    selector: { role: "admin" },
+    limit: 99999
+  });
+
+  for (const admin of admins) {
+    // Send a mail
+    await Mailer.send({
+      to: admin.email,
+      subject: "MArtinize Database - New molecule submitted",
+    }, "mail_molecule_submitted", {
+      submitter,
+      name: admin.name,
+      molecule: new_molecule
+    });
+  }
+}
+
+export async function informAdminContact(content: string, sender: string) {
+  const admins = await Database.user.find({
+    selector: { role: "admin" },
+    limit: 99999
+  });
+
+  for (const admin of admins) {
+    // Send a mail
+    await Mailer.send({
+      to: admin.email,
+      subject: "MArtinize Database - New question asked from contact page",
+    }, "mail_contact", {
+      content,
+      name: admin.name,
+      email: sender
     });
   }
 }

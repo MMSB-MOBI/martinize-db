@@ -8,6 +8,7 @@ import ListUserRouter from './list';
 import DestroyUserRouter from './destroy';
 import LostPasswordUserRouter from './lost_password';
 import ChangePasswordUserRouter from './change_password';
+import ContactRouter from './contact';
 
 const UserRouter = Router();
 
@@ -20,5 +21,6 @@ UserRouter.use('/list', ListUserRouter);
 UserRouter.use('/destroy', DestroyUserRouter);
 UserRouter.use('/lost_password', LostPasswordUserRouter);
 UserRouter.use('/change_password', ChangePasswordUserRouter);
+UserRouter.use('/contact', ContactRouter);
 
 export default UserRouter;

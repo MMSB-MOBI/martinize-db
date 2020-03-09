@@ -18,6 +18,7 @@ try {
 export { KEYS };
 
 export const MOLECULE_ROOT_DIR = __dirname + "/../molecules/";
+export const MARTINIZER_ROOT_DIR = __dirname + "/../molecules/martinizer/";
 export const UPLOAD_ROOT_DIR = __dirname + "/../uploads/";
 export const SETTINGS_FILE = __dirname + "/../settings.json";
 export const TEMPLATE_DIR = __dirname + "/../templates/";
