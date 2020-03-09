@@ -6,7 +6,7 @@ import { Molecule, StashedMolecule } from "../Entities/entities";
 const MOLECULE_CLI = new CliListener(
   CliHelper.formatHelp("molecule", {
     list: 'List registred molecules',
-    'get <id>/all': 'Get details about molecule <id> / about all molecules',
+    'get <id>': 'Get details about molecule <id>',
     'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
   }, "Command is incorrect. Type \"molecule\" for help.")
 );

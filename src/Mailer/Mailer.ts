@@ -1,19 +1,11 @@
 import nodemailer from 'nodemailer';
-import { TEMPLATE_DIR, URLS } from '../constants';
+import { TEMPLATE_DIR, URLS, DEFAULT_MAILER_NAME, DEFAULT_MAILER_ADDRESS, MAILER_ENFORCE_RECIPIENT, MAILER_TRANSPORT_SETTINGS } from '../constants';
 import Twig from 'twig';
 
 export default new class Mailer {
-  protected transporter = nodemailer.createTransport({
-    host: 'smtp.ibcp.fr',
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    tls: {
-      // do not fail on invalid certs
-      rejectUnauthorized: false
-    }
-  });
+  protected transporter = nodemailer.createTransport(MAILER_TRANSPORT_SETTINGS);
 
-  public default_sender = { name: "MArtinize Database", address: "martinize.db@ibcp.fr" };
+  public default_sender = { name: DEFAULT_MAILER_NAME, address: DEFAULT_MAILER_ADDRESS };
 
   async send(send_options: nodemailer.SendMailOptions, template_name: string, options: { [variableName: string]: any }) {
     if (!send_options.to) {
@@ -46,8 +38,9 @@ export default new class Mailer {
       send_options.subject = options.title;
     }
 
-    //// TODO DEBUG: REMOVE
-    send_options.to = "tulouca@gmail.com";
+    if (MAILER_ENFORCE_RECIPIENT) {
+      send_options.to = MAILER_ENFORCE_RECIPIENT;
+    }
 
     return this.mail(send_options);
   }
