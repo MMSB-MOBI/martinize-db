@@ -110,7 +110,7 @@ export class MoleculeChecker {
       // Save the molecule in ZIP format if files changed
       let save: MoleculeSave;
       try {
-        save = await MoleculeOrganizer.save(files.itps, files.molecule);
+        save = await MoleculeOrganizer.save(files.itps, files.molecule, molecule.force_field!);
       } catch (e) {
         return Errors.throw(ErrorType.InvalidMoleculeFiles, e);
       }

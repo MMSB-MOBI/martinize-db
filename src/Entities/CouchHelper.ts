@@ -5,6 +5,7 @@ import UserDatabase from './UserDatabase';
 import StashedMoleculeDatabase from './StashedMoleculeDatabase';
 import { URLS } from '../constants';
 import logger from '../logger';
+import RadiusDatabase from './RadiusDatabase';
 
 export class CouchDatabase<T> {
   constructor(protected collection: nano.DocumentScope<T>) {}
@@ -19,6 +20,7 @@ interface Databases {
   stashed: StashedMoleculeDatabase;
   user: UserDatabase;
   token: TokenDatabase;
+  radius: RadiusDatabase;
 }
 
 export default class CouchHelper {
@@ -31,11 +33,13 @@ export default class CouchHelper {
   static readonly STASHED_MOLECULE_COLLECTION = "stashed";
   static readonly USER_COLLECTION = "user";
   static readonly TOKEN_COLLECTION = "token";
+  static readonly RADIUS_COLLECTION = "vanderwaalsradii";
   static readonly DBS = [
     "molecule",
     "stashed",
     "user",
-    "token"
+    "token",
+    "vanderwaalsradii",
   ];
 
   constructor(url: string) {
@@ -53,6 +57,7 @@ export default class CouchHelper {
       stashed: new StashedMoleculeDatabase(this.link.use(CouchHelper.STASHED_MOLECULE_COLLECTION)),
       user: new UserDatabase(this.link.use(CouchHelper.USER_COLLECTION)),
       token: new TokenDatabase(this.link.use(CouchHelper.TOKEN_COLLECTION)),
+      radius: new RadiusDatabase(this.link.use(CouchHelper.RADIUS_COLLECTION)),
     };
   }
 
@@ -74,6 +79,10 @@ export default class CouchHelper {
 
   get stashed() {
     return this.dbs.stashed;
+  }
+
+  get radius() {
+    return this.dbs.radius;
   }
 
   /** Create a database */

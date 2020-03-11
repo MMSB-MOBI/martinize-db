@@ -1,6 +1,7 @@
 import fs from 'fs';
 import logger from './logger';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import path from 'path';
 
 const json_package = JSON.parse(fs.readFileSync(__dirname + '/../package.json', 'utf-8'));
 export const VERSION = json_package.version as string;
@@ -27,6 +28,7 @@ export const MARTINIZER_ROOT_DIR = __dirname + "/../molecules/martinizer/";
 export const UPLOAD_ROOT_DIR = __dirname + "/../uploads/";
 export const SETTINGS_FILE = __dirname + "/../settings.json";
 export const TEMPLATE_DIR = __dirname + "/../templates/";
+export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
 
 /* - SEARCH WORKERS SETTINGS - */
 export const MINUTES_BEFORE_WORKER_KILL = 2;

@@ -104,7 +104,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * 
    * TODO make support of GRO files & verification of ITP+PDB
    */
-  async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File) : Promise<MoleculeSave> {
+  async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File, force_field: string) : Promise<MoleculeSave> {
     logger.debug("Saving ", itp_files, " and ", pdb_file);
 
     // TODO check ITP and PDB
@@ -159,7 +159,8 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       },
       itp: itp_files_info,
       type: "pdb",
-      hash
+      hash,
+      force_field
     };
 
     await FsPromise.writeFile(info_name, JSON.stringify(infos));
@@ -185,6 +186,7 @@ export interface MoleculeSaveInfo {
   gro?: FileSaveInfo;
   type: "pdb" | "gro";
   hash: string;
+  force_field: string;
 }
 
 export interface MoleculeSave {

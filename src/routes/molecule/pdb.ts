@@ -3,6 +3,7 @@ import { errorCatcher, sleep } from '../../helpers';
 import MoleculeOrganizer from '../../MoleculeOrganizer';
 import Errors, { ErrorType } from '../../Errors';
 import NodeStream from 'stream';
+import { Database } from '../../Entities/CouchHelper';
 
 // Get a pdb from a file ID
 const PdbGetterRouter = Router();
@@ -46,6 +47,30 @@ PdbGetterRouter.get('/:id.pdb', (req, res) => {
 
     // End stream then req
     write_stream.end("");
+  })().catch(errorCatcher(res));
+});
+
+PdbGetterRouter.get('/:id.radiimap', (req, res) => {
+  (async () => {
+    // Find/get file by ID
+    const molecule = await MoleculeOrganizer.get(req.params.id);
+
+    // File does not exists or does not have a pdb file attached
+    if (!molecule || !molecule[1].itp.length) {
+      return Errors.throw(ErrorType.ElementNotFound);
+    }
+
+    const [zip, save_info] = molecule;
+    const itps: string[] = [];
+    
+    // Read every ITP
+    for (const itp of save_info.itp) {
+      const content = await zip.file(itp.name).async('text');
+      itps.push(content);
+    }
+
+    // Generate the needed radius
+    res.json(await Database.radius.getRadius(save_info.force_field || 'martini304', itps));
   })().catch(errorCatcher(res));
 });
 

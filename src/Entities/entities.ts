@@ -77,3 +77,14 @@ export interface Token extends BaseCouchDocument {
   created_at: string;
 }
 
+// extract all lennar johns > grep -P "^\s*(?'g1'\S+)\s+(\k{g1})\b" kwalp/martini_v.3.0.4.26/martini_v3.0.4.itp | sort | cut -d' ' -f-2,4- | uniq
+export interface VanDerWaalsRadius extends BaseCouchDocument {
+  /** Martinize force field related to the defined radius. It is a reference to _id, when it's present. */
+  id: string;
+  /** Map between atom name > van der waals radii. */
+  atoms: {
+    /** Van der Waals Radii */
+    [name: string]: number
+  };
+}
+
