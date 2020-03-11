@@ -194,9 +194,6 @@ You now have the required file `deploy.zip` in order to deploy with Docker! Foll
 
 ### Deploy an already compiled version
 
-> In order to deploy, `docker` and `docker-compose` must be installed and configured properly.
-> Docker is not configured/installed? See [Configure_Docker_IBCP.md](./Configure_Docker_IBCP.md) file.
-
 Switch to branch `deploy` with `git`.
 
 ```bash
@@ -208,6 +205,9 @@ You can now skip to part **`Deploy with Docker`**.
 
 
 ### Deploy with Docker
+
+> In order to deploy, `docker` and `docker-compose` must be installed and configured properly.
+> Docker is not configured/installed? See [Configure_Docker_IBCP.md](./Configure_Docker_IBCP.md) file.
 
 #### Create the containers
 
