@@ -1,8 +1,9 @@
 import { VanDerWaalsRadius } from "./entities";
 import AbstractDatabase from "./AbstractDatabase";
 import nano = require("nano");
-import { promises as FsPromise } from 'fs';
-import { exec } from 'child_process';
+import fs, { promises as FsPromise } from 'fs';
+import readline from 'readline';
+import { FORCE_FIELD_DIR } from "../constants";
 
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
   protected static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
@@ -26,21 +27,18 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     }
 
     const itp_files = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
+    const files = Array.isArray(itp_files) ? itp_files : [itp_files];
 
-    for (const file of (Array.isArray(itp_files) ? itp_files : [itp_files])) {
-      const [out, ] = await new Promise((resolve, reject) => {
-        exec(`grep -P "^\\s*(?'g1'\\S+)\\s+(\\k{g1})\\b" "${file}" | sort | cut -d' ' -f-2,4- | uniq`, (err, stdout, stderr) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve([stdout, stderr]);
-        });
-      }) as [string, string];
+    for (const file of files) {
+      const rl = readline.createInterface({
+        input: fs.createReadStream(FORCE_FIELD_DIR + file),
+        crlfDelay: Infinity, // crlfDelay option to recognize all instances of CR LF in file as a single line break.
+      });
 
-      for (const line of out.split('\n')) {
+      for await (const line of rl) {
         const l = line.trim();
-        if (!l) {
+        
+        if (!l || !l.match(/^(?<g1>\S+)\s+(\k<g1>)\b/)) {
           continue;
         }
 
