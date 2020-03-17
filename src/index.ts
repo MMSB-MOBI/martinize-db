@@ -15,6 +15,8 @@ import MAIL_CLI from './cli/mail_cli';
 import StaticServer from './static_server';
 import CliHelper from 'interactive-cli-helper';
 import DATABASE_CLI from './cli/databases_cli';
+import { Martinizer } from './Martinizer/Martinizer';
+import path from 'path';
 
 commander
   .version(VERSION)
@@ -141,6 +143,9 @@ async function startCli() {
   CLI.addSubListener('worker', WORKER_CLI);
   CLI.addSubListener('mail', MAIL_CLI);
   CLI.addSubListener('database', DATABASE_CLI);
+  
+  const tests = CLI.addSubListener('test', 'Choose a test.');
+  tests.addSubListener('map', () => Martinizer.getMap(path.resolve('../../IBCP/KWALP.pdb')));
   
   CLI.addSubListener(
     /^(\?|help)$/,  

@@ -55,7 +55,7 @@ UpdateUserRouter.post('/', (req, res) => {
       changed = true;
     }
     if (approved && usr_role === "admin") {
-      if (approved === 'true' && user.approved === false) {
+      if (approved === 'true' && !user.approved) {
         now_approved = true;
         user.approved = approved === 'true';
         changed = true;

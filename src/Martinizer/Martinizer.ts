@@ -2,6 +2,14 @@ import { exec } from 'child_process';
 import fs, { promises as FsPromise } from 'fs';
 import os from 'os';
 import Errors, { ErrorType } from '../Errors';
+import axios, { AxiosResponse } from 'axios';
+import FormData from 'form-data';
+import path from 'path';
+import TarStream from 'tar-stream';
+import zlib from 'zlib';
+
+const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
+const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
 
 
 export interface MartinizeSettings {
@@ -73,7 +81,7 @@ export const Martinizer = new class Martinizer {
     const with_ext = basename + '.pdb';
 
     // Check dssp ps
-    let command_line = "martinize2 -f " + with_ext + " -x output.pdb -dssp mkdssp -ff " + full.ff + " -p " + full.position + " ";
+    let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
     if (full.ignore) {
       command_line += " " + full.ignore.join(',');
@@ -153,6 +161,7 @@ export const Martinizer = new class Martinizer {
       // Scan for files in result dir
       let pdb_file: string = dir + "/output.pdb";
       const itp_files: string[] = [];
+      console.log("Tmp directory for Martinize job:", dir);
   
       const exists_pdb = await FsPromise.access(pdb_file, fs.constants.F_OK).then(() => true).catch(() => false);
       if (!exists_pdb) {
@@ -173,13 +182,14 @@ export const Martinizer = new class Martinizer {
         }) as [string, string];
         
         // GET THE MAP FILE FROM A CUSTOM WAY.
-        // For now, this throw an error.
-        throw new Error("No way to get the MAP file.");
+        // Use the original pdb file !!!
+        const map_filename = await this.getMap(with_ext, dir);
 
         // Ensure to have the script at the correct place...
         await new Promise((resolve, reject) => {
-          exec(`python create_goVirt.py -s output.pdb -f MOLECULE.map --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir }, (err, stdout, stderr) => {
+          exec(`python ${CREATE_GO_PATH} -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir }, (err, stdout, stderr) => {
             if (err) {
+              // Sometimes, the program crashes, I don't know why. To investigate
               reject(err);
               return;
             }
@@ -203,5 +213,94 @@ export const Martinizer = new class Martinizer {
     } finally {
       await FsPromise.rename(with_ext, basename);
     }
+  }
+
+  protected findUrlInRedirect(data: string) {
+    // Find the redirect in page
+    const rest = data.split('Content="0; URL=')[1];
+    if (!rest) {
+      throw new Error('Unable to find map URL.');
+    }
+    
+    return 'http://info.ifpan.edu.pl/~rcsu/rcsu/' + rest.split('">')[0];
+  }
+
+  async getMap(pdb_filename: string, use_tmp_dir?: string) {
+    // Create the initial form data job
+    const form = new FormData;
+
+    form.append('filename', fs.createReadStream(pdb_filename));
+    form.append('radii', 'tsai');
+    form.append('fib', '14');
+    form.append('allchains', '1');
+    form.append('PDB_ID', '');
+
+    // Start the job
+    let res: AxiosResponse<string> = await axios.post('http://info.ifpan.edu.pl/~rcsu/rcsu/prepare.php', form, {
+      headers: {
+        ...form.getHeaders()
+      },
+      responseType: 'text'
+    });
+
+    // Follow the first redirect
+    res = await axios.get(this.findUrlInRedirect(res.data), { responseType: 'text' });
+
+    // Follow the second redirect, to the TAR file.
+    // To get the tar, you should only replace .html to .tgz
+    const url = this.findUrlInRedirect(res.data).replace('.html', '.tgz');
+
+    // Save the map file inside a temporary directory
+    if (!use_tmp_dir) {
+      const tmp_dir = os.tmpdir();
+      use_tmp_dir = await FsPromise.mkdtemp(tmp_dir + "/");
+    }
+
+    // Prepare the write stream for filesave
+    const map_filename = path.resolve(use_tmp_dir + '/output.map');
+    const map_stream = fs.createWriteStream(map_filename);
+
+    // Download the tgz via a stream
+    const map_response = await axios.get(url, { responseType: 'stream' });
+    
+    // Prepare the targz extractor, then pipe it to response stream
+    const extractor = TarStream.extract();
+
+    map_response.data
+      .pipe(zlib.createGunzip())
+      .pipe(extractor);
+
+    // Assign stream download to extract only the .map file,
+    // pipe the file content to the {map_stream}
+    await new Promise((resolve, reject) => {
+      extractor.on('entry', (header, stream, next) => {
+        // {stream} is the file body, 
+        // call {next} entry is read
+
+        if (header.name.endsWith('.map')) {
+          stream.on('data', chunk => {
+            map_stream.write(chunk);
+          });
+
+          stream.on('end', () => {
+            // ready for next entry
+            next(); 
+          });
+
+          // Start the read stream
+          stream.resume();
+        }
+        else {
+          next();
+        }
+      });
+      
+      extractor.on('finish', resolve);
+      extractor.on('error', reject);
+    });
+
+    map_stream.close();
+
+    return map_filename;
   }
 }();

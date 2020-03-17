@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { TEMPLATE_DIR, URLS, DEFAULT_MAILER_NAME, DEFAULT_MAILER_ADDRESS, MAILER_ENFORCE_RECIPIENT, MAILER_TRANSPORT_SETTINGS } from '../constants';
 import Twig from 'twig';
+import logger from '../logger';
 
 export default new class Mailer {
   protected transporter = nodemailer.createTransport(MAILER_TRANSPORT_SETTINGS);
@@ -46,6 +47,10 @@ export default new class Mailer {
   }
 
   protected async mail(options: nodemailer.SendMailOptions) {
+    // TODO REMOVE !!
+    logger.warn("You're not at IBCP, can't send mail yet. Simulating good response...");
+    return { messageId: '000' };
+
     const info = await this.transporter.sendMail(options);
 
     return info as { messageId: string };

@@ -8,6 +8,8 @@ import { promises as FsPromise } from 'fs';
 import Errors, { ErrorType } from '../../Errors';
 import shellescape from 'shell-escape';
 import logger from '../../logger';
+import path from 'path';
+import { Database } from '../../Entities/CouchHelper';
 
 const MartinizerRouter = Router();
 
@@ -108,13 +110,24 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
     }
 
     try {
-      const { pdb } = await Martinizer.run(runner);
+      const { pdb, itps } = await Martinizer.run(runner);
   
-      // ITPs are not sended for now
-      res.download(pdb, err => {
-        if (err) {
-          Errors.send(ErrorType.Server, res);
-        }
+      // Formatting itps
+      const res_itp: { content: string, name: string }[] = [];
+      for (const itp of itps) {
+        res_itp.push({
+          content: await FsPromise.readFile(itp, 'utf-8'),
+          name: path.basename(itp),
+        });
+      }
+
+      // Get the radius for itps
+      const radius = await Database.radius.getRadius(runner.ff || 'martini22', res_itp.map(e => e.content));
+
+      res.json({
+        pdb: { content: await FsPromise.readFile(pdb, 'utf-8'), name: path.basename(pdb) },
+        itps: res_itp,
+        radius
       });
     } catch (e) {
       if (e instanceof Error && e.stack?.startsWith('Error: Command failed')) {
