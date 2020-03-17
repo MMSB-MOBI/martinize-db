@@ -208,7 +208,8 @@ export const Martinizer = new class Martinizer {
 
       return {
         pdb: pdb_file,
-        itps: itp_files
+        itps: itp_files,
+        top: dir + '/system.top',
       };
     } finally {
       await FsPromise.rename(with_ext, basename);

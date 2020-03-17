@@ -110,7 +110,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
     }
 
     try {
-      const { pdb, itps } = await Martinizer.run(runner);
+      const { pdb, itps, top } = await Martinizer.run(runner);
   
       // Formatting itps
       const res_itp: { content: string, name: string }[] = [];
@@ -127,6 +127,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       res.json({
         pdb: { content: await FsPromise.readFile(pdb, 'utf-8'), name: path.basename(pdb) },
         itps: res_itp,
+        top: { content: await FsPromise.readFile(top, 'utf-8'), name: path.basename(top) },
         radius
       });
     } catch (e) {

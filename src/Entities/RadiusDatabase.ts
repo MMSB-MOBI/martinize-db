@@ -43,7 +43,9 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
         }
 
         const [residue, , r1, r2] = l.split(/\s+/);
-        atoms[residue] = Number(r1) + Number(r2);
+        if (residue && r1 && r2) {
+          atoms[residue] = Number(r1) + Number(r2);
+        }
       }
     }
 
