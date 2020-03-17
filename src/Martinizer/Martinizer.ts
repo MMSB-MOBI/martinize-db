@@ -206,6 +206,8 @@ export const Martinizer = new class Martinizer {
         }
       }
 
+      // TODO: modify system.top to include the right ITPs !
+
       return {
         pdb: pdb_file,
         itps: itp_files,
