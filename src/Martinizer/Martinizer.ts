@@ -10,7 +10,24 @@ import zlib from 'zlib';
 
 const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
+const CREATE_MAP_PATH = path.resolve(__dirname, "../../utils/get_map.py");
 
+interface CCMapResChain {
+  resID: string;
+  chainID: string;
+}
+
+interface CCMapWithDistance extends CCMapResChain {
+  distance: number;
+}
+
+interface ContactMapCCMap {
+  type: 'contactList';
+  data: {
+    root: CCMapResChain;
+    partners: CCMapWithDistance[];
+  }[];
+}
 
 export interface MartinizeSettings {
   /** PDB file path */
@@ -216,6 +233,43 @@ export const Martinizer = new class Martinizer {
     } finally {
       await FsPromise.rename(with_ext, basename);
     }
+  }
+
+  async getCcMap(pdb_filename: string, use_tmp_dir?: string) {
+    const [strmap, ] = await new Promise((resolve, reject) => {
+      exec(`python ${CREATE_MAP_PATH} -f ${pdb_filename}`, (err, stdout, stderr) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve([stdout, stderr]);
+      });
+    }) as [string, string];
+
+    const map: ContactMapCCMap = JSON.parse(strmap);
+
+    // Save the map file inside a temporary directory
+    if (!use_tmp_dir) {
+      const tmp_dir = os.tmpdir();
+      use_tmp_dir = await FsPromise.mkdtemp(tmp_dir + "/");
+    }
+
+    // Prepare the write stream for filesave
+    const map_filename = path.resolve(use_tmp_dir + '/output.map');
+    const map_stream = fs.createWriteStream(map_filename);
+
+    map_stream.write(`            I1  AA  C I(PDB)    I2  AA  C I(PDB)    DISTANCE       CMs    rCSU    aSurf    rSurf    nSurf\n`);
+    map_stream.write(`==========================================================================================================\n`);
+
+    for (const atom of map.data) {
+      for (const partner of atom.partners) {
+        map_stream.write(`R      1     1  XXX ${atom.root.chainID}    ${atom.root.resID}        2  XXX ${partner.chainID}    ${partner.resID}       ${partner.distance}     1 1 1 1    16   2.6585   0.0000  60.5690\n`);
+      }
+    }
+
+    map_stream.close();
+
+    return map_filename;
   }
 
   protected findUrlInRedirect(data: string) {

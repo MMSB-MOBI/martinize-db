@@ -1,76 +1,81 @@
 import { Router } from 'express';
-import { errorCatcher, sleep } from '../../helpers';
+import { errorCatcher } from '../../helpers';
 import MoleculeOrganizer from '../../MoleculeOrganizer';
 import Errors, { ErrorType } from '../../Errors';
-import NodeStream from 'stream';
 import { Database } from '../../Entities/CouchHelper';
+import { BaseMolecule } from '../../Entities/entities';
+// @ts-ignore 
+import NodeStreamZip from 'node-stream-zip';
 
 // Get a pdb from a file ID
 const PdbGetterRouter = Router();
 
-PdbGetterRouter.get('/:id.pdb', (req, res) => {
+PdbGetterRouter.get('/:id', (req, res) => {
   (async () => {
     // Find/get file by ID
-    const molecule = await MoleculeOrganizer.get(req.params.id);
+    const molecule = await MoleculeOrganizer.getInfo(req.params.id);
 
     // File does not exists or does not have a pdb file attached
-    if (!molecule || !molecule[1].pdb) {
+    if (!molecule || !molecule.itp.length) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
 
-    const [zip, save_info] = molecule;
+    // Find the molecule to find which force field is used.
+    let molecule_data: BaseMolecule;
+    const holders = await Database.molecule.find({ selector: { files: req.params.id } });
+    if (holders.length) {
+      molecule_data = holders[0];
+    }
+    else {
+      const holders_stashed = await Database.stashed.find({ selector: { files: req.params.id } });
+      molecule_data = holders_stashed[0];
+    }
 
-    // Extract the pdb file from the internal ZIP file
-    const file_as_buffer = await zip.file(save_info.pdb!.name).async("nodebuffer");
+    if (!molecule_data) {
+      return Errors.throw(ErrorType.MoleculeNotFound);
+    }
 
-    // Create the write stream
-    const write_stream = new NodeStream.PassThrough;
+    const itps: NodeJS.ReadableStream[] = [];
 
-    res.set('Content-Type', 'chemical/x-pdb');
-    // Must set for download progress estimation
-    res.set('Content-Length', file_as_buffer.length.toString()); 
+    const zip = new NodeStreamZip({
+      file: MoleculeOrganizer.getFilenameFor(req.params.id),
+      storeEntries: true
+    });
 
-    // Attach write stream to request
-    write_stream.pipe(res);
-
-    // Send slowly the PDB to client
-    const PARTS_NUMBER = 5;
-    const PART_LENGTH = Math.ceil(file_as_buffer.length / PARTS_NUMBER);
+    await new Promise((resolve, reject) => {
+      zip.on('ready', resolve);
+      zip.on('error', reject);
+    });
     
-    for (let i = 0; i < PARTS_NUMBER; i++) {
-      const start = i * PART_LENGTH;
-      const part = file_as_buffer.slice(start, start + PART_LENGTH);
-
-      write_stream.push(part);
-      await sleep(350);
+    // Read every ITP in a stream
+    for (const itp of molecule.itp) {
+      const stream = await new Promise((resolve, reject) => {
+        zip.stream(itp.name, (err: any, stm: NodeJS.ReadableStream) => {
+          if (err)
+            reject(err);
+          resolve(stm);
+        });
+      }) as NodeJS.ReadableStream;
+      
+      itps.push(stream);
     }
 
-    // End stream then req
-    write_stream.end("");
-  })().catch(errorCatcher(res));
-});
-
-PdbGetterRouter.get('/:id.radiimap', (req, res) => {
-  (async () => {
-    // Find/get file by ID
-    const molecule = await MoleculeOrganizer.get(req.params.id);
-
-    // File does not exists or does not have a pdb file attached
-    if (!molecule || !molecule[1].itp.length) {
-      return Errors.throw(ErrorType.ElementNotFound);
-    }
-
-    const [zip, save_info] = molecule;
-    const itps: string[] = [];
+    // Read the PDB in a stream
+    const pdb_stream = await new Promise((resolve, reject) => {
+      zip.stream(molecule.pdb!.name, (err: any, stm: NodeJS.ReadableStream) => {
+        if (err)
+          reject(err);
+        resolve(stm);
+      });
+    }) as NodeJS.ReadableStream;
     
-    // Read every ITP
-    for (const itp of save_info.itp) {
-      const content = await zip.file(itp.name).async('text');
-      itps.push(content);
-    }
-
     // Generate the needed radius
-    res.json(await Database.radius.getRadius(save_info.force_field || 'martini304', itps));
+    const [pdb_final, radius] = await Database.radius.transformPdb(pdb_stream, itps, molecule_data.force_field);
+
+    res.json({
+      radius,
+      pdb: pdb_final
+    });
   })().catch(errorCatcher(res));
 });
 

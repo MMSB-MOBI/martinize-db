@@ -122,10 +122,14 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       }
 
       // Get the radius for itps
-      const radius = await Database.radius.getRadius(runner.ff || 'martini22', res_itp.map(e => e.content));
+      const [pdb_content, radius] = await Database.radius.transformPdb(
+        pdb, 
+        itps,
+        runner.ff || 'martini22'
+      );
 
       res.json({
-        pdb: { content: await FsPromise.readFile(pdb, 'utf-8'), name: path.basename(pdb) },
+        pdb: { content: pdb_content, name: path.basename(pdb) },
         itps: res_itp,
         top: { content: await FsPromise.readFile(top, 'utf-8'), name: path.basename(top) },
         radius

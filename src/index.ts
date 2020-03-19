@@ -144,8 +144,9 @@ async function startCli() {
   CLI.addSubListener('mail', MAIL_CLI);
   CLI.addSubListener('database', DATABASE_CLI);
   
-  const tests = CLI.addSubListener('test', 'Choose a test.');
+  const tests = CLI.addSubListener('test', 'Choose a test. (map, ccmap)');
   tests.addSubListener('map', () => Martinizer.getMap(path.resolve('../../IBCP/KWALP.pdb')));
+  tests.addSubListener('ccmap', () => Martinizer.getCcMap(path.resolve('../../IBCP/KWALP.pdb')));
   
   CLI.addSubListener(
     /^(\?|help)$/,  

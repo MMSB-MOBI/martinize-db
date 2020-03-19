@@ -1,6 +1,5 @@
 import { VanDerWaalsRadius } from "./entities";
 import AbstractDatabase from "./AbstractDatabase";
-import nano = require("nano");
 import fs, { promises as FsPromise } from 'fs';
 import readline from 'readline';
 import { FORCE_FIELD_DIR } from "../constants";
@@ -79,23 +78,29 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     return this.get(force_field);
   }
 
-  /**
-   * For a given molecule, get the related radius for every atom linked to its ITPs.
-   * 
-   * @param itp_files ITP **content** (not their filename!).
-   */
-  async getRadius(force_field: string, itp_files: string[]) {
+  protected async getAtomMapAndRadius(force_field: string, itp_files: (string | NodeJS.ReadableStream)[]) {
     const atoms = (await this.createOrCheckExistance(force_field)).atoms;
     const subset: typeof atoms = {};
+    const index_to_residue: { [index: number]: string } = {};
+    let i = 1;
 
+    // ITP files must be in TOP file include order !!
     for (const file of itp_files) {
       let seen_atoms = false;
 
-      for (const line of file.split('\n')) {
+      const rl = readline.createInterface({
+        input: typeof file === 'string' ? fs.createReadStream(file) : file,
+        crlfDelay: Infinity, // crlfDelay option to recognize all instances of CR LF in file as a single line break.
+      });
+
+      for await (const line of rl) {
         if (!seen_atoms && line !== '[ atoms ]') {
           continue;
         }
         seen_atoms = true;
+        if (line === '[ atoms ]') {
+          continue;
+        }
 
         if (!line.trim()) {
           break;
@@ -103,14 +108,68 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
         }
 
         // Typical line is: 1 Q5  1 GLY BB   1   1
-        const residue = line.split(/\s+/)[1];
+        const splitted_line = line.split(/\s+/).filter(e => e);
+        const residue = splitted_line[1];
+
+        index_to_residue[i] = residue;
+        i++;
 
         if (residue in atoms) {
           subset[residue] = atoms[residue];
         }
       }
+
+      rl.close();
     }
 
-    return subset;
+    return [subset, index_to_residue] as [typeof atoms, { [index: number]: string }];
+  }
+
+  async transformPdb(pdb: string | NodeJS.ReadableStream, itp_files: (string | NodeJS.ReadableStream)[], force_field: string) {
+    // Read the pdb and transform it
+    const lines: string[] = [];
+    
+    const [radius, indexes] = await this.getAtomMapAndRadius(force_field, itp_files);
+
+    const rl = readline.createInterface({
+      input: typeof pdb === 'string' ? fs.createReadStream(pdb) : pdb,
+      crlfDelay: Infinity, // crlfDelay option to recognize all instances of CR LF in file as a single line break.
+    });
+
+    for await (const line of rl) {
+      if (!line.startsWith('ATOM')) {
+        lines.push(line);
+        continue;
+      }
+
+      // Atom name needs to be changed.
+      const atom_number = Number(line.slice(7, 12));
+
+      // TODO: For now, it is disabled... links in NGL are broken when atoms are changed.
+      if (atom_number in indexes && false) {
+        lines.push(
+          line.slice(0, 12) +
+          indexes[atom_number].padEnd(4, ' ') +
+          line.slice(16)
+        );
+      }
+      else {
+        lines.push(line);
+      }
+    }
+
+    return [
+      lines.join('\n'),
+      radius
+    ] as [string, typeof radius];
+  }
+
+  /**
+   * For a given molecule, get the related radius for every atom linked to its ITPs.
+   * 
+   * @param itp_files ITP **filename**.
+   */
+  async getRadius(force_field: string, itp_files: (string | NodeJS.ReadableStream)[]) {
+    return (await this.getAtomMapAndRadius(force_field, itp_files))[0];
   }
 }

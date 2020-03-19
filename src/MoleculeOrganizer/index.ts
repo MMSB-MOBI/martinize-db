@@ -19,15 +19,22 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    */
   async get(file_id: string) : Promise<[JSZip, MoleculeSaveInfo] | undefined> {
     if (await this.exists(file_id)) {
-      const infos: MoleculeSaveInfo = JSON.parse(await FsPromise.readFile(this.getInfoFilenameFor(file_id), "utf-8"));
-
       const zip_buffer = await FsPromise.readFile(this.getFilenameFor(file_id));
       const zip = await JSZip.loadAsync(zip_buffer);
       
       return [
         zip,
-        infos
+        (await this.getInfo(file_id))!
       ];
+    }
+  }
+
+  /**
+   * Get the file infos attached to a save.
+   */
+  async getInfo(file_id: string) : Promise<MoleculeSaveInfo | undefined> {
+    if (await this.exists(file_id)) {
+      return JSON.parse(await FsPromise.readFile(this.getInfoFilenameFor(file_id), "utf-8"));
     }
   }
 
@@ -59,7 +66,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     let json_files = files.filter(f => f.endsWith('.json'));
 
     if (predicate) {
-      json_files = files.filter(predicate);
+      json_files = json_files.filter(predicate);
     }
 
     // Todo in a worker ?
