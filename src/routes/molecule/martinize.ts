@@ -67,7 +67,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       }
     }
     if (position) {
-      if (['none', 'all', 'backbone'].includes(position)) {
+      if (Martinizer.isMartinizePosition(position)) {
         runner.position = position;
       }
       else {

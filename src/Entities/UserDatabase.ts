@@ -16,13 +16,11 @@ export default class UserDatabase extends AbstractDatabase<User> {
   }
 
   async fromUsername(username: string) : Promise<User | undefined> {
-    const res = await this.findOne({ selector: { name: withRegex(username, false, "i", true) } });
-    return res[0];
+    return this.findOne({ selector: { name: withRegex(username, false, "i", true) } });
   }
   
   async fromEmail(email: string) : Promise<User | undefined> {
-    const res = await this.findOne({ selector: { email: withRegex(email, false, "i", true) } });
-    return res[0];
+    return this.findOne({ selector: { email: withRegex(email, false, "i", true) } });
   }
 
   /**

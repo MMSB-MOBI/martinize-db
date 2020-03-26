@@ -7,6 +7,7 @@ import FormData from 'form-data';
 import path from 'path';
 import TarStream from 'tar-stream';
 import zlib from 'zlib';
+import { ArrayValues } from '../helpers';
 
 const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
@@ -29,6 +30,9 @@ interface ContactMapCCMap {
   }[];
 }
 
+const MARTINIZE_POSITIONS = ['none', 'all', 'backbone'] as const;
+export type MartinizePosition = ArrayValues<typeof MARTINIZE_POSITIONS>;
+
 export interface MartinizeSettings {
   /** PDB file path */
   input: string;
@@ -43,7 +47,7 @@ export interface MartinizeSettings {
   ff: string;
 
   /** Position restrains */
-  position: 'none' | 'all' | 'backbone';
+  position: MartinizePosition;
 
   /** Position restrain force const */
   posref_fc?: number;
@@ -83,6 +87,10 @@ export interface MartinizeSettings {
 }
 
 export const Martinizer = new class Martinizer {
+  isMartinizePosition(value: any) : value is MartinizePosition {
+    return MARTINIZE_POSITIONS.includes(value);
+  }
+  
   async run(settings: Partial<MartinizeSettings>) {
     const full: MartinizeSettings = Object.assign({}, {
       input: '',

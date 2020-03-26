@@ -146,7 +146,7 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
       const atom_number = Number(line.slice(7, 12));
 
       // TODO: For now, it is disabled... links in NGL are broken when atoms are changed.
-      if (atom_number in indexes && false) {
+      if (atom_number in indexes && false) {
         lines.push(
           line.slice(0, 12) +
           indexes[atom_number].padEnd(4, ' ') +

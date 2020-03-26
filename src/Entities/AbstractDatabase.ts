@@ -37,12 +37,9 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
       logger.warn("bulkDelete: One element has no revision information, this should not happen. It has been filtered.");
     }
 
-    const docs: nano.BulkModifyDocsWrapper = { docs: [] };
-    for (const doc of documents) {
-      docs.docs.push({ _deleted: true, _id: doc._id, _rev: doc._rev });
-    }
-
-    return this.bulk(docs);
+    return this.bulk({ 
+      docs: documents.map(doc => ({ _deleted: true, _id: doc._id, _rev: doc._rev })) 
+    });
   }
 
   /** Bulk create, update or delete */
@@ -58,9 +55,9 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
     return res.docs;
   }
 
-  async findOne(query: nano.MangoQuery) {
+  async findOne(query: nano.MangoQuery) : Promise<T | undefined> {
     const res = await this._db.find({ ...query, limit: 1 });
-    return res.docs;
+    return res.docs[0];
   }
 
   save(element: T) {

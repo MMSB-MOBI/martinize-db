@@ -279,3 +279,24 @@ export async function informAdminContact(content: string, sender: string) {
     });
   }
 }
+
+// Example: 4.700000e-01    4.990000e+00
+export function vanDerWaalsRadius(lennar_johns_1: number, lennar_johns_2: number) {
+  const T = 0.191, S = 0.230, R = 0.254;
+
+
+}
+
+/**
+ * Create a type that contain values from an array (known at compile-time).
+ * 
+ * Usage:
+ * ```ts
+ * const MY_VALUES = ['v1', 'v2', 'v3'] as const;
+ * 
+ * type AvailableValues = ArrayValues<typeof MY_VALUES>;
+ * // AvailableValues = 'v1' | 'v2' | 'v3'
+ * ```
+ */
+export type ArrayValues<T extends ReadonlyArray<unknown>> = T extends ReadonlyArray<infer ArrayValues> ? ArrayValues : never;
+
