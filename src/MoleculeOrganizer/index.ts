@@ -1,9 +1,12 @@
 import fs, { promises as FsPromise } from 'fs';
 import { MOLECULE_ROOT_DIR } from '../constants';
 import logger from '../logger';
-import { getNameAndPathOfUploadedFile, generateSnowflake } from '../helpers';
+import { generateSnowflake } from '../helpers';
 import JSZip from 'jszip';
 import md5File from 'md5-file/promise';
+import os from 'os';
+import { Martinizer } from '../Martinizer/Martinizer';
+import path from 'path';
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {
   constructor() {
@@ -111,26 +114,50 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * 
    * TODO make support of GRO files & verification of ITP+PDB
    */
-  async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File, force_field: string) : Promise<MoleculeSave> {
+  async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File, top_file: Express.Multer.File, force_field: string) : Promise<MoleculeSave> {
     logger.debug("Saving ", itp_files, " and ", pdb_file);
 
     // TODO check ITP and PDB
     // ----------------------
+
+    // Copy the files into a tmp dir
+    const tmp_dir = os.tmpdir();
+    const use_tmp_dir = await FsPromise.mkdtemp(tmp_dir + "/");
+
+    const pdb_name = pdb_file.originalname.split('.')[0] + '.pdb';
+    const full_pdb_name = use_tmp_dir + "/" + pdb_name;
+
+    await FsPromise.copyFile(pdb_file.path, use_tmp_dir + "/" + pdb_name);
+
+    const top_name = top_file.originalname.split('.')[0] + '.top';
+    const full_top_name = use_tmp_dir + "/" + top_name;
+
+    await FsPromise.copyFile(top_file.path, use_tmp_dir + "/" + top_name);
+   
+    const full_itp_files: string[] = [];
+    for (const file of itp_files) {
+      const itp_name = file.originalname.split('.')[0] + '.itp';
+      full_itp_files.push(use_tmp_dir + "/" + itp_name);
+
+      await FsPromise.copyFile(file.path, use_tmp_dir + "/" + itp_name);
+    }
+
+    // Create the modified TOP and the modified pdb
+    const { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, full_top_name, full_itp_files, force_field);
+    const full_pdb = await Martinizer.createPdbWithConect(full_pdb_name, full_top, use_tmp_dir);
 
     // Compressing and saving
     const save_id = generateSnowflake();
     const zip_name = this.getFilenameFor(save_id);
     const info_name = this.getInfoFilenameFor(save_id);
 
-    const pdb_name = pdb_file.originalname.split('.')[0] + '.pdb';
-
     // Create ZIP
     const zip = new JSZip();
 
     let itp_files_info: FileSaveInfo[] = [];
-    for (const file of itp_files) {
-      const itp_name = file.originalname.split('.')[0] + '.itp';
-      const itp_content = await FsPromise.readFile(file.path);
+    for (const file of full_itp_files) {
+      const itp_name = path.basename(file);
+      const itp_content = await FsPromise.readFile(file);
       zip.file(itp_name, itp_content);
 
       itp_files_info.push({
@@ -139,8 +166,11 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       });
     }
 
-    const pdb_content = await FsPromise.readFile(pdb_file.path);
-    zip.file(pdb_name, pdb_content);
+    const top_content = await FsPromise.readFile(full_top);
+    zip.file(path.basename(top_name), top_content);
+
+    const pdb_content = await FsPromise.readFile(full_pdb);
+    zip.file(path.basename(full_pdb), pdb_content);
 
     await new Promise((resolve, reject) => {
       zip
@@ -162,10 +192,13 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const infos: MoleculeSaveInfo = {
       pdb: {
         size: pdb_content.length,
-        name: pdb_name
+        name: path.basename(full_pdb)
+      },
+      top: {
+        size: top_content.length,
+        name: path.basename(top_name),
       },
       itp: itp_files_info,
-      type: "pdb",
       hash,
       force_field
     };
@@ -188,10 +221,9 @@ export interface FileSaveInfo {
 }
 
 export interface MoleculeSaveInfo {
-  pdb?: FileSaveInfo;
+  pdb: FileSaveInfo;
   itp: FileSaveInfo[];
-  gro?: FileSaveInfo;
-  type: "pdb" | "gro";
+  top: FileSaveInfo;
   hash: string;
   force_field: string;
 }

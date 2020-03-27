@@ -110,7 +110,7 @@ export class MoleculeChecker {
       // Save the molecule in ZIP format if files changed
       let save: MoleculeSave;
       try {
-        save = await MoleculeOrganizer.save(files.itps, files.molecule, molecule.force_field!);
+        save = await MoleculeOrganizer.save(files.itps, files.molecule, files.top, molecule.force_field!);
       } catch (e) {
         return Errors.throw(ErrorType.InvalidMoleculeFiles, e);
       }
@@ -144,10 +144,11 @@ export class MoleculeChecker {
 
     // Find the ITP files
     const itps_files: File[] = this.req.files.itp;
-    const pdb_files: File[] = this.req.files.pdb ?? this.req.files.gro;
+    const pdb_files: File[] = this.req.files.pdb;
+    const top_files: File[] = this.req.files.top;
 
     // Requires one itp file at least
-    if (!itps_files || !pdb_files || !itps_files.length || !pdb_files.length) {
+    if (!itps_files || !top_files || !pdb_files || !itps_files.length || !pdb_files.length) {
       return false;
     }
     return true;
@@ -168,7 +169,7 @@ export class MoleculeChecker {
     }
 
     // Get the PDB files
-    const pdb_files: File[] = this.req.files.pdb ?? this.req.files.gro;
+    const pdb_files: File[] = this.req.files.pdb;
     const is_pdb = !!this.req.files.pdb;
 
     if (pdb_files.length !== 1) {
@@ -178,7 +179,8 @@ export class MoleculeChecker {
     return {
       molecule: pdb_files[0],
       is_pdb,
-      itps: itps_files
+      itps: itps_files,
+      top: this.req.files.top[0],
     };
   }
 

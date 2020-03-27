@@ -7,11 +7,17 @@ import FormData from 'form-data';
 import path from 'path';
 import TarStream from 'tar-stream';
 import zlib from 'zlib';
-import { ArrayValues } from '../helpers';
+import { ArrayValues, fileExists } from '../helpers';
+import logger from '../logger';
+import RadiusDatabase from '../Entities/RadiusDatabase';
+import readline from 'readline';
+import { FORCE_FIELD_DIR } from '../constants';
 
 const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
 const CREATE_MAP_PATH = path.resolve(__dirname, "../../utils/get_map.py");
+const CONECT_PDB_PATH = path.resolve(__dirname, "../../utils/create_conect_pdb.sh");
+const CONECT_MDP_PATH = path.resolve(__dirname, "../../utils/run.mdp");
 
 interface CCMapResChain {
   resID: string;
@@ -168,7 +174,7 @@ export const Martinizer = new class Martinizer {
       const tmp_dir = os.tmpdir();
       const dir = await FsPromise.mkdtemp(tmp_dir + "/");
   
-      const exists = await FsPromise.access(dir, fs.constants.F_OK).then(() => true).catch(() => false);
+      const exists = await fileExists(dir);
       if (!exists) {
         await FsPromise.mkdir(dir, { recursive: true });
       }
@@ -188,7 +194,7 @@ export const Martinizer = new class Martinizer {
       const itp_files: string[] = [];
       console.log("Tmp directory for Martinize job:", dir);
   
-      const exists_pdb = await FsPromise.access(pdb_file, fs.constants.F_OK).then(() => true).catch(() => false);
+      const exists_pdb = await fileExists(pdb_file);
       if (!exists_pdb) {
         return Errors.throw(ErrorType.Server, { error: "Unable to find created pdb." });
       }
@@ -231,16 +237,81 @@ export const Martinizer = new class Martinizer {
         }
       }
 
-      // TODO: modify system.top to include the right ITPs !
+      // Modify system.top to include the right ITPs !
+      const { top: full_top, itps: full_itps } = await this.createTopFile(dir, dir + '/system.top', itp_files, full.ff);
+
+      // Generate the right PDB file (with conect entries)
+      const pdb_with_conect = await this.createPdbWithConect(pdb_file, full_top, dir, false);
 
       return {
-        pdb: pdb_file,
-        itps: itp_files,
-        top: dir + '/system.top',
+        pdb: pdb_with_conect,
+        itps: full_itps,
+        top: full_top,
       };
     } finally {
       await FsPromise.rename(with_ext, basename);
     }
+  }
+
+  /**
+   * Modify the original top file in order to include the right ITPs, 
+   * and create a link of the force field martini file into current directory.
+   * 
+   * ITPs in {itps_path} MUST be in {current_directory} !
+   * 
+   * Returns new TOP filename and all the used ITPs to generate top.
+   */
+  async createTopFile(current_directory: string, original_top_path: string, itps_path: string[], force_field: string) {
+    let itps_ff = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
+
+    if (!itps_ff) {
+      throw new ReferenceError("Your force field is invalid: can't find related ITPs.");
+    }
+
+    itps_ff = typeof itps_ff === 'string' ? [itps_ff] : itps_ff;
+
+    const itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    const base_ff_itps = [] as string[];
+
+    // Create everysym link
+    for (const itp of itps_ff) {
+      const itp_path = FORCE_FIELD_DIR + itp;
+      const name = itp;
+      const dest = path.resolve(current_directory + "/" + name);
+      base_ff_itps.push(name);
+
+      await FsPromise.symlink(itp_path, dest);
+    }
+
+    const real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
+    const top = current_directory + "/full.top";
+
+    const top_write_stream = fs.createWriteStream(top);
+    
+    // Add every #include first
+    for (const itp of real_itps) {
+      top_write_stream.write(`#include "${itp}"\n`);
+    }
+
+    const top_read_stream = readline.createInterface({
+      input: fs.createReadStream(original_top_path),
+      crlfDelay: Infinity,
+    });
+
+    // Remove every #include line
+    for await (const line of top_read_stream) {
+      if (line.startsWith('#include')) {
+        continue;
+      }
+      top_write_stream.write(line + '\n');
+    }
+
+    top_write_stream.close();
+
+    return {
+      top,
+      itps,
+    };
   }
 
   async getCcMap(pdb_filename: string, use_tmp_dir?: string) {
@@ -367,5 +438,43 @@ export const Martinizer = new class Martinizer {
     map_stream.close();
 
     return map_filename;
+  }
+
+  /**
+   * Create the conect entries of the desired PDB/GRO.
+   * 
+   * This function should be done ONCE: After a Martinize Run / A INSANE Run / A molecule insert in database
+   * 
+   * Don't do it at each call!
+   * 
+   * Need the TOP topology file. 
+   * ITP includes should be able to be resolved, use the {base_directory} parameter
+   * in order to set the used current directory path.
+   */
+  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water = false) {
+    const command = `${CONECT_PDB_PATH} "${pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+    const pdb_out = base_directory + "/output-conect.pdb";
+
+    const [, err] = await new Promise((resolve, reject) => {
+      exec(command, { cwd: base_directory }, (err, stdout, stderr) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve([stdout, stderr]);
+      });
+    }) as [string, string];
+
+    if (err) {
+      logger.warn("An error occured during run of pdb conect: " + err);
+    }
+
+    const exists = await FsPromise.access(pdb_out, fs.constants.F_OK).then(() => true).catch(() => false);
+
+    if (!exists) {
+      throw new Error("PDB could not be created for an unknown reason. Check the logs.");
+    }
+
+    return pdb_out;
   }
 }();

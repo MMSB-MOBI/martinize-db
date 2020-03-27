@@ -35,7 +35,7 @@ CreateMoleculeRouter.use((req, res, next) => {
  */
 CreateMoleculeRouter.post('/', Uploader.fields([
   { name: 'itp', maxCount: 99 }, 
-  { name: 'gro', maxCount: 1 },
+  { name: 'top', maxCount: 1 },
   { name: 'pdb', maxCount: 1 },
 ]), (req, res) => {
   (async () => {

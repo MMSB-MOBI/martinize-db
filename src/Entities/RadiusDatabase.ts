@@ -5,7 +5,8 @@ import readline from 'readline';
 import { FORCE_FIELD_DIR } from "../constants";
 
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
-  protected static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
+  // TODO: ITPs for lipids!
+  static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
     martini304: 'martini_v3.0.4.itp',
     elnedyn22p: 'martini_v2.2P.itp',
     elnedyn22: 'martini_v2.2.itp',
@@ -146,7 +147,7 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
       const atom_number = Number(line.slice(7, 12));
 
       // TODO: For now, it is disabled... links in NGL are broken when atoms are changed.
-      if (atom_number in indexes && false) {
+      if (atom_number in indexes) {
         lines.push(
           line.slice(0, 12) +
           indexes[atom_number].padEnd(4, ' ') +

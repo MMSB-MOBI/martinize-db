@@ -11,6 +11,7 @@ import { unlink } from "fs";
 import MoleculeOrganizer from "./MoleculeOrganizer";
 import SearchWorker from "./search_worker";
 import Mailer from "./Mailer/Mailer";
+import fs, { promises as FsPromise } from 'fs';
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -299,4 +300,8 @@ export function vanDerWaalsRadius(lennar_johns_1: number, lennar_johns_2: number
  * ```
  */
 export type ArrayValues<T extends ReadonlyArray<unknown>> = T extends ReadonlyArray<infer ArrayValues> ? ArrayValues : never;
+
+export function fileExists(path: string) {
+  return FsPromise.access(path, fs.constants.F_OK).then(() => true).catch(() => false);
+}
 
