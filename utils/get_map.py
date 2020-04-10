@@ -5,7 +5,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', help='File containing the original structure of the protein in pdb format.')
-parser.add_argument('-t', help='Threshold', default=7.0, type=float)
+parser.add_argument('-t', help='Threshold', default=10, type=float)
 parser.add_argument('-o', help='JSON out file (default: stdout)', default=sys.stdout)
 args = parser.parse_args()
 
@@ -14,15 +14,10 @@ pdbObj = parser.load(file=args.f)
 
 atoms = pdbObj.atomDictorize
 
-res = ccmap.compute(
-  atoms['x'],
-  atoms['y'],
-  atoms['z'],
-  atoms['chainID'],
-  atoms['seqRes'],
-  atoms['resName'],
-  atoms['name'],
-  args.t
+res = ccmap.cmap(
+  atoms,
+  d=args.t,
+  atomic=True,
 )
 
 out = args.o

@@ -110,7 +110,13 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
 
         // Typical line is: 1 Q5  1 GLY BB   1   1
         const splitted_line = line.split(/\s+/).filter(e => e);
-        const residue = splitted_line[1];
+        let residue = splitted_line[1];
+
+        if (residue.startsWith('molecule_0_')) {
+          // Go virt site
+          // Original name 'CA'
+          residue = 'CA';
+        }
 
         index_to_residue[i] = residue;
         i++;
@@ -143,10 +149,9 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
         continue;
       }
 
-      // Atom name needs to be changed.
       const atom_number = Number(line.slice(7, 12));
-
-      // TODO: For now, it is disabled... links in NGL are broken when atoms are changed.
+      
+      // Atom name needs to be changed.
       if (atom_number in indexes) {
         lines.push(
           line.slice(0, 12) +

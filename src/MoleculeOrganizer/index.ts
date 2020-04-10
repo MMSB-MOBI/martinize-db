@@ -7,6 +7,7 @@ import md5File from 'md5-file/promise';
 import os from 'os';
 import { Martinizer } from '../Martinizer/Martinizer';
 import path from 'path';
+import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {
   constructor() {
@@ -115,17 +116,26 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * TODO make support of GRO files & verification of ITP+PDB
    */
   async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File, top_file: Express.Multer.File, force_field: string) : Promise<MoleculeSave> {
-    logger.debug("Saving ", itp_files, " and ", pdb_file);
+    logger.verbose("Saving upload " + itp_files.map(e => e.originalname).join(', ') + " and " + pdb_file.originalname);
 
     // TODO check ITP and PDB
     // ----------------------
 
+    logger.debug("Copying files into a temporary directory");
     // Copy the files into a tmp dir
-    const tmp_dir = os.tmpdir();
-    const use_tmp_dir = await FsPromise.mkdtemp(tmp_dir + "/");
+    const use_tmp_dir = await TmpDirHelper.get();
 
-    const pdb_name = pdb_file.originalname.split('.')[0] + '.pdb';
+    const pdb_name = path.basename(pdb_file.originalname);
     const full_pdb_name = use_tmp_dir + "/" + pdb_name;
+
+    // Check if pdb has extension
+    const pdb_ext = pdb_name.split('.')[1];
+    if (!pdb_ext) {
+      throw new Error("Uploaded PDB/GRO file must have an extension");
+    }
+    else if (pdb_ext !== 'pdb' && pdb_ext !== 'gro') {
+      throw new Error("Uploaded PDB/GRO file must file extension '.pdb' or '.gro'.");
+    }
 
     await FsPromise.copyFile(pdb_file.path, use_tmp_dir + "/" + pdb_name);
 
@@ -142,9 +152,14 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       await FsPromise.copyFile(file.path, use_tmp_dir + "/" + itp_name);
     }
 
+    logger.debug("Creating extended TOP file for " + pdb_file.originalname);
     // Create the modified TOP and the modified pdb
     const { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, full_top_name, full_itp_files, force_field);
+    logger.debug("Extended TOP file created: " + path.basename(full_top));
+
+    logger.debug("Creating PDB with CONECT entries for " + pdb_file.originalname);
     const full_pdb = await Martinizer.createPdbWithConect(full_pdb_name, full_top, use_tmp_dir);
+    logger.debug("CONECT-ed PDB created: " + path.basename(full_pdb));
 
     // Compressing and saving
     const save_id = generateSnowflake();

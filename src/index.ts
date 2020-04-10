@@ -15,8 +15,8 @@ import MAIL_CLI from './cli/mail_cli';
 import StaticServer from './static_server';
 import CliHelper from 'interactive-cli-helper';
 import DATABASE_CLI from './cli/databases_cli';
-import { Martinizer } from './Martinizer/Martinizer';
-import path from 'path';
+import TmpDirHelper from './TmpDirHelper/TmpDirHelper';
+import TEST_CLI from './cli/test.cli';
 
 commander
   .version(VERSION)
@@ -132,9 +132,18 @@ app.use(StaticServer);
 /* -------------------------- */
 
 async function startCli() {
+  const old_onclose = CLI.onclose!.bind(CLI);
+
+  CLI.onclose = async function() {
+    await TmpDirHelper.clean();
+
+    // this => attached to CLI; Should be fine
+    old_onclose();
+  };
+
   // Cli starter
-  CLI.addSubListener('exit', () => {
-    CLI.onclose!();
+  CLI.addSubListener('exit', async () => {
+    await CLI.onclose!();
     process.exit(0);
   });
 
@@ -143,10 +152,7 @@ async function startCli() {
   CLI.addSubListener('worker', WORKER_CLI);
   CLI.addSubListener('mail', MAIL_CLI);
   CLI.addSubListener('database', DATABASE_CLI);
-  
-  const tests = CLI.addSubListener('test', 'Choose a test. (map, ccmap)');
-  tests.addSubListener('map', () => Martinizer.getMap(path.resolve('../../IBCP/KWALP.pdb')));
-  tests.addSubListener('ccmap', () => Martinizer.getCcMap(path.resolve('../../IBCP/KWALP.pdb')));
+  CLI.addSubListener('test', TEST_CLI);
   
   CLI.addSubListener(
     /^(\?|help)$/,  

@@ -5,7 +5,7 @@ import { Martinizer, MartinizeSettings } from '../../Martinizer/Martinizer';
 import { SETTINGS_FILE } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
-import Errors, { ErrorType } from '../../Errors';
+import Errors, { ErrorType, ApiError } from '../../Errors';
 import shellescape from 'shell-escape';
 import logger from '../../logger';
 import path from 'path';
@@ -113,28 +113,36 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       const { pdb, itps, top } = await Martinizer.run(runner);
   
       // Formatting itps
-      const res_itp: { content: string, name: string }[] = [];
+      const res_itp: { content: string, name: string, type: string, }[] = [];
       for (const itp of itps) {
         res_itp.push({
           content: await FsPromise.readFile(itp, 'utf-8'),
           name: path.basename(itp),
+          type: 'chemical/x-include-topology',
         });
       }
 
+      // todo: create the custom pdb? à voir
+
       // Get the radius for itps
-      const [pdb_content, radius] = await Database.radius.transformPdb(
-        pdb, 
+      const radius = await Database.radius.getRadius(
+        runner.ff || 'martini22',
         itps,
-        runner.ff || 'martini22'
       );
 
       res.json({
-        pdb: { content: pdb_content, name: path.basename(pdb) },
+        pdb: { content: await FsPromise.readFile(pdb, 'utf-8'), name: path.basename(pdb), type: 'chemical/x-pdb' },
         itps: res_itp,
-        top: { content: await FsPromise.readFile(top, 'utf-8'), name: path.basename(top) },
+        top: { content: await FsPromise.readFile(top, 'utf-8'), name: path.basename(top), type: 'chemical/x-topology' },
         radius
       });
     } catch (e) {
+      if (e instanceof ApiError) {
+        logger.error("Martinize Error.");
+        logger.error(e.stack!);
+
+        throw e;
+      }
       if (e instanceof Error && e.stack?.startsWith('Error: Command failed')) {
         logger.error("Martinize Error.");
         logger.error(e.stack);

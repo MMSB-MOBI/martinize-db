@@ -6,3 +6,4 @@ uploads
 molecules
 static/www
 deploy.zip
+tests/
