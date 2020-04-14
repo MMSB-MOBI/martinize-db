@@ -1,5 +1,5 @@
 import readline from 'readline';
-import fs, { promises as FsPromise } from 'fs';
+import fs from 'fs';
 import stream from 'stream';
 import logger from './logger';
 
@@ -10,7 +10,7 @@ export class ItpFile {
   protected includes: string[] = [];
 
   protected static HEADLINE_KEY = '_____begin_____';
-  protected static BLANK_REGEX = /\s+/;
+  static BLANK_REGEX = /\s+/;
 
   constructor(protected file: string | NodeJS.ReadableStream) {}
 
@@ -52,7 +52,7 @@ export class ItpFile {
     return [];
   }
 
-  getHeadLines() {
+  get headlines() {
     return this.getField(ItpFile.HEADLINE_KEY);
   }
 
@@ -85,6 +85,10 @@ export class ItpFile {
     return this.getField('bonds');
   }
 
+  get virtual_sites() {
+    return this.getField('virtual_sitesn');
+  }
+
   asReadStream() {
     const stm = new stream.Readable;
 
@@ -104,6 +108,14 @@ export class ItpFile {
     }, 5);
 
     return stm;
+  }
+
+  /**
+   * Remove data from this ITP. You can't read it after this!
+   */
+  dispose() {
+    this.data = {};
+    this.includes = [];
   }
 }
 
@@ -158,5 +170,22 @@ export class TopFile extends ItpFile {
 
   get molecule_list() {
     return Object.entries(this.molecules);
+  }
+
+  get system() {
+    return this.getField('system');
+  }
+
+  /**
+   * Remove data from all itps included and top file.
+   */
+  dispose() {
+    super.dispose();
+    
+    for (const itps of Object.values(this.molecules)) {
+      for (const itp of itps) {
+        itp.dispose();
+      }
+    }
   }
 }

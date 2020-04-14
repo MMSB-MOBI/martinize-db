@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher } from '../../helpers';
 import Uploader from '../Uploader';
-import { Martinizer, MartinizeSettings } from '../../Martinizer/Martinizer';
+import { Martinizer, MartinizeSettings, ElasticOrGoBounds } from '../../Martinizer/Martinizer';
 import { SETTINGS_FILE } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
@@ -111,6 +111,17 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
 
     try {
       const { pdb, itps, top } = await Martinizer.run(runner);
+
+      // Create elastic/go bounds if needed
+      let go_bonds: ElasticOrGoBounds[] | undefined = undefined;
+      let elastic_bonds: ElasticOrGoBounds[] | undefined = undefined;
+
+      if (runner.use_go_virtual_sites) {
+        go_bonds = await Martinizer.computeGoModelBounds(top, itps);
+      }
+      else if (runner.elastic) {
+        elastic_bonds = await Martinizer.computeElasticNetworkBounds(top, itps);
+      }
   
       // Formatting itps
       const res_itp: { content: string, name: string, type: string, }[] = [];
@@ -134,7 +145,9 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
         pdb: { content: await FsPromise.readFile(pdb, 'utf-8'), name: path.basename(pdb), type: 'chemical/x-pdb' },
         itps: res_itp,
         top: { content: await FsPromise.readFile(top, 'utf-8'), name: path.basename(top), type: 'chemical/x-topology' },
-        radius
+        radius,
+        elastic_bonds,
+        go_bonds,
       });
     } catch (e) {
       if (e instanceof ApiError) {
