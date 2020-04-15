@@ -13,6 +13,7 @@ import { ArrayValues, fileExists } from '../helpers';
 import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
 import { TopFile, ItpFile } from '../ItpParser';
+import JSZip from 'jszip';
 
 const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
@@ -95,6 +96,14 @@ export interface MartinizeSettings {
 }
 
 export const Martinizer = new class Martinizer {
+  STEP_MARTINIZE_INIT = 'init';
+  STEP_MARTINIZE_RUNNING = 'internal';
+  STEP_MARTINIZE_ENDED_FINE = 'martinize-end';
+  STEP_MARTINIZE_GET_CONTACTS = 'contacts';
+  STEP_MARTINIZE_GO_SITES = 'go-sites';
+  STEP_MARTINIZE_GROMACS = 'gromacs';
+
+
   protected MAX_JOB_EXECUTION_TIME = 5 * 60 * 1000;
 
   isMartinizePosition(value: any) : value is MartinizePosition {
@@ -105,7 +114,7 @@ export const Martinizer = new class Martinizer {
    * Create a martinize run.
    * Returns created path to created PDB, TOP and ITP files.
    */
-  async run(settings: Partial<MartinizeSettings>) {
+  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void) {
     const full: MartinizeSettings = Object.assign({}, {
       input: '',
       ff: 'martini22',
@@ -130,7 +139,6 @@ export const Martinizer = new class Martinizer {
     if (full.ignh) {
       command_line += " -ignh";
     }
-
     if (full.posref_fc) {
       command_line += " -pf " + full.posref_fc.toString();
     }
@@ -190,19 +198,23 @@ export const Martinizer = new class Martinizer {
         await FsPromise.mkdir(dir, { recursive: true });
       }
       
+      // try-finally to ensure rename even if error happend
       try {
+        // Step: Martinize Init
+        onStep?.(this.STEP_MARTINIZE_INIT);
+
         await new Promise((resolve, reject) => {
           const stdout_martinize = fs.createWriteStream(dir + '/martinize.stdout');
           const stderr_martinize = fs.createWriteStream(dir + '/martinize.stderr');
           const MTZ_STEP_INDICATOR = 'INFO - step - ';
 
-          const child = exec(command_line, { cwd: dir }, err => {
+          const child = exec(command_line, { cwd: dir }, (err) => {
             stdout_martinize.close();
             stderr_martinize.close();
             child.stderr?.removeAllListeners();
   
             if (err) {
-              reject(err);
+              reject({ error: err, stdout: dir + '/martinize.stdout', stderr: dir + '/martinize.stderr' });
               return;
             }
             resolve();
@@ -210,23 +222,33 @@ export const Martinizer = new class Martinizer {
 
           child.stdout?.pipe(stdout_martinize);
           child.stderr?.on('data', (chunk: Buffer) => {
-            const line = chunk.toString().trim();
+            const lines = chunk.toString().trim().split('\n');
 
-            if (line.startsWith(MTZ_STEP_INDICATOR)) {
-              // Get the step name (every step is ended with a dot, so line.length-1 remove it)
-              const step_info = line.slice(MTZ_STEP_INDICATOR.length, line.length - 1);
+            for (const line of lines) {
+              if (line.startsWith(MTZ_STEP_INDICATOR)) {
+                // Get the step name (every step is ended with a dot, so line.length-1 remove it)
+                const step_info = line.slice(MTZ_STEP_INDICATOR.length, line.length - 1);
+  
+                // Todo send to socket.io ?
+                logger.debug("[MARTINIZER-RUN] [Martinize Step] " + step_info);
 
-              // Todo send to socket.io ?
-              logger.debug("[MARTINIZER-RUN] [Martinize Step] " + step_info);
+                onStep?.(this.STEP_MARTINIZE_RUNNING, step_info);
+              }
             }
 
             stderr_martinize.write(chunk);
           });
         });
       } catch (e) {
-        const err: ExecException = e;
+        const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
 
-        return Errors.throw(ErrorType.MartinizeRunFailed, { error: "Martinize as failed with an exit code.", misc: err, cwd: dir });
+        return Errors.throw(ErrorType.MartinizeRunFailed, { 
+          error: "Martinize has failed with an non-zero exit code.", 
+          type: "non-zero",
+          stdout,
+          stderr,
+          dir,
+        });
       }
   
       // Scan for files in result dir
@@ -235,13 +257,21 @@ export const Martinizer = new class Martinizer {
   
       const exists_pdb = await fileExists(pdb_file);
       if (!exists_pdb) {
-        return Errors.throw(ErrorType.MartinizeRunFailed, { error: "Unable to find created pdb." });
+        return Errors.throw(ErrorType.MartinizeRunFailed, { 
+          error: "Unable to find created pdb.",
+          type: "no-output",
+          stderr: dir + '/martinize.stderr',
+          dir,
+        });
       }
 
       logger.debug(`[MARTINIZER-RUN] Generated PDB is found, run should be fine.`);
+      onStep?.(this.STEP_MARTINIZE_ENDED_FINE);
 
       // If go mode, we should compute map + run a python script to refresh ITPs files.
       if (settings.use_go_virtual_sites) {
+        let map_filename: string;
+        
         // Must create the go sites
         const [out, ] = await new Promise((resolve, reject) => {
           exec('cut -f1 -d \' \' output.pdb | grep -c ATOM', { cwd: dir }, (err, stdout, stderr) => {
@@ -256,30 +286,52 @@ export const Martinizer = new class Martinizer {
         // GET THE MAP FILE FROM A CUSTOM WAY.
         // Use the original pdb file !!!
         // todo change (ccmap create way too much distances, so the shell script takes forever)
-        const map_filename = await this.getCcMap(with_ext, dir);
+        onStep?.(this.STEP_MARTINIZE_GET_CONTACTS);
+        try {
+          map_filename = await this.getCcMap(with_ext, dir);
+        } catch {
+          return Errors.throw(ErrorType.MartinizeRunFailed, { 
+            error: "Unable to create contact map.",
+            type: "contact-map",
+            stdout: dir + '/distances.stdout',
+            stderr: dir + '/distances.stderr',
+            dir,
+          });
+        }
 
         logger.debug("[MARTINIZER-RUN] Creating Go virtual bonds");
+        onStep?.(this.STEP_MARTINIZE_GO_SITES);
 
         // Ensure to have the script at the correct place...
-        await new Promise((resolve, reject) => {
-          const stdout = fs.createWriteStream(dir + '/contact-map.stdout');
-          const stderr = fs.createWriteStream(dir + '/contact-map.stderr');
-
-          const child = exec(`python ${CREATE_GO_PATH} -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
-            stdout.close();
-            stderr.close();
-
-            if (err) {
-              // Sometimes, the program crashes, I don't know why. To investigate
-              reject(err);
-              return;
-            }
-            resolve();
+        try {
+          await new Promise((resolve, reject) => {
+            const stdout = fs.createWriteStream(dir + '/go-virt-sites.stdout');
+            const stderr = fs.createWriteStream(dir + '/go-virt-sites.stderr');
+  
+            const child = exec(`python ${CREATE_GO_PATH} -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
+              stdout.close();
+              stderr.close();
+  
+              if (err) {
+                // Sometimes, the program crashes, I don't know why. To investigate
+                reject(err);
+                return;
+              }
+              resolve();
+            });
+  
+            child.stdout?.pipe(stdout);
+            child.stderr?.pipe(stderr);
           });
-
-          child.stdout?.pipe(stdout);
-          child.stderr?.pipe(stderr);
-        });
+        } catch {
+          return Errors.throw(ErrorType.MartinizeRunFailed, { 
+            error: "Unable to create go virtual sites.",
+            type: "create-go-virt",
+            stdout: dir + '/go-virt-sites.stdout',
+            stderr: dir + '/go-virt-sites.stderr',
+            dir,
+          });
+        }
 
         // Ok, ITP file refreshed.
       }
@@ -293,11 +345,33 @@ export const Martinizer = new class Martinizer {
       // Modify system.top to include the right ITPs !
       logger.debug("[MARTINIZER-RUN] Creating full TOP file for Martinize built molecule.");
       // Full itps contain the force field itps.
-      const { top: full_top, itps: full_itps } = await this.createTopFile(dir, dir + '/system.top', itp_files, full.ff);
+      let full_top: string;
+      try {
+        const { top } = await this.createTopFile(dir, dir + '/system.top', itp_files, full.ff);
+        full_top = top;
+      } catch {
+        return Errors.throw(ErrorType.MartinizeRunFailed, { 
+          error: "Unable to create full topology file.",
+          type: "full-topology",
+          dir,
+        });
+      }
 
       // Generate the right PDB file (with conect entries)
       logger.debug("[MARTINIZER-RUN] Creating PDB with CONECT entries for Martinize built molecule.");
-      const pdb_with_conect = await this.createPdbWithConect(pdb_file, full_top, dir, false);
+      onStep?.(this.STEP_MARTINIZE_GROMACS);
+      let pdb_with_conect: string;
+      try {
+        pdb_with_conect = await this.createPdbWithConect(pdb_file, full_top, dir, false);
+      } catch {
+        return Errors.throw(ErrorType.MartinizeRunFailed, { 
+          error: "Creation of full PDB with Gromacs failed.",
+          type: "pdb-conect",
+          stdout: dir + '/gromacs.stdout',
+          stderr: dir + '/gromacs.stderr',
+          dir,
+        });
+      }
 
       logger.debug("[MARTINIZER-RUN] Run is complete, everything seems to be fine :)");
 
@@ -643,9 +717,10 @@ export const Martinizer = new class Martinizer {
           if (band.startsWith(';')) {
             // Find the elastic related comments
             if (
-              band.startsWith('; Long elastic bonds for extended regions') ||
-              band.startsWith('; Rubber band') || 
-              band.startsWith('; Short elastic bonds for extended regions')
+              // Todo verify if it is elastic bounds
+              // band.startsWith('; Long elastic bonds for extended regions') ||
+              // band.startsWith('; Short elastic bonds for extended regions') ||
+              band.startsWith('; Rubber band')
             ) {
               should_read = true;
             }
@@ -873,4 +948,30 @@ export const Martinizer = new class Martinizer {
 
     return bounds;
   } 
+
+  /**
+   * Zip a directory.
+   * 
+   * Todo: worker thread
+   * @param dir 
+   */
+  async zipDirectory(dir: string) {
+    const zip = new JSZip;
+
+    for (const file of await FsPromise.readdir(dir)) {
+      const stat = await FsPromise.stat(dir + "/" + file);
+
+      // 10 MB max
+      if (stat.size < 10 * 1024 * 1024 && !stat.isSymbolicLink() && stat.isFile()) {
+        const name = file.endsWith('.stderr') || file.endsWith('.stdout') ? file + '.txt' : file;
+        zip.file(name, await FsPromise.readFile(dir + "/" + file));
+      }
+    }
+
+    return zip.generateAsync({
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 },
+      type: "arraybuffer",
+    });
+  }
 }();

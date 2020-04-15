@@ -128,8 +128,24 @@ export default new class Errors {
 };
 
 export class ApiError extends Error {
-  constructor(public message: string, public data: any) { 
+  code: ErrorType;
+
+  constructor(
+    public message: string, 
+    public data: { code: ErrorType, message: string, [additionnal: string]: any }
+  ) { 
     super(message); 
     this.name = "ApiError";
+    this.code = this.data.code;
+  }
+
+  toJSON() {
+    return {
+      error: this.name,
+      http_code: this.message,
+      code: this.code,
+      message: this.data.message,
+      data: this.data,
+    };
   }
 }

@@ -123,6 +123,32 @@ export function signToken(payload: TokenPayload, id: string) {
   }) as Promise<string>;
 }
 
+export async function validateToken(token: string) {
+  const payload: any = await new Promise((resolve, reject) => {
+    JsonWebToken.verify(
+      token, 
+      { key: KEYS.PUBLIC, passphrase: "" }, 
+      { algorithms: ['RS256'] }, 
+      (err, payload: any) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(payload);
+      }
+    )
+  });
+
+  return getUserFromToken(payload.jti);
+}
+
+export function getUserFromToken(jti: string) {
+  // Get the token from string and call done(null, is_revoked)
+  return Database.token.get(jti as string)
+    .then(() => Database.user.fromToken(jti as string));
+}
+
 export function methodNotAllowed(allow: string | string[]) {
   return (_: any, res: Express.Response) => {
       res.setHeader('Allow', typeof allow === 'string' ? allow : allow.join(', '));

@@ -6,6 +6,7 @@ import nano from 'nano';
 import { User } from '../Entities/entities';
 import logger from '../logger';
 import Errors, { ErrorType } from '../Errors';
+import { getUserFromToken } from '../helpers';
 
 export default jwt({
   getToken: function fromHeaderOrQuerystring(req) {
@@ -20,8 +21,7 @@ export default jwt({
   credentialsRequired: true,
   isRevoked: (req, payload, done) => {
     // Get the token from string and call done(null, is_revoked)
-    Database.token.get(payload.jti as string)
-      .then(() => Database.user.fromToken(payload.jti as string))
+    getUserFromToken(payload.jti)
       .then(user => {
         req.full_user = user;
         

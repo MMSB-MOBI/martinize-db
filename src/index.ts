@@ -17,6 +17,8 @@ import CliHelper from 'interactive-cli-helper';
 import DATABASE_CLI from './cli/databases_cli';
 import TmpDirHelper from './TmpDirHelper/TmpDirHelper';
 import TEST_CLI from './cli/test.cli';
+import { SocketIoMartinizer } from './routes/molecule/martinize';
+import http from 'http';
 
 commander
   .version(VERSION)
@@ -126,6 +128,11 @@ logger.debug("Serving static website");
 // File should be in build/
 app.use(StaticServer);
 
+const HTTP_SERVER = http.createServer(app);
+
+// Start socket.io
+SocketIoMartinizer(HTTP_SERVER);
+
 
 /* -------------------------- */
 /* - COMMAND LINE INTERFACE - */
@@ -221,7 +228,7 @@ async function main() {
     process.exit(2);
   }
 
-  app.listen(commander.port, () => {
+  HTTP_SERVER.listen(commander.port, () => {
     logger.info(`Martinize Database Server version ${VERSION} is listening on port ${commander.port}.`);
     startCli();
   });
