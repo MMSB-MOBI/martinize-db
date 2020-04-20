@@ -5,6 +5,7 @@ import logger from '../../logger';
 import { errorCatcher, methodNotAllowed } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { SettingsJson } from '../../types';
+import MembraneBuilder from '../../Builders/MembraneBuilder';
 
 const SettingsRouter = Router();
 
@@ -19,6 +20,10 @@ SettingsRouter.get('/', (_, res) => {
       Errors.throw(ErrorType.Server);
     })
     .catch(errorCatcher(res));
+});
+
+SettingsRouter.get('/lipids', (_, res) => {
+  res.json(MembraneBuilder.SUPPORTED_LIPIDS);
 });
 
 SettingsRouter.post('/', (req, res) => {

@@ -16,6 +16,28 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     martini23: 'martini_v2.3P.itp',
   };
 
+  static readonly FORCE_FIELD_TO_MARTINI_VERSION: { [ff: string]: string } = {
+    martini304: '3_0',
+    elnedyn22p: '2_2',
+    elnedyn22: '2_2',
+    elnedyn: '2_2',
+    martini22: '2_2',
+    martini22p: '2_2',
+    martini23: '2_3',
+  };
+
+  static getFilesForForceField(name: string) {
+    if (!(name in this.FORCE_FIELD_TO_FILE_NAME)) {
+      return [];
+    }
+
+    const files = this.FORCE_FIELD_TO_FILE_NAME[name];
+    if (typeof files === 'string') {
+      return [files];
+    }
+    return files;
+  }
+
   /**
    * Create a new set a custom atoms for {force_field}.
    */

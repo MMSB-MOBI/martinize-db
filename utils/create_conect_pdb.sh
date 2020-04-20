@@ -37,6 +37,7 @@ tpr_run="__run__.tpr"
 index_ndx="__index__.ndx"
 tmp_stdin="tmp"
 output_conect="output-conect.pdb"
+output_conect_no_water="output-conect-no-w.pdb"
 
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
@@ -57,12 +58,16 @@ then
   # File to give on stdin to trjconv
   printf '!W\n' > $tmp_stdin
   # Create the PDB with conect entries without water 
-  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin
-else
-  # File to give on stdin to trjconv
-  printf '0\n' > $tmp_stdin
-  # Create the PDB with conect entries without water 
-  gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin
+  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin
+
+  echo "File $output_conect_no_water has been written."
 fi
 
+# File to give on stdin to trjconv
+printf '0\n' > $tmp_stdin
+# Create the PDB with conect entries with water 
+gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin
+
 echo "File $output_conect has been written."
+
+

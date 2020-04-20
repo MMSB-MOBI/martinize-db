@@ -408,9 +408,8 @@ export const Martinizer = new class Martinizer {
     // Create everysym link
     for (const itp of itps_ff) {
       const itp_path = FORCE_FIELD_DIR + itp;
-      const name = itp;
-      const dest = path.resolve(current_directory + "/" + name);
-      base_ff_itps.push(name);
+      const dest = path.resolve(current_directory + "/" + itp);
+      base_ff_itps.push(itp);
 
       await FsPromise.symlink(itp_path, dest);
     }
@@ -672,6 +671,33 @@ export const Martinizer = new class Martinizer {
     }
 
     return pdb_out;
+  }
+
+  /**
+   * Create the conect entries of the desired PDB/GRO.
+   * 
+   * This function should be done ONCE: After a Martinize Run / A INSANE Run / A molecule insert in database
+   * 
+   * Don't do it at each call!
+   * 
+   * Need the TOP topology file. 
+   * ITP includes should be able to be resolved, use the {base_directory} parameter
+   * in order to set the used current directory path.
+   */
+  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string) {
+    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true);
+
+    const pdb_no_w = base_directory + "/output-conect-no-w.pdb";
+    const exists = await FsPromise.access(pdb_no_w, fs.constants.F_OK).then(() => true).catch(() => false);
+
+    if (!exists) {
+      throw new Error("PDB could not be created for an unknown reason. Check the files gromacs.stdout and gromacs.stderr in directory " + base_directory + ".");
+    }
+
+    return {
+      water: pdb_water,
+      no_water: pdb_no_w
+    };
   }
   
   /**

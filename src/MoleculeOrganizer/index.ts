@@ -5,9 +5,11 @@ import { generateSnowflake } from '../helpers';
 import JSZip from 'jszip';
 import md5File from 'md5-file/promise';
 import os from 'os';
-import { Martinizer } from '../Martinizer/Martinizer';
+import { Martinizer } from '../Builders/Martinizer';
 import path from 'path';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
+// @ts-ignore 
+import NodeStreamZip from 'node-stream-zip';
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {
   constructor() {
@@ -30,6 +32,49 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         zip,
         (await this.getInfo(file_id))!
       ];
+    }
+  }
+
+  async extract(id: string, in_directory: string) {
+    const infos = await this.getInfo(id);
+    if (!infos) {
+      throw new Error("Save not found.");
+    }
+
+    const zip = new NodeStreamZip({
+      file: this.getFilenameFor(id),
+      storeEntries: true
+    });
+
+    await new Promise((resolve, reject) => {
+      zip.on('ready', resolve);
+      zip.on('error', reject);
+    });
+
+    function extract(input: string, output: string) {
+      return new Promise((resolve, reject) => {
+        zip.extract(input, in_directory + "/" + output, (err: any) => {
+          if (err) reject(err);
+          resolve();
+        });
+      });
+    }
+
+    // Extract top file, pdb file and itps
+    await extract(infos.top.name, "molecule.top");
+    await extract(infos.pdb.name, "molecule.pdb");
+
+    for (const itp of infos.itp) {
+      await extract(itp.name, itp.name);
+    }
+
+    // this throws ?
+    zip.close();
+
+    return {
+      pdb: in_directory + '/molecule.pdb',
+      top: in_directory + '/molecule.top',
+      itps: infos.itp.map(e => `${in_directory}/${e.name}`),
     }
   }
 

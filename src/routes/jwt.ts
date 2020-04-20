@@ -49,10 +49,12 @@ export default jwt({
     "/api/user/change_password", 
     "/api", 
     { url: "/api/settings", methods: ['GET'] },
+    "/api/settings/lipids",
     "/api/molecule",
     "/api/molecule/download",
     "/api/molecule/get",
     "/api/molecule/martinize",
+    "/api/molecule/membrane_builder",
     "/api/user/contact",
     /^\/api\/molecule\/representation\/.+$/,
   ] }

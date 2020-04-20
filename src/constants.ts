@@ -26,6 +26,7 @@ export { KEYS };
 export const MOLECULE_ROOT_DIR = __dirname + "/../molecules/";
 export const MARTINIZER_ROOT_DIR = __dirname + "/../molecules/martinizer/";
 export const UPLOAD_ROOT_DIR = __dirname + "/../uploads/";
+export const LIPIDS_ROOT_DIR = __dirname + "/../lipids/";
 export const SETTINGS_FILE = __dirname + "/../settings.json";
 export const TEMPLATE_DIR = __dirname + "/../templates/";
 export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
@@ -37,6 +38,9 @@ export const MAX_REQUEST_PER_WORKER_THRESHOLD = 3;
 
 /** If `true`, every sended molecule to `/api/molecule/create` will be directly accepted without moderation. */
 export const DISABLE_MODERATION_PROCESS = false;
+
+export const PYTHON2_PATH = "python2";
+export const INSANE_PATH = path.resolve(__dirname + "/../utils/insane.py");
 
 /** Name of the e-mail sender. */
 export const DEFAULT_MAILER_NAME = "MArtinize Database";

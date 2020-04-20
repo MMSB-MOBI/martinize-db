@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken } from '../../helpers';
 import Uploader from '../Uploader';
-import { Martinizer, MartinizeSettings, ElasticOrGoBounds } from '../../Martinizer/Martinizer';
+import { Martinizer, MartinizeSettings, ElasticOrGoBounds } from '../../Builders/Martinizer';
 import { SETTINGS_FILE } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';

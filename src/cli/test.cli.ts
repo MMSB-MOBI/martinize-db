@@ -1,5 +1,5 @@
 import CliHelper, { CliListener } from "interactive-cli-helper";
-import { Martinizer } from "../Martinizer/Martinizer";
+import { Martinizer } from "../Builders/Martinizer";
 import path from "path";
 import { promises as FsPromise, fstat } from 'fs';
 
