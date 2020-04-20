@@ -7,3 +7,5 @@ molecules
 static/www
 deploy.zip
 tests/
+.*DS_Store
+.DS_Store
