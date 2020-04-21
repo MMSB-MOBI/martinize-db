@@ -67,15 +67,12 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     const molecule_id = req.body.from_id as string | undefined;
-    const { pbc, box, force_field, lipids: lipids_str, upper_leaflet: upper_leaflet_str } = req.body;
+    const { pbc, box, lipids: lipids_str, upper_leaflet: upper_leaflet_str } = req.body;
+    let force_field: string = req.body.force_field;
 
     const opts: Partial<InsaneSettings> = {};
 
     // Test force field
-    
-    if (!settings.force_fields.includes(force_field)) {
-      return Errors.throw(ErrorType.InvalidForceField);
-    }
     
     const molecule_entries = {
       molecule_pdb: "",
@@ -85,12 +82,16 @@ MembraneBuilderRouter.post('/', Uploader.fields([
 
     if (molecule_id) {
       // from molecule id
-      const { pdb, itps, top } = await MembraneBuilder.prepareRunWithDatabaseMolecule(molecule_id);
+      const { pdb, itps, top, force_field: ff } = await MembraneBuilder.prepareRunWithDatabaseMolecule(molecule_id);
       molecule_entries.molecule_itps = itps;
       molecule_entries.molecule_pdb = pdb;
       molecule_entries.molecule_top = top;
+      force_field = ff;
     }
     else {
+      if (!settings.force_fields.includes(force_field)) {
+        return Errors.throw(ErrorType.InvalidForceField);
+      }
       // except them from files
       if (!files || !files.itp || !files.top || !files.pdb) {
         return Errors.throw(ErrorType.MissingFiles);
@@ -121,7 +122,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       // ready !
     }
 
-    if (!lipids_str) {
+    if (!lipids_str || !force_field) {
       return Errors.throw(ErrorType.MissingParameters);
     }
 

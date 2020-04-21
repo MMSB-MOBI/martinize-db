@@ -195,7 +195,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     // + symlink of the molecule ITPs (needed)
     logger.debug(`[INSANE] Creating symlinks for lipids ITPs.`);
     await this.createLipidItpSymlinks(workdir, force_field, lipid_param, upper_lipid_param);
-    for (const itp of molecule_itps) {
+    for (const itp of new Set(molecule_itps)) {
       await FsPromise.symlink(itp, workdir + "/" + path.basename(itp));
     }
 
@@ -234,7 +234,14 @@ export const MembraneBuilder = new class MembraneBuilder {
     // Extract ZIP file in a temporary directory
     const tmp_dir = await TmpDirHelper.get();
 
-    return MoleculeOrganizer.extract(molecule.files, tmp_dir);
+    const { pdb, top, itps } = await MoleculeOrganizer.extract(molecule.files, tmp_dir);
+
+    return { 
+      force_field: molecule.force_field, 
+      top,
+      pdb,
+      itps, 
+    };
   }
 
   protected getUniqueLipids(lower: SimpleLipidMap, upper: SimpleLipidMap) {
@@ -279,9 +286,8 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     const lipid_itp_base_dir = LIPIDS_ROOT_DIR + RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field] + "/";
     
-    for (const lipid of [...lower, ...upper]) {
-      const lipid_name = lipid[0];
-      await FsPromise.symlink(lipid_itp_base_dir + lipid_name + ".itp", workdir + "/" + lipid_name + ".itp");
+    for (const lipid of new Set([...lower.map(e => e[0]), ...upper.map(e => e[0])])) {
+      await FsPromise.symlink(lipid_itp_base_dir + lipid + ".itp", workdir + "/" + lipid + ".itp");
     }
   }
 };
