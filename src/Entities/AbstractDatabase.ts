@@ -10,6 +10,18 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
     return res.rows.map(d => d.doc).filter(d => d) as (T & nano.Document)[];
   }
 
+  /** Get all IDs in this database. */
+  async keys() {
+    const res = await this._db.list({ include_docs: false });
+    return res.rows.map(d => d.id);
+  }
+
+  /** Bulk get documents by id. */
+  async bulkGet(keys: string[]) {
+    const data = await this._db.fetch({ keys });
+    return data.rows.filter(e => 'doc' in e).map(e => (e as nano.DocumentResponseRow<T>).doc!);
+  }
+
   /** Bulk create */
   bulkCreate(docs: T[]) {
     const original_length = docs.length;

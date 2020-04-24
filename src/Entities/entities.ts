@@ -88,3 +88,12 @@ export interface VanDerWaalsRadius extends BaseCouchDocument {
   };
 }
 
+export interface Lipid extends BaseCouchDocument {
+  /** Lipid id. DO NOT USE. */
+  id: string;
+  /** Lipid short name. */
+  name: string;
+  /** Content of the ITP file for this lipid. */
+  itp: string;
+}
+

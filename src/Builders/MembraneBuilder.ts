@@ -1,16 +1,17 @@
-import RadiusDatabase from '../Entities/RadiusDatabase';
+import { TopFile } from 'itp-parser';
+import fs, { promises as FsPromise } from 'fs';
 import { promisify } from 'util';
 import { exec } from 'child_process';
-import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
-import { PYTHON2_PATH, INSANE_PATH, LIPIDS_ROOT_DIR } from '../constants';
-import { Martinizer } from './Martinizer';
-import { TopFile } from '../ItpParser';
-import fs, { promises as FsPromise } from 'fs';
 import path from 'path';
+import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
+import { INSANE_PATH, LIPIDS_ROOT_DIR } from '../constants';
+import { Martinizer } from './Martinizer';
+import RadiusDatabase from '../Entities/RadiusDatabase';
 import logger from '../logger';
 import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
+import { Lipid } from '../Entities/entities';
 
 const ExecPromise = promisify(exec);
 
@@ -38,19 +39,34 @@ type SimpleLipidMap = [string, number][];
 export type LipidMap = SimpleLipidMap | string[];
 
 export const MembraneBuilder = new class MembraneBuilder {
-  /*
-   * todo
-   * Supported lipids for INSANE.
-   * 
-   * ITP name must be {lipid_name}.itp
-   * If ITP name == {itp_name}, ITP file must be under {server_root}/lipids/{martini_version}/{itp_name}
-   * 
-   * {martini_version} is automatically determined with force field name (see RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION).
-   */
-  readonly SUPPORTED_LIPIDS = [
-    'DPPC',
-    'DLPC',
-  ];
+  readonly SUPPORTED_LIPIDS: { [prefix: string]: string[] } = {};
+
+  constructor() {
+    // Init the supported lipids
+    const supported_prefixes = new Set(Object.values(RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION));
+
+    for (const dir of fs.readdirSync(LIPIDS_ROOT_DIR)) {
+      if (!supported_prefixes.has(dir)) {
+        continue;
+      }
+
+      if (!(dir in this.SUPPORTED_LIPIDS)) {
+        this.SUPPORTED_LIPIDS[dir] = [];
+      }
+
+      for (const itp of fs.readdirSync(LIPIDS_ROOT_DIR + dir)) {
+        const full = LIPIDS_ROOT_DIR + dir + "/";
+
+        if (!itp.endsWith('.itp')) {
+          continue;
+        }
+
+        const name = itp.slice(0, itp.indexOf('.itp'));
+        this.SUPPORTED_LIPIDS[dir].push(name);
+      }
+    }
+  }
+
 
   /**
    * Build a membrane using INSANE.
@@ -63,7 +79,8 @@ export const MembraneBuilder = new class MembraneBuilder {
    */
   async run({ force_field, molecule_pdb, molecule_top, molecule_itps, lipids, upper_leaflet = [], settings = {} }: InsaneRunnerOptions) {
     let ff_location = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
-    if (!ff_location) {
+    const ff_prefix = RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field];
+    if (!ff_location || !ff_prefix) {
       throw new Error("Unknown force field. Please select a good force field");
     }
     else if (typeof ff_location === 'string') {
@@ -84,10 +101,15 @@ export const MembraneBuilder = new class MembraneBuilder {
       (upper_leaflet as string[]).map(e => [e, 1]) : 
       upper_leaflet as SimpleLipidMap;
 
+    /// WITH DATABASE
+    // Download every lipid
+    // const lipids_entities = await Database.lipid.getAndThrowIfMissing([...lipid_param, ...upper_lipid_param].map(e => e[0]), force_field);
+    
+    /// WITH FILES
     // Check if every lipid is supported
     if (
-      !lipid_param.every(l => this.SUPPORTED_LIPIDS.includes(l[0])) ||
-      !upper_lipid_param.every(l => this.SUPPORTED_LIPIDS.includes(l[0]))
+      !lipid_param.every(l => this.SUPPORTED_LIPIDS[ff_prefix].includes(l[0])) ||
+      !upper_lipid_param.every(l => this.SUPPORTED_LIPIDS[ff_prefix].includes(l[0]))
     ) {
       // unsupported lipid
       throw new Error("Unsupported lipid.");
@@ -112,7 +134,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     }
 
     // Build the command line
-    const command_line = `${PYTHON2_PATH} "${INSANE_PATH}" ` +
+    const command_line = `${INSANE_PATH} ` +
       // Input PDB file
       `-f "${molecule_pdb}" ` +
       // Output files (system and topology) 
@@ -190,11 +212,16 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug(`[INSANE] Writing prepared TOP file.`);
     const prepared_top = await this.writePreparedTopFile(workdir + "/__prepared.top", insane_top, molecule_full_top);
 
-    // Create symlinks of the lipids ITP in working dir.
+    // Create lipids ITP files in working dir.
     // FF(s) symlink has been created by createTopFile() method.
     // + symlink of the molecule ITPs (needed)
-    logger.debug(`[INSANE] Creating symlinks for lipids ITPs.`);
+    logger.debug(`[INSANE] Creating files for lipids ITPs.`);
+
+    /// WITH DATABASE
+    // await this.createLipidItpFiles(workdir, lipids_entities);
+    /// WITH FILES
     await this.createLipidItpSymlinks(workdir, force_field, lipid_param, upper_lipid_param);
+
     for (const itp of new Set(molecule_itps)) {
       await FsPromise.symlink(itp, workdir + "/" + path.basename(itp));
     }
@@ -279,6 +306,12 @@ export const MembraneBuilder = new class MembraneBuilder {
     return filename;
   }
   
+  protected async createLipidItpFiles(workdir: string, lipids: Lipid[]) {
+    for (const lipid of lipids) {
+      await FsPromise.writeFile(workdir + "/" + lipid.name + ".itp", lipid.itp);
+    }
+  }
+
   protected async createLipidItpSymlinks(workdir: string, force_field: string, lower: SimpleLipidMap, upper: SimpleLipidMap) {
     if (!RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field]) {
       throw new Error("Lipid ITP directory not found.")

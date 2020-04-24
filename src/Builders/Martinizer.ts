@@ -12,7 +12,7 @@ import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
 import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
-import { TopFile, ItpFile } from '../ItpParser';
+import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
 
 const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
@@ -25,6 +25,17 @@ const CONECT_MDP_PATH = path.resolve(__dirname, "../../utils/run.mdp");
  * Tuple of two integers: [{from} atom index, {to} atom index]
  */
 export type ElasticOrGoBounds = [number, number];
+
+export interface GoBoundsDetails {
+  index_to_real: { [index: number]: number };
+  name_to_index: { [name: string]: number };
+  index_to_name: { [index: number]: string };
+  real_to_index: { [index: number]: number };
+  /** Atom count */
+  count: number;
+}
+
+export type GoMoleculeDetails = { [moleculeType: string]: GoBoundsDetails };
 
 interface ContactMapCCMap {
   type: 'atomic';
@@ -131,7 +142,9 @@ export const Martinizer = new class Martinizer {
     const with_ext = basename + '.pdb';
 
     // Check dssp ps
-    let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
+    // TODO: DSSP gives bad results... this should not append
+    let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
+    // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
     if (full.ignore) {
       command_line += " " + full.ignore.join(',');
@@ -821,6 +834,8 @@ export const Martinizer = new class Martinizer {
 
     // Here, we store bounds
     const bounds: ElasticOrGoBounds[] = [];
+    const details: GoMoleculeDetails = {};
+
     // Increment counter for bounds add.
     let i = 0;
 
@@ -843,6 +858,9 @@ export const Martinizer = new class Martinizer {
       // Read the molecule file
       logger.debug(`[GO-VIRT-SITES] [${molecule_type}] Reading ITP files.`);
       await molecule_itp.read();
+
+      // Count all atoms, used to increment atom counter at the end of loop
+      const all_atom_count = molecule_itp.atoms.filter(line => line && !line.startsWith(';')).length;
   
       const prefix = molecule_type + '_';
       /** Link go atom index to real atom index. */
@@ -850,10 +868,104 @@ export const Martinizer = new class Martinizer {
       /** Link go atom name to go atom index. */
       const name_to_index: { [name: string]: number } = {};
 
+      // WILL BE USEFUL WHEN BOUNDS ARE INSERTED/DELETED DYNAMICALLY
+      /** Link go atom index to go atom name. */
+      const index_to_name: { [index: number]: string } = {};
+      /** Link real atom index to go atom index. */
+      const real_to_index: { [index: number]: number } = {};
+
+      details[molecule_type] = { index_to_real, name_to_index, index_to_name, real_to_index, count: all_atom_count };
+      /**
+       * TODO: insert a new bounds from real atom i and real atom j.
+       * 
+       * 1 - Find the go node of each atom
+       * ```ts
+       * const go_i = real_to_index[i], go_j = real_to_index[j];
+       * ```
+       * 
+       * 2 - Find the name of each go node
+       * ```ts 
+       * const go_i_name = index_to_name[go_i], go_j_name = index_to_name[go_j];
+       * ```
+       * 
+       * 3 - Insert the bound inside the right ITP (molecule_0_go-table)
+       * ```ts
+       * itp_file.headlines.push(`${go_i_name}    ${go_j_name}    1  ${number???}  9.4140000000`)
+       * ```
+       * 
+       * 4 - Add the bound in the scene
+       * ```ts
+       * // todo have atoms coords & links (points) stored
+       * const { stage, component, coords, points } = this.state;
+       * 
+       * // Remove the old go bonds component
+       * stage.remove(component);
+       * 
+       * // Add the relations i, j in the points
+       * points.push([i, j]);
+       * 
+       * // Redraw all the bounds (very quick)
+       * const { component: new_cmp, representation } = drawBondsInStage(stage, points, coords, 'go');
+       * 
+       * // Save the new component
+       * this.setState({ component: new_cmp, representation });
+       * ```
+       * 
+       * ----
+       * 
+       * TODO: remove a bound from real atom i and real atom j.
+       * 
+       * 1 - Find the go node of each atom
+       * ```ts
+       * const go_i = real_to_index[i], go_j = real_to_index[j];
+       * ```
+       * 
+       * 2 - Find the name of each go node
+       * ```ts 
+       * const go_i_name = index_to_name[go_i], go_j_name = index_to_name[go_j];
+       * ```
+       * 
+       * 3 - Delete the bound of the right ITP (molecule_0_go-table)
+       * ```ts
+       * const index = itp_file.headlines.findIndex(e => {
+       *  const [name_1, name_2,] = e.split(/\s+/).filter(l => l);
+       *  
+       *  return (name_1 === go_i_name && name_2 === go_i_name) || (name_2 === go_i_name && name_1 === go_i_name);
+       * });
+       * 
+       * if (index !== -1) {
+       *  // Remove line at index {index}
+       *  itp_file.headlines.splice(index, 1);
+       * }
+       * ```
+       * 
+       * 4 - Remove the bound in the scene
+       * ```ts
+       * // todo have atoms coords & links (points) stored
+       * const { stage, component, coords, points } = this.state;
+       * 
+       * // Remove the old go bonds component
+       * stage.remove(component);
+       * 
+       * // Remove the tuple where there is a relation between i and j
+       * const new_points = points.filter(e => {
+       *  if (e[0] === i && e[1] === j) return false;
+       *  if (e[1] === i && e[0] === j) return false;
+       * 
+       *  return true;
+       * });
+       * 
+       * // Redraw all the bounds (very quick)
+       * const { component: new_cmp, representation } = drawBondsInStage(stage, new_points, coords, 'go');
+       * 
+       * // Save the new component
+       * this.setState({ component: new_cmp, representation, points: new_points });
+       * ```
+       * 
+       */
+
       // Step 1: Find atoms that name start by "{molecule_type}_" in category "atoms"
       logger.debug(`[GO-VIRT-SITES] [${molecule_type}] Looking for virtual atoms.`);
-      // Count all atoms, used to increment atom counter at the end of loop
-      const all_atom_count = molecule_itp.atoms.filter(line => line && !line.startsWith(';')).length;
 
       for (const atom_line of molecule_itp.atoms) {
         // Typical line is : 
@@ -863,6 +975,7 @@ export const Martinizer = new class Martinizer {
   
         if (name.startsWith(prefix)) {
           name_to_index[name] = Number(index);
+          index_to_name[Number(index)] = name;
         }
       }
   
@@ -884,6 +997,7 @@ export const Martinizer = new class Martinizer {
         // 2575 1    1
         const [go_index, , real_index] = virt_line.split(ItpFile.BLANK_REGEX);
         index_to_real[Number(go_index)] = Number(real_index);
+        real_to_index[Number(real_index)] = Number(go_index);
       }
   
       const n_atoms = Object.keys(name_to_index).length;
@@ -972,7 +1086,7 @@ export const Martinizer = new class Martinizer {
       i += all_atom_count;
     }
 
-    return bounds;
+    return { bounds, details };
   } 
 
   /**

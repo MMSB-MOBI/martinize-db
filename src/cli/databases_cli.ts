@@ -7,6 +7,7 @@ const DATABASE_CLI = new CliListener(
     'create <name>/all': 'Create a single or all databases. Available names are: ' + CouchHelper.DBS.join(', ') + '.',
     'wipe <name>/all': 'Delete a single or all databases.',
     info: 'Check existence of each database and show their document count.',
+    'get <database> <docId>': 'Get a document by id in a selected database.',
   }, "Command is incorrect. Type \"database\" for help.")
 );
 
@@ -46,6 +47,15 @@ DATABASE_CLI.addSubListener('wipe', async rest => {
   return `Database ${rest} has been wiped.`;
 });
 
+DATABASE_CLI.addSubListener('get', async rest => {
+  const [database, id] = rest.split(/ +/);
+  if (!database || !id) {
+    return `You must specify database name and id. Available names are ${CouchHelper.DBS.join(', ')}.`;
+  }
+
+  return Database.link.use(database).get(id);
+});
+
 DATABASE_CLI.addSubListener('info', async () => {
   // Show: Database info (document count in each)
   async function infoAbout(database: AbstractDatabase<any>) {
@@ -66,6 +76,8 @@ DATABASE_CLI.addSubListener('info', async () => {
         [CouchHelper.TOKEN_COLLECTION, Database.token],
         [CouchHelper.MOLECULE_COLLECTION, Database.molecule],
         [CouchHelper.STASHED_MOLECULE_COLLECTION, Database.stashed],
+        [CouchHelper.RADIUS_COLLECTION, Database.radius],
+        [CouchHelper.LIPID_COLLECTION, Database.lipid],
       ]
       .map(async e => formatInfo(e[0] as string, await infoAbout(e[1] as AbstractDatabase<any>)))
     )

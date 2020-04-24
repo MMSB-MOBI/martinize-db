@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken } from '../../helpers';
 import Uploader from '../Uploader';
-import { Martinizer, MartinizeSettings, ElasticOrGoBounds } from '../../Builders/Martinizer';
+import { Martinizer, MartinizeSettings, ElasticOrGoBounds, GoMoleculeDetails } from '../../Builders/Martinizer';
 import { SETTINGS_FILE } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
@@ -122,17 +122,20 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
 
     // Create elastic/go bounds if needed
     let go_bonds: ElasticOrGoBounds[] | undefined = undefined;
+    let go_details: GoMoleculeDetails | undefined = undefined;
     let elastic_bonds: ElasticOrGoBounds[] | undefined = undefined;
 
     if (runner.use_go_virtual_sites) {
-      go_bonds = await Martinizer.computeGoModelBounds(top, itps);
+      const { bounds, details } = await Martinizer.computeGoModelBounds(top, itps);
+      go_bonds = bounds;
+      go_details = details;
     }
     else if (runner.elastic) {
       elastic_bonds = await Martinizer.computeElasticNetworkBounds(top, itps);
     }
 
     return {
-      pdb, itps, top, go_bonds, elastic_bonds
+      pdb, itps, top, go_bonds, elastic_bonds, go_details,
     };
   } catch (e) {
     if (e instanceof ApiError) {
@@ -197,7 +200,7 @@ export function SocketIoMartinizer(app: Server) {
       try {
         await FsPromise.writeFile(INPUT, file);
 
-        const { pdb, itps, top, go_bonds, elastic_bonds } = await martinizeRun(
+        const { pdb, itps, top, go_bonds, elastic_bonds, go_details } = await martinizeRun(
           settings, 
           INPUT, 
           (step, ...data) => {
@@ -233,7 +236,7 @@ export function SocketIoMartinizer(app: Server) {
           itps,
         );
 
-        socket.emit('martinize end', { id: run_id, go_bonds, elastic_bonds, radius });
+        socket.emit('martinize end', { id: run_id, go_bonds, elastic_bonds, radius, go_details });
       } catch (e) {
         // Error catch, test the error :D
         if (e instanceof ApiError && e.code === ErrorType.MartinizeRunFailed) {
@@ -270,7 +273,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
   }
 
   (async () => {
-    const { pdb, itps, top, go_bonds, elastic_bonds } = await martinizeRun(req.body, pdb_file.path);
+    const { pdb, itps, top, go_bonds, elastic_bonds, go_details } = await martinizeRun(req.body, pdb_file.path);
 
     // Formatting itps
     const res_itp: { content: string, name: string, type: string, }[] = [];
@@ -297,6 +300,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       radius,
       elastic_bonds,
       go_bonds,
+      go_details,
     });
   })().catch(errorCatcher(res));
 });

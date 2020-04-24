@@ -6,6 +6,7 @@ import StashedMoleculeDatabase from './StashedMoleculeDatabase';
 import { URLS } from '../constants';
 import logger from '../logger';
 import RadiusDatabase from './RadiusDatabase';
+import LipidDatabase from './LipidDatabase';
 
 export class CouchDatabase<T> {
   constructor(protected collection: nano.DocumentScope<T>) {}
@@ -21,25 +22,26 @@ interface Databases {
   user: UserDatabase;
   token: TokenDatabase;
   radius: RadiusDatabase;
+  lipid: LipidDatabase;
 }
 
 export default class CouchHelper {
-  // @ts-ignore
-  public link: nano.ServerScope;
-  // @ts-ignore
-  protected dbs: Databases;
+  public link!: nano.ServerScope;
+  protected dbs!: Databases;
 
   static readonly MOLECULE_COLLECTION = "molecule";
   static readonly STASHED_MOLECULE_COLLECTION = "stashed";
   static readonly USER_COLLECTION = "user";
   static readonly TOKEN_COLLECTION = "token";
   static readonly RADIUS_COLLECTION = "vanderwaalsradii";
+  static readonly LIPID_COLLECTION = "lipid";
   static readonly DBS = [
     "molecule",
     "stashed",
     "user",
     "token",
     "vanderwaalsradii",
+    "lipid",
   ];
 
   constructor(url: string) {
@@ -58,6 +60,7 @@ export default class CouchHelper {
       user: new UserDatabase(this.link.use(CouchHelper.USER_COLLECTION)),
       token: new TokenDatabase(this.link.use(CouchHelper.TOKEN_COLLECTION)),
       radius: new RadiusDatabase(this.link.use(CouchHelper.RADIUS_COLLECTION)),
+      lipid: new LipidDatabase(this.link.use(CouchHelper.LIPID_COLLECTION)),
     };
   }
 
@@ -83,6 +86,10 @@ export default class CouchHelper {
 
   get radius() {
     return this.dbs.radius;
+  }
+
+  get lipid() {
+    return this.dbs.lipid;
   }
 
   /** Create a database */

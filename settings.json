@@ -1,7 +1,7 @@
 {
   "martinize_versions": [
     "2.6",
-    "3.0"
+    "vermouth-martinize2"
   ],
   "force_fields": [
     "elnedyn",
@@ -29,6 +29,10 @@
           }
         }
       }
+    },
+    "lipids": {
+      "name": "Lipids",
+      "children": {}
     }
   }
 }

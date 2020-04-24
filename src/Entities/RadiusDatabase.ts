@@ -5,9 +5,8 @@ import readline from 'readline';
 import { FORCE_FIELD_DIR } from "../constants";
 
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
-  // TODO: ITPs for lipids!
   static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
-    martini304: 'martini_v3.0.4.itp',
+    martini304: ['martini_v3.0.4.itp', 'martini_v3.0_ions.itp', 'martini_v3.0_solvents.itp'],
     elnedyn22p: 'martini_v2.2P.itp',
     elnedyn22: 'martini_v2.2.itp',
     elnedyn: 'martini_v2.2.itp',
