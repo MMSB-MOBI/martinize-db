@@ -15,7 +15,7 @@ GetMoleculeRouter.get('/', (req, res) => {
       return Errors.throw(ErrorType.MissingParameters);
     }
 
-    const selector: any = { alias: { $regex: '(?i)^' + escapeRegExp(alias) + '$' } };
+    const selector: any = { alias: { $regex: '(?i)^' + escapeRegExp(alias as string) + '$' } };
     let search_specific_version = false;
 
     if (version) {

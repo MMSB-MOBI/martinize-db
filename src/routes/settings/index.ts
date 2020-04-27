@@ -54,7 +54,7 @@ SettingsRouter.get('/lipids', async (req, res) => {
   let ff: string | undefined = undefined;
 
   if (req.query.force_field) {
-    ff = req.query.force_field;
+    ff = req.query.force_field as string;
   }
 
   /// WITH DATABASE

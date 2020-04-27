@@ -11,7 +11,7 @@ DestroyUserRouter.delete('/', (req, res) => {
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const id = req.query.id;
+    const id = req.query.id as string;
 
     if (!id) {
       return Errors.throw(ErrorType.MissingParameters);

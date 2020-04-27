@@ -11,7 +11,7 @@ RevokeTokenRouter.delete('/', (req, res) => {
     let token_to_revoke = req.user!.jti;
 
     if (req.query && req.query.token) {
-      token_to_revoke = req.query.token;
+      token_to_revoke = req.query.token as string;
     }
 
     if (!token_to_revoke) {

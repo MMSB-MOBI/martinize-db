@@ -7,7 +7,7 @@ const DownloadMoleculeRouter = Router();
 
 DownloadMoleculeRouter.get('/', (req, res) => {
   (async () => {
-    const { id, filename } = req.query;
+    const { id, filename } = req.query as Record<string, string>;
     
     if (!id) {
       return Errors.throw(ErrorType.MissingParameters);
@@ -25,7 +25,7 @@ DownloadMoleculeRouter.get('/', (req, res) => {
 
     // todo check filename
 
-    res.download(MoleculeOrganizer.getFilenameFor(id), filename || undefined);
+    res.download(MoleculeOrganizer.getFilenameFor(id), filename);
   })().catch(errorCatcher(res));
 });
 
