@@ -18,12 +18,41 @@ const ExecPromise = promisify(exec);
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
 
+export const AvailableRotateTypes = ['random', 'princ', 'angle'] as const;
+export type RotateString = ArrayValues<typeof AvailableRotateTypes>;
 
 export interface InsaneSettings {
   pbc: PbcString;
   /** Box size: Must be an array of 3, 6 or 9 integers. */
   box: number[];
+  area_per_lipid?: number;
+  area_per_lipid_upper?: number;
+  random_kick_size?: number;
+  bead_distance?: number;
+  center?: boolean;
+  orient?: boolean;
+  rotate?: RotateString;
+  rotate_angle?: number;
+  grid_spacing?: number;
+  hydrophobic_ratio?: number;
+  fudge?: number;
+  shift_protein?: number;
 }
+
+// @ts-ignore
+const InsaneParamToCliArg: { [T in keyof InsaneSettings]: string } = {
+  pbc: '-pbc',
+  area_per_lipid: '-a',
+  area_per_lipid_upper: '-au',
+  random_kick_size: '-rand',
+  bead_distance: '-bd',
+  center: '-center',
+  orient: '-orient',
+  grid_spacing: '-od',
+  hydrophobic_ratio: '-op',
+  fudge: '-fudge',
+  shift_protein: '-dm',
+};
 
 export interface InsaneRunnerOptions {
   force_field: string, 
@@ -55,8 +84,6 @@ export const MembraneBuilder = new class MembraneBuilder {
       }
 
       for (const itp of fs.readdirSync(LIPIDS_ROOT_DIR + dir)) {
-        const full = LIPIDS_ROOT_DIR + dir + "/";
-
         if (!itp.endsWith('.itp')) {
           continue;
         }
@@ -133,26 +160,48 @@ export const MembraneBuilder = new class MembraneBuilder {
       throw new Error("Box has unsupported number of dimensions.");
     }
 
-    // Build the command line
-    const command_line = `${INSANE_PATH} ` +
+    // Build the command line with fixed options (or that requires treatment)
+    let command_line = `${INSANE_PATH} ` +
       // Input PDB file
       `-f "${molecule_pdb}" ` +
       // Output files (system and topology) 
       "-o system.gro -p __insane.top " +
-      // Box type
-      `-pbc ${options.pbc} ` +
       // Box size
       `-box ${options.box.map(e => Math.trunc(e)).join(',')} ` +
-      // Solvant and insane fixed settings
-      `-center -sol W ` + 
+      // Solvant FIXED (todo) settings
+      `-sol W ` + 
       // Add all the lipids
       // Lower leaflet/both leaflets if -u is missing
       `-l ${lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -l ')} ` +
       // Upper leaflet (if defined)
-      (upper_lipid_param.length ? `-u ${upper_lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -u ')} ` : "") +
-      // More options TODO...
-      ``;
+      (upper_lipid_param.length ? `-u ${upper_lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -u ')} ` : "");
+    
+    if (options.rotate) {
+      if (options.rotate === 'angle') {
+        command_line += `-rotate ${options.rotate_angle} `;
+      }
+      else if (AvailableRotateTypes.includes(options.rotate)) {
+        command_line += `-rotate ${options.rotate} `;
+      }
+    }
+    
+    // Add every supported item
+    for (const opt in options) {
+      const o = opt as keyof InsaneSettings;
+      if (!(opt in InsaneParamToCliArg) || options[o] === undefined) {
+        // Unsupported or invalid option
+        continue;
+      }
 
+      if (typeof options[o] === 'boolean') {
+        command_line += `${InsaneParamToCliArg[o]} `;
+      }
+      else {
+        command_line += `${InsaneParamToCliArg[o]} ${options[o]} `;
+      }
+    }
+
+    logger.debug("[INSANE] Command line: " + command_line);
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
     const stdout_insane = fs.createWriteStream(workdir + '/insane.stdout');

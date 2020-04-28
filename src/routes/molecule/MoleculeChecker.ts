@@ -259,7 +259,7 @@ export class MoleculeChecker {
     // OK now: id, name, tree_id, alias, formula, category, parent, owner
 
     // Copy the version-specific fields
-    if (!body.version || !body.command_line || !body.force_field || !body.martinize_version) {
+    if (!body.version || !body.force_field || !body.martinize_version) {
       return Errors.throw(ErrorType.MissingParameters);
     }
 
@@ -274,7 +274,7 @@ export class MoleculeChecker {
 
     // Copy comments + command line
     mol.comments = body.comments || "";
-    mol.command_line = body.command_line;
+    mol.command_line = body.command_line || "";
 
     // Check force field and martinize version
     this.checkMartinizeVersion(body.martinize_version, settings);

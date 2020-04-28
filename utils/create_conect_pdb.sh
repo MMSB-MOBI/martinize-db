@@ -42,8 +42,15 @@ output_conect_no_water="output-conect-no-w.pdb"
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
 
-# Create the box
-gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc
+
+if [ $4 == "--remove-water" ]
+then
+  # do nothing, they're already a box
+  gro_box="$pdb"
+else
+  # Create the box
+  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc
+fi
 
 # Create the computed topology .tpr
 gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"

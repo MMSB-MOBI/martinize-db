@@ -47,6 +47,23 @@ function checkPbc(pbc: string) : pbc is PbcString {
   return AvailablePbcStrings.includes(pbc as any);
 }
 
+function isBoolTrue(v: string) {
+  return v === "true" || v === "t" || v === "1";
+}
+
+// Items automatically coerced to numbers when presents
+const VALID_BODY_ITEMS = [
+  'area_per_lipid', 
+  'area_per_lipid_upper',
+  'random_kick_size',
+  'bead_distance',
+  'grid_spacing',
+  'hydrophobic_ratio',
+  'fudge',
+  'shift_protein',
+] as const;
+
+
 /**
  * Create a new molecule.
  * 
@@ -63,11 +80,25 @@ MembraneBuilderRouter.post('/', Uploader.fields([
   { name: 'pdb', maxCount: 1 },
 ]), (req, res) => {
   (async () => {
+    function convertOrThrow(str: string) : number {
+      const n = Number(str);
+      if (isNaN(n)) {
+        return Errors.throw(ErrorType.Format);
+      }
+
+      return n;
+    }
+
     // Init
     const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     const molecule_id = req.body.from_id as string | undefined;
-    const { pbc, box, lipids: lipids_str, upper_leaflet: upper_leaflet_str } = req.body;
+    const { 
+      pbc, 
+      box, 
+      lipids: lipids_str, 
+      upper_leaflet: upper_leaflet_str 
+    } = req.body;
     let force_field: string = req.body.force_field;
 
     const opts: Partial<InsaneSettings> = {};
@@ -161,7 +192,31 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       }
       opts.box = items;
     }
-    // todo other settings
+
+    // Auto convert all items that are numbers
+    for (const item of VALID_BODY_ITEMS) {
+      if (item in req.body && req.body[item]) {
+        opts[item] = convertOrThrow(req.body[item]);
+      } 
+    }
+
+    // Handle rotate
+    if (req.body.rotate && req.body.rotate !== 'none') {
+      if (req.body.rotate === 'angle') {
+        opts.rotate_angle = convertOrThrow(req.body.rotate_angle);
+      }
+      else {
+        opts.rotate = req.body.rotate;
+      }
+    }
+
+    // Handle booleans
+    if (isBoolTrue(req.body.center)) {
+      opts.center = true;
+    }
+    if (isBoolTrue(req.body.orient)) {
+      opts.orient = true;
+    }
 
     const { pdbs: { water, no_water }, top, itps } = await MembraneBuilder.run({
       force_field,
