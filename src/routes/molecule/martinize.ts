@@ -120,22 +120,18 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
   try {
     const { pdb, itps, top } = await Martinizer.run(runner, onStep);
 
-    // Create elastic/go bounds if needed
-    let go_bonds: ElasticOrGoBounds[] | undefined = undefined;
-    let go_details: GoMoleculeDetails | undefined = undefined;
+    // Create elastic if needed
     let elastic_bonds: ElasticOrGoBounds[] | undefined = undefined;
 
-    if (runner.use_go_virtual_sites) {
-      const { bounds, details } = await Martinizer.computeGoModelBounds(top, itps);
-      go_bonds = bounds;
-      go_details = details;
-    }
-    else if (runner.elastic) {
+    if (runner.elastic) {
       elastic_bonds = await Martinizer.computeElasticNetworkBounds(top, itps);
     }
 
     return {
-      pdb, itps, top, go_bonds, elastic_bonds, go_details,
+      pdb, 
+      itps, 
+      top, 
+      elastic_bonds,
     };
   } catch (e) {
     if (e instanceof ApiError) {
@@ -200,7 +196,7 @@ export function SocketIoMartinizer(app: Server) {
       try {
         await FsPromise.writeFile(INPUT, file);
 
-        const { pdb, itps, top, go_bonds, elastic_bonds, go_details } = await martinizeRun(
+        const { pdb, itps, top, elastic_bonds } = await martinizeRun(
           settings, 
           INPUT, 
           (step, ...data) => {
@@ -236,7 +232,7 @@ export function SocketIoMartinizer(app: Server) {
           itps,
         );
 
-        socket.emit('martinize end', { id: run_id, go_bonds, elastic_bonds, radius, go_details });
+        socket.emit('martinize end', { id: run_id, elastic_bonds, radius });
       } catch (e) {
         // Error catch, test the error :D
         if (e instanceof ApiError && e.code === ErrorType.MartinizeRunFailed) {
@@ -273,7 +269,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
   }
 
   (async () => {
-    const { pdb, itps, top, go_bonds, elastic_bonds, go_details } = await martinizeRun(req.body, pdb_file.path);
+    const { pdb, itps, top, elastic_bonds } = await martinizeRun(req.body, pdb_file.path);
 
     // Formatting itps
     const res_itp: { content: string, name: string, type: string, }[] = [];
@@ -299,8 +295,6 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       top: { content: await FsPromise.readFile(top, 'utf-8'), name: path.basename(top), type: 'chemical/x-topology' },
       radius,
       elastic_bonds,
-      go_bonds,
-      go_details,
     });
   })().catch(errorCatcher(res));
 });

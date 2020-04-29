@@ -73,7 +73,7 @@ TEST_CLI.addSubListener('go-sites', async rest => {
     return "Given folder must have ITP files.";
   }
 
-  const relations = await Martinizer.computeGoModelBounds(top_file, itps);
+  const relations = await Martinizer.__UNSAFEcomputeGoModelBounds(top_file, itps);
 
   await FsPromise.writeFile(rest + 'relations.json', JSON.stringify(relations, null, 2));
 

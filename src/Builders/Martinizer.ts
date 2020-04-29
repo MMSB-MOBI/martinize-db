@@ -730,7 +730,7 @@ export const Martinizer = new class Martinizer {
     await top.read();
 
     logger.debug(`[ELASTIC-BUILD] Available molecules: ${
-      top.molecule_list
+      top.molecules
         .map(([name, molecule]) => `${name} (${molecule.count} time${molecule.count > 1 ? 's' : ''})`)
         .join(', ')
     }`);
@@ -738,7 +738,7 @@ export const Martinizer = new class Martinizer {
     // Incrementer for designating PDB line
     let i = 0;
 
-    for (const [name, molecule] of top.molecule_list) {
+    for (const [name, molecule] of top.molecules) {
       logger.debug("[ELASTIC-BUILD] Reading molecule " + name + ".");
 
       // Get the number of atoms in a single chain of this molecule
@@ -811,7 +811,7 @@ export const Martinizer = new class Martinizer {
    * 
    * TODO: worker thread
    */
-  async computeGoModelBounds(top_file: string, itp_files: string[], remove_duplicates = true) {
+  async __UNSAFEcomputeGoModelBounds(top_file: string, itp_files: string[], remove_duplicates = true) {
     /*
      *  Même si il y a deux chaînes, en mode go elles seront dans une seule molécule (normalement).
      *
