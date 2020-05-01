@@ -243,11 +243,9 @@ export const MembraneBuilder = new class MembraneBuilder {
     );
 
     logger.debug(`[INSANE] Reading built TOP file and INSANE generate TOP file.`);
-    const insane_top = new TopFile(workdir + "/__insane.top", []);
-    await insane_top.read();
+    const insane_top = await TopFile.read(workdir + "/__insane.top");
 
-    const molecule_full_top = new TopFile(full_top, []);
-    await molecule_full_top.read();
+    const molecule_full_top = await TopFile.read(full_top);
 
     // Compile the top files
     // Includes are normally all resolved in molecule_full_top (with the force field !)

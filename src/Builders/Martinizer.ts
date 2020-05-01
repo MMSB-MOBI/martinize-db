@@ -726,20 +726,19 @@ export const Martinizer = new class Martinizer {
     const bounds: ElasticOrGoBounds[] = [];
 
     logger.debug("[ELASTIC-BUILD] Reading TOP+ITP files.");
-    const top = new TopFile(top_file, itp_files);
-    await top.read();
+    const top = await TopFile.read(top_file, itp_files);
 
     logger.debug(`[ELASTIC-BUILD] Available molecules: ${
       top.molecules
-        .map(([name, molecule]) => `${name} (${molecule.count} time${molecule.count > 1 ? 's' : ''})`)
+        .map(molecule => `${molecule.type} (${molecule.count} time${molecule.count > 1 ? 's' : ''})`)
         .join(', ')
     }`);
 
     // Incrementer for designating PDB line
     let i = 0;
 
-    for (const [name, molecule] of top.molecules) {
-      logger.debug("[ELASTIC-BUILD] Reading molecule " + name + ".");
+    for (const molecule of top.molecules) {
+      logger.debug("[ELASTIC-BUILD] Reading molecule " + molecule.type + ".");
 
       // Get the number of atoms in a single chain of this molecule
       const itp = molecule.itp;
@@ -751,7 +750,7 @@ export const Martinizer = new class Martinizer {
         let should_read = false;
         chain_n++;
         
-        logger.verbose(`[ELASTIC-BUILD] Chain ${chain_n} of molecule "${name}": ${itp.bonds.length} bond lines.`);
+        logger.verbose(`[ELASTIC-BUILD] Chain ${chain_n} of molecule "${molecule.type}": ${itp.bonds.length} bond lines.`);
 
         for (const band of itp.bonds) {
           if (band.startsWith(';')) {
@@ -822,12 +821,10 @@ export const Martinizer = new class Martinizer {
      */
 
     logger.verbose("[GO-VIRT-SITES] Reading system topology.");
-    const top = new TopFile(top_file, []);
+    const top = await TopFile.read(top_file);
     const molecule_types: string[] = [];
 
-    await top.read();
-
-    for (const molecule of top.getField('molecules')) {
+    for (const molecule of top.getField('molecules', true)) {
       // molecule_0    1 (count is always 1 for Go model.)
       const [name, ] = molecule.split(ItpFile.BLANK_REGEX);
       molecule_types.push(name);
@@ -853,12 +850,11 @@ export const Martinizer = new class Martinizer {
       }
   
       // Instanciate ITP
-      const molecule_itp = new ItpFile(itp_files[molecule_itp_index]);
-      const go_table = new ItpFile(itp_files[go_table_index]);
+      const molecule_itp = await ItpFile.read(itp_files[molecule_itp_index]);
+      const go_table = await ItpFile.read(itp_files[go_table_index]);
 
       // Read the molecule file
       logger.debug(`[GO-VIRT-SITES] [${molecule_type}] Reading ITP files.`);
-      await molecule_itp.read();
 
       // Count all atoms, used to increment atom counter at the end of loop
       const all_atom_count = molecule_itp.atoms.filter(line => line && !line.startsWith(';')).length;
@@ -928,7 +924,6 @@ export const Martinizer = new class Martinizer {
 
       // Read the go table
       logger.debug(`[GO-VIRT-SITES] [${molecule_type}] Reading virtual Go sites table.`);
-      await go_table.read();
   
       logger.verbose(`[GO-VIRT-SITES] [${molecule_type}] Atom bonds described: ${go_table.headlines.length - 2}.`);
   

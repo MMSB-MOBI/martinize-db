@@ -1,6 +1,5 @@
 import jwt from 'express-jwt';
 import { KEYS } from '../constants';
-import { Database } from '../Entities/CouchHelper';
 import { JSONWebToken } from '../types';
 import nano from 'nano';
 import { User } from '../Entities/entities';

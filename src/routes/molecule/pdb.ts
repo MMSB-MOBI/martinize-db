@@ -50,7 +50,7 @@ PdbGetterRouter.get('/:id', (req, res) => {
     // Read every ITP in a stream
     for (const itp of molecule.itp) {
       const stream = await new Promise((resolve, reject) => {
-        zip.stream(itp.name, (err: any, stm: NodeJS.ReadableStream) => {
+        zip.stream(itp.name, (err: any, stm: any) => {
           if (err)
             reject(err);
           resolve(stm);
@@ -62,7 +62,7 @@ PdbGetterRouter.get('/:id', (req, res) => {
 
     // Read the PDB in a stream
     const pdb_stream = await new Promise((resolve, reject) => {
-      zip.stream(molecule.pdb!.name, (err: any, stm: NodeJS.ReadableStream) => {
+      zip.stream(molecule.pdb!.name, (err: any, stm: any) => {
         if (err)
           reject(err);
         resolve(stm);
