@@ -110,7 +110,13 @@ export class MoleculeChecker {
       // Save the molecule in ZIP format if files changed
       let save: MoleculeSave;
       try {
-        save = await MoleculeOrganizer.save(files.itps, files.molecule, files.top, molecule.force_field!);
+        save = await MoleculeOrganizer.save(
+          files.itps, 
+          files.molecule, 
+          files.top, 
+          files.maps,
+          molecule.force_field!
+        );
       } catch (e) {
         return Errors.throw(ErrorType.InvalidMoleculeFiles, e);
       }
@@ -176,11 +182,14 @@ export class MoleculeChecker {
       return Errors.throw(ErrorType.TooManyFiles);
     }
 
+    const map_files: File[] = this.req.files.map || [];
+
     return {
       molecule: pdb_files[0],
       is_pdb,
       itps: itps_files,
       top: this.req.files.top[0],
+      maps: map_files,
     };
   }
 
@@ -245,12 +254,8 @@ export class MoleculeChecker {
       await this.checkAlias(body.alias, mol.tree_id!);
       mol.alias = body.alias;
 
-      if (body.formula) {
-        mol.formula = body.formula;
-      }
-      else {
-        mol.formula = "";
-      }
+      // TODO introduce check
+      mol.smiles = body.smiles || "";
 
       this.checkCategory(body.category, settings);
       mol.category = body.category;
@@ -259,7 +264,7 @@ export class MoleculeChecker {
     // OK now: id, name, tree_id, alias, formula, category, parent, owner
 
     // Copy the version-specific fields
-    if (!body.version || !body.force_field || !body.martinize_version) {
+    if (!body.version || !body.force_field || !body.create_way) {
       return Errors.throw(ErrorType.MissingParameters);
     }
 
@@ -272,16 +277,18 @@ export class MoleculeChecker {
       return Errors.throw(ErrorType.VersionAlreadyExists);
     }
 
-    // Copy comments + command line
+    // Optional fields TODO limit length
     mol.comments = body.comments || "";
     mol.command_line = body.command_line || "";
+    mol.citation = body.citation || "";
+    mol.validation = body.validation || "";
 
     // Check force field and martinize version
-    this.checkMartinizeVersion(body.martinize_version, settings);
+    this.checkCreateWay(body.create_way, settings);
     this.checkForceField(body.force_field, settings);
 
     mol.force_field = body.force_field;
-    mol.martinize_version = body.martinize_version;
+    mol.create_way = body.create_way;
 
     return mol;
   }
@@ -289,7 +296,7 @@ export class MoleculeChecker {
   protected swallowCopyFromParent(molecule: Partial<BaseMolecule>, parent: Molecule) {
     molecule.name = parent.name;
     molecule.alias = parent.alias;
-    molecule.formula = parent.formula;
+    molecule.smiles = parent.smiles;
     molecule.category = parent.category;
     molecule.tree_id = parent.tree_id;
     molecule.parent = parent.id;
@@ -349,8 +356,8 @@ export class MoleculeChecker {
     }
   }
 
-  protected checkMartinizeVersion(v: string, settings: SettingsJson) {
-    if (!settings.martinize_versions.includes(v)) {
+  protected checkCreateWay(v: string, settings: SettingsJson) {
+    if (!(v in settings.create_way)) {
       return Errors.throw(ErrorType.InvalidMartinizeVersion);
     }
   }

@@ -14,7 +14,7 @@ interface Filters {
   q: string;
   author: string;
   categories?: string;
-  martinize_versions?: string;
+  create_ways?: string;
   name?: string;
   alias?: string;
   owner?: string;
@@ -38,7 +38,7 @@ ListMoleculeRouter.get('/', (req, res) => {
       owner,
       categories, 
       is_regex,
-      martinize_versions,
+      create_ways,
       name: molecule_name,
       alias,
       combine: __as_version_tree__,
@@ -58,11 +58,11 @@ ListMoleculeRouter.get('/', (req, res) => {
         }
       });
     }
-    if (martinize_versions) {
-      const vers = martinize_versions.split(',');
+    if (create_ways) {
+      const vers = create_ways.split(',');
 
       selectors.push({
-        martinize_version: {
+        create_way: {
           $in: vers
         }
       });

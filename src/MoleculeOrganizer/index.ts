@@ -158,15 +158,23 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * 
    * Returns a save information.
    * 
-   * TODO make support of GRO files & verification of ITP+PDB
+   * TODO & verification of ITP+PDB
+   * 
+   * pdb_file can also be a GRO file, it doesn't matter. It is converted by GROMACS.
    */
-  async save(itp_files: Express.Multer.File[], pdb_file: Express.Multer.File, top_file: Express.Multer.File, force_field: string) : Promise<MoleculeSave> {
-    logger.verbose("Saving upload " + itp_files.map(e => e.originalname).join(', ') + " and " + pdb_file.originalname);
+  async save(
+    itp_files: Express.Multer.File[], 
+    pdb_file: Express.Multer.File, 
+    top_file: Express.Multer.File, 
+    map_files: Express.Multer.File[],
+    force_field: string
+  ) : Promise<MoleculeSave> {
+    logger.verbose("[MOLECULE-ORGANIZER] Saving upload " + itp_files.map(e => e.originalname).join(', ') + " and " + pdb_file.originalname);
 
     // TODO check ITP and PDB
     // ----------------------
 
-    logger.debug("Copying files into a temporary directory");
+    logger.debug("[MOLECULE-ORGANIZER] Symlinking files into a temporary directory.");
     // Copy the files into a tmp dir
     const use_tmp_dir = await TmpDirHelper.get();
 
@@ -182,29 +190,37 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       throw new Error("Uploaded PDB/GRO file must file extension '.pdb' or '.gro'.");
     }
 
-    await FsPromise.copyFile(pdb_file.path, use_tmp_dir + "/" + pdb_name);
+    await FsPromise.symlink(pdb_file.path, use_tmp_dir + "/" + pdb_name);
 
     const top_name = top_file.originalname.split('.')[0] + '.top';
     const full_top_name = use_tmp_dir + "/" + top_name;
 
-    await FsPromise.copyFile(top_file.path, use_tmp_dir + "/" + top_name);
+    await FsPromise.symlink(top_file.path, use_tmp_dir + "/" + top_name);
    
     const full_itp_files: string[] = [];
     for (const file of itp_files) {
       const itp_name = file.originalname.split('.')[0] + '.itp';
       full_itp_files.push(use_tmp_dir + "/" + itp_name);
 
-      await FsPromise.copyFile(file.path, use_tmp_dir + "/" + itp_name);
+      await FsPromise.symlink(file.path, use_tmp_dir + "/" + itp_name);
     }
 
-    logger.debug("Creating extended TOP file for " + pdb_file.originalname);
+    const full_map_files: string[] = [];
+    for (const file of map_files) {
+      const map_name = file.originalname.split('.')[0] + '.map';
+      full_map_files.push(use_tmp_dir + "/" + map_name);
+
+      await FsPromise.symlink(file.path, use_tmp_dir + "/" + map_name);
+    }
+
+    logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ".");
     // Create the modified TOP and the modified pdb
     const { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, full_top_name, full_itp_files, force_field);
-    logger.debug("Extended TOP file created: " + path.basename(full_top));
+    logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created: " + path.basename(full_top));
 
-    logger.debug("Creating PDB with CONECT entries for " + pdb_file.originalname);
+    logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
     const full_pdb = await Martinizer.createPdbWithConect(full_pdb_name, full_top, use_tmp_dir);
-    logger.debug("CONECT-ed PDB created: " + path.basename(full_pdb));
+    logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(full_pdb) + ".");
 
     // Compressing and saving
     const save_id = generateSnowflake();
@@ -214,16 +230,24 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     // Create ZIP
     const zip = new JSZip();
 
-    let itp_files_info: FileSaveInfo[] = [];
-    for (const file of full_itp_files) {
-      const itp_name = path.basename(file);
-      const itp_content = await FsPromise.readFile(file);
-      zip.file(itp_name, itp_content);
+    const itp_files_info: FileSaveInfo[] = [];
+    const map_files_info: FileSaveInfo[] = [];
+    const targets = [itp_files_info, map_files_info];
 
-      itp_files_info.push({
-        size: itp_content.length,
-        name: itp_name,
-      });
+    // Copy map and itps
+    for (const item of [full_itp_files, full_map_files]) {
+      const target = targets.shift()!;
+
+      for (const file of item) {
+        const f_name = path.basename(file);
+        const content = await FsPromise.readFile(file);
+        zip.file(f_name, content);
+  
+        target.push({
+          size: content.length,
+          name: f_name,
+        });
+      }
     }
 
     const top_content = await FsPromise.readFile(full_top);
@@ -231,6 +255,8 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     const pdb_content = await FsPromise.readFile(full_pdb);
     zip.file(path.basename(full_pdb), pdb_content);
+
+    logger.debug("[MOLECULE-ORGANIZER] Saving in-memory ZIP file to disk.");
 
     await new Promise((resolve, reject) => {
       zip
@@ -244,9 +270,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         });
     });
 
+    logger.debug("[MOLECULE-ORGANIZER] Computing MD5 hash of ZIP file.");
+
     // Calculate hash
     const hash = await md5File(zip_name);
-
 
     // TODO write better infos of the ZIP in the JSON
     const infos: MoleculeSaveInfo = {
@@ -259,11 +286,14 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         name: path.basename(top_name),
       },
       itp: itp_files_info,
+      map: map_files_info,
       hash,
       force_field
     };
 
     await FsPromise.writeFile(info_name, JSON.stringify(infos));
+
+    logger.debug("[MOLECULE-ORGANIZER] ZIP has been created and saved with save ID #" + save_id + ".");
 
     return {
       id: save_id,
@@ -284,6 +314,7 @@ export interface MoleculeSaveInfo {
   pdb: FileSaveInfo;
   itp: FileSaveInfo[];
   top: FileSaveInfo;
+  map: FileSaveInfo[];
   hash: string;
   force_field: string;
 }

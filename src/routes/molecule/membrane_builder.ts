@@ -187,7 +187,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     if (box) {
       const items = (box as string).split(',').map(e => parseInt(e, 10));
 
-      if (!items.every(e => !isNaN(e) && e > 0)) {
+      if (!items.every(e => !isNaN(e) && e >= 0)) {
         return Errors.throw(ErrorType.Format);
       }
       opts.box = items;

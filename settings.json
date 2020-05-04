@@ -1,8 +1,11 @@
 {
-  "martinize_versions": [
-    "2.6",
-    "vermouth-martinize2"
-  ],
+  "create_way": {
+    "hand": "Manually",
+    "martinize_1": "Martinize 1",
+    "martinize_2": "Vermouth-Martinize 2",
+    "cartographer": "Cartographer",
+    "auto_martini": "Auto-Martini"
+  },
   "force_fields": [
     "elnedyn",
     "elnedyn22",

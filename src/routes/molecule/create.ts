@@ -37,6 +37,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
   { name: 'itp', maxCount: 99 }, 
   { name: 'top', maxCount: 1 },
   { name: 'pdb', maxCount: 1 },
+  { name: 'map', maxCount: 99 },
 ]), (req, res) => {
   (async () => {
     const logged_user = req.full_user!;

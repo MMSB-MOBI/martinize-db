@@ -34,6 +34,7 @@ EditStashedRouter.post('/', Uploader.fields([
   { name: 'itp', maxCount: 99 }, 
   { name: 'top', maxCount: 1 },
   { name: 'pdb', maxCount: 1 },
+  { name: 'map', maxCount: 99 },
 ]), (req: Request, res) => {
   // Saving the file
   // @ts-ignore

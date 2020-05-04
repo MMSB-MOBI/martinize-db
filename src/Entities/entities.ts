@@ -12,18 +12,22 @@ export interface BaseMolecule extends BaseCouchDocument {
   name: string;
   /** Molecule short alias */
   alias: string;
-  /** Mol formula */
-  formula: string;
+  /** Mol smiles formula (optional) */
+  smiles: string;
   /** Category, should be a GO Term */
   category: keyof typeof GoTerms;
   /** Molecule version (free text) */
   version: string;
   /** Free comment text. */
   comments: string;
+  /** Citation */
+  citation: string;
+  /** Information about a protein validation, model quality */
+  validation: string;
   /** String version of the used command line (other parameters) */
   command_line: string;
-  /** Martinize version used to generate files */
-  martinize_version: string;
+  /** Way to create the martinized molecule (id that refers in create_way field of settings.json) */
+  create_way: string;
   /** Force field version */
   force_field: string;
   /** Stringified ISO date of creation date */

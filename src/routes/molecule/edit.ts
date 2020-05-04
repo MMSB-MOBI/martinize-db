@@ -34,6 +34,7 @@ EditMoleculeRouter.post('/', Uploader.fields([
   { name: 'itp', maxCount: 99 }, 
   { name: 'top', maxCount: 1 },
   { name: 'pdb', maxCount: 1 },
+  { name: 'map', maxCount: 99 },
 ]), (req, res) => {
   // Saving the file
   (async () => {
@@ -54,7 +55,7 @@ EditMoleculeRouter.post('/', Uploader.fields([
       for (const child of children) {
         child.name = molecule.name;
         child.alias = molecule.alias;
-        child.formula = molecule.formula;
+        child.smiles = molecule.smiles;
         child.category = molecule.category;
 
         saves.push(Database.molecule.save(child));

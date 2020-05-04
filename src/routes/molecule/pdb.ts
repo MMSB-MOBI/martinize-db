@@ -48,17 +48,17 @@ PdbGetterRouter.get('/:id', (req, res) => {
     });
     
     // Read every ITP in a stream
-    for (const itp of molecule.itp) {
-      const stream = await new Promise((resolve, reject) => {
-        zip.stream(itp.name, (err: any, stm: any) => {
-          if (err)
-            reject(err);
-          resolve(stm);
-        });
-      }) as NodeJS.ReadableStream;
+    // for (const itp of molecule.itp) {
+    //   const stream = await new Promise((resolve, reject) => {
+    //     zip.stream(itp.name, (err: any, stm: any) => {
+    //       if (err)
+    //         reject(err);
+    //       resolve(stm);
+    //     });
+    //   }) as NodeJS.ReadableStream;
       
-      itps.push(stream);
-    }
+    //   itps.push(stream);
+    // }
 
     // Read the PDB in a stream
     const pdb_stream = await new Promise((resolve, reject) => {
@@ -70,10 +70,21 @@ PdbGetterRouter.get('/:id', (req, res) => {
     }) as NodeJS.ReadableStream;
     
     // Generate the needed radius
-    const [pdb_final, radius] = await Database.radius.transformPdb(pdb_stream, itps, molecule_data.force_field);
+    // const [pdb_final, radius] = await Database.radius.transformPdb(pdb_stream, itps, molecule_data.force_field);
+
+    let pdb_final = "";
+
+    await new Promise((resolve, reject) => {
+      pdb_stream.on('data', (chunk: string) => {
+        pdb_final += chunk;
+      });
+
+      pdb_stream.on('end', resolve);
+      pdb_stream.on('error', reject);
+    });
 
     res.json({
-      radius,
+      radius: {},
       pdb: pdb_final
     });
   })().catch(errorCatcher(res));
