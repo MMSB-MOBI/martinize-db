@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import { BaseMolecule, Molecule, StashedMolecule } from '../../Entities/entities';
-import Errors, { ErrorType } from '../../Errors';
+import Errors, { ErrorType, ApiError } from '../../Errors';
 import { MAX_ITP_FILE_SIZE, NAME_REGEX, ALIAS_REGEX, VERSION_REGEX } from '../Uploader';
 import { generateSnowflake } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
@@ -118,7 +118,13 @@ export class MoleculeChecker {
           molecule.force_field!
         );
       } catch (e) {
-        return Errors.throw(ErrorType.InvalidMoleculeFiles, e);
+        if (e instanceof ApiError) {
+          throw e;
+        }
+        if (e instanceof Error) {
+          return Errors.throw(ErrorType.InvalidMoleculeFiles, { detail: e.message });
+        }
+        return Errors.throw(ErrorType.InvalidMoleculeFiles);
       }
 
       // Remove the old files, if they exists

@@ -655,7 +655,15 @@ export const Martinizer = new class Martinizer {
    * in order to set the used current directory path.
    */
   async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water = false) {
-    const command = `${CONECT_PDB_PATH} "${pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+    let tmp_original_filename: string | null = null;
+
+    if (pdb_or_gro_filename.endsWith('output-conect.pdb')) {
+      // Filename collision between original and will to be created file. Tmp renaming it
+      tmp_original_filename = pdb_or_gro_filename.slice(0, pdb_or_gro_filename.length - 4) + '.original.pdb';
+      await FsPromise.rename(pdb_or_gro_filename, tmp_original_filename);
+    }
+
+    const command = `${CONECT_PDB_PATH} "${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
     const pdb_out = base_directory + "/output-conect.pdb";
 
     await new Promise((resolve, reject) => {
@@ -678,6 +686,12 @@ export const Martinizer = new class Martinizer {
     });
 
     const exists = await FsPromise.access(pdb_out, fs.constants.F_OK).then(() => true).catch(() => false);
+
+    if (tmp_original_filename) {
+      // Rename the output to original name
+      await FsPromise.rename(pdb_out, base_directory + '/output-conect.gromacs.pdb');
+      await FsPromise.rename(tmp_original_filename, pdb_or_gro_filename);
+    }
 
     if (!exists) {
       throw new Error("PDB could not be created for an unknown reason. Check the files gromacs.stdout and gromacs.stderr in directory " + base_directory + ".");

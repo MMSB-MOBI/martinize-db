@@ -1,7 +1,7 @@
 import { Router, Request } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize, dumpStdFromDir } from '../../helpers';
 import Uploader from '../Uploader';
-import Errors, { ErrorType } from '../../Errors';
+import Errors, { ErrorType, ApiError } from '../../Errors';
 import { StashedMolecule, User } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import { MoleculeChecker } from '../molecule/MoleculeChecker';
@@ -45,15 +45,31 @@ EditStashedRouter.post('/', Uploader.fields([
     }
 
     const checker = new MoleculeChecker(req);
-    const molecule = await checker.checkStashedEdition();
 
-    let response = await Database.stashed.save(molecule as StashedMolecule);
+    try {
+      const molecule = await checker.checkStashedEdition();
+  
+      let response = await Database.stashed.save(molecule as StashedMolecule);
+  
+      if (response.ok) {
+        res.json(sanitize(molecule));
+      }
+      else {
+        return Errors.throw(ErrorType.Server);
+      }
+    } catch (e) {
+      if (
+        e instanceof ApiError && 
+        e.code === ErrorType.InvalidMoleculeFiles && 
+        e.data && 
+        e.data.dir
+      ) {
+        const { stdout, stderr } = await dumpStdFromDir(e.data.dir as string);
 
-    if (response.ok) {
-      res.json(sanitize(molecule));
-    }
-    else {
-      return Errors.throw(ErrorType.Server);
+        return Errors.throw(ErrorType.InvalidMoleculeFiles, { stdout, stderr });
+      }
+
+      throw e;
     }
   })().catch(errorCatcher(res));
 });

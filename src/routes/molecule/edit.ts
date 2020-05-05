@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize, dumpStdFromDir } from '../../helpers';
 import Uploader from '../Uploader';
-import Errors, { ErrorType } from '../../Errors';
-import { Molecule, StashedMolecule } from '../../Entities/entities';
+import Errors, { ErrorType, ApiError } from '../../Errors';
+import { Molecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import { MoleculeChecker } from './MoleculeChecker';
 
@@ -42,36 +42,51 @@ EditMoleculeRouter.post('/', Uploader.fields([
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const checker = new MoleculeChecker(req);
-    const molecule = await checker.checkEdition();
+    try {
+      const checker = new MoleculeChecker(req);
+      const molecule = await checker.checkEdition();
 
-    if (molecule.parent === null) {
-      // Should refresh all the possible childs with name, alias, formula, category
+      if (molecule.parent === null) {
+        // Should refresh all the possible childs with name, alias, formula, category
 
-      const children = (await Database.molecule.find({ limit: 99999, selector: { tree_id: molecule.tree_id } })).filter(m => m.id !== molecule.id);
+        const children = (await Database.molecule.find({ limit: 99999, selector: { tree_id: molecule.tree_id } })).filter(m => m.id !== molecule.id);
 
-      const saves: Promise<any>[] = [];
+        const saves: Promise<any>[] = [];
 
-      for (const child of children) {
-        child.name = molecule.name;
-        child.alias = molecule.alias;
-        child.smiles = molecule.smiles;
-        child.category = molecule.category;
+        for (const child of children) {
+          child.name = molecule.name;
+          child.alias = molecule.alias;
+          child.smiles = molecule.smiles;
+          child.category = molecule.category;
 
-        saves.push(Database.molecule.save(child));
+          saves.push(Database.molecule.save(child));
+        }
+
+        await Promise.all(saves);
       }
 
-      await Promise.all(saves);
-    }
+      // Save the edited molecule
+      const response = await Database.molecule.save(molecule as Molecule);
 
-    // Save the edited molecule
-    const response = await Database.molecule.save(molecule as Molecule);
+      if (response.ok) {
+        res.json(sanitize(molecule));
+      }
+      else {
+        return Errors.throw(ErrorType.Server);
+      }
+    } catch (e) {
+      if (
+        e instanceof ApiError && 
+        e.code === ErrorType.InvalidMoleculeFiles && 
+        e.data && 
+        e.data.dir
+      ) {
+        const { stdout, stderr } = await dumpStdFromDir(e.data.dir as string);
 
-    if (response.ok) {
-      res.json(sanitize(molecule));
-    }
-    else {
-      return Errors.throw(ErrorType.Server);
+        return Errors.throw(ErrorType.InvalidMoleculeFiles, { stdout, stderr });
+      }
+
+      throw e;
     }
   })().catch(errorCatcher(res));
 });

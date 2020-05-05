@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize, informAdminFromNewMolecule } from '../../helpers';
+import { methodNotAllowed, errorCatcher, cleanMulterFiles, sanitize, informAdminFromNewMolecule, dumpStdFromDir } from '../../helpers';
 import Uploader from '../Uploader';
-import Errors, { ErrorType } from '../../Errors';
+import Errors, { ErrorType, ApiError } from '../../Errors';
 import { Molecule, StashedMolecule, BaseMolecule } from '../../Entities/entities';
 import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
@@ -49,26 +49,41 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     let response: nano.DocumentInsertResponse;
     let molecule: BaseMolecule;
 
-    const checker = new MoleculeChecker(req);
+    try {
+      const checker = new MoleculeChecker(req);
 
-    if (user_role === "admin" && !force_moderation) {
-      // Inset directly in molecule db
-      molecule = await checker.check();
-      response = await Database.molecule.save(molecule as Molecule);
-    }
-    else {
-      molecule = await checker.checkStashed();
-      response = await Database.stashed.save(molecule as StashedMolecule);
+      if (user_role === "admin" && !force_moderation) {
+        // Inset directly in molecule db
+        molecule = await checker.check();
+        response = await Database.molecule.save(molecule as Molecule);
+      }
+      else {
+        molecule = await checker.checkStashed();
+        response = await Database.stashed.save(molecule as StashedMolecule);
+  
+        // Inform moderators
+        informAdminFromNewMolecule(molecule as StashedMolecule, logged_user).catch(logger.error);
+      }
+  
+      if (response.ok) {
+        res.json(sanitize(molecule));
+      }
+      else {
+        return Errors.throw(ErrorType.Server);
+      }
+    } catch (e) {
+      if (
+        e instanceof ApiError && 
+        e.code === ErrorType.InvalidMoleculeFiles && 
+        e.data && 
+        e.data.dir
+      ) {
+        const { stdout, stderr } = await dumpStdFromDir(e.data.dir as string);
 
-      // Inform moderators
-      informAdminFromNewMolecule(molecule as StashedMolecule, logged_user).catch(logger.error);
-    }
+        return Errors.throw(ErrorType.InvalidMoleculeFiles, { stdout, stderr });
+      }
 
-    if (response.ok) {
-      res.json(sanitize(molecule));
-    }
-    else {
-      return Errors.throw(ErrorType.Server);
+      throw e;
     }
   })().catch(errorCatcher(res));
 });

@@ -10,6 +10,7 @@ import path from 'path';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
 // @ts-ignore 
 import NodeStreamZip from 'node-stream-zip';
+import Errors, { ErrorType } from '../Errors';
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {
   constructor() {
@@ -307,11 +308,32 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ".");
     // Create the modified TOP and the modified pdb
-    const { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, force_field);
+    try {
+      var { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, force_field);
+    } catch (e) {
+      logger.warn("[MOLECULE-ORGANIZER] Unable to create extended TOP file. Maybe the ITPs are incorrects.");
+      
+      return Errors.throw(ErrorType.InvalidMoleculeFiles, {
+        dir: use_tmp_dir,
+        error: e,
+      });
+    }
+
     logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created: " + path.basename(full_top));
 
+
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
-    const full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir);
+    try {
+      var full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir);
+    } catch (e) {
+      logger.warn("[MOLECULE-ORGANIZER] Unable to create full PDB with GROMACS. Provided files might be incorrects.");
+
+      return Errors.throw(ErrorType.InvalidMoleculeFiles, {
+        dir: use_tmp_dir,
+        error: e,
+      });
+    }
+
     logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(full_pdb) + ".");
 
     // Compressing and saving

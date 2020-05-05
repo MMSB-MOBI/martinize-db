@@ -315,6 +315,25 @@ export function vanDerWaalsRadius(lennar_johns_1: number, lennar_johns_2: number
 
 }
 
+export async function dumpStdFromDir(dir: string) {
+  // Can for .stdout and .stderr files
+  const stderr: any = {};
+  const stdout: any = {};
+  
+  for (const file of await FsPromise.readdir(dir)) {
+    if (file.endsWith('.stdout')) {
+      const name = file.slice(0, file.length - '.stdout'.length);
+      stdout[name] = await FsPromise.readFile(dir + '/' + file, 'utf-8');
+    }
+    else if (file.endsWith('.stderr')) {
+      const name = file.slice(0, file.length - '.stderr'.length);
+      stderr[name] = await FsPromise.readFile(dir + '/' + file, 'utf-8');
+    }
+  }
+
+  return { stdout, stderr };
+}
+
 /**
  * Get the basename of a file without the extension.
  */
