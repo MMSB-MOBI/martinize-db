@@ -104,7 +104,7 @@ export class MoleculeChecker {
     }
     // Must insert files into upload directory
     else {
-      const files = this.getFilesFromRequest();
+      const files = await this.getFilesFromRequest();
 
       // Register the files
       // Save the molecule in ZIP format if files changed
@@ -154,13 +154,13 @@ export class MoleculeChecker {
     const top_files: File[] = this.req.files.top;
 
     // Requires one itp file at least
-    if (!itps_files || !top_files || !pdb_files || !itps_files.length || !pdb_files.length) {
+    if (!itps_files || !top_files || !pdb_files || !itps_files.length || !pdb_files.length || !top_files.length) {
       return false;
     }
     return true;
   }
 
-  protected getFilesFromRequest() {
+  protected async getFilesFromRequest() {
     if (!this.req.files || Array.isArray(this.req.files)) {
       return Errors.throw(ErrorType.MissingParameters);
     }
@@ -184,11 +184,14 @@ export class MoleculeChecker {
 
     const map_files: File[] = this.req.files.map || [];
 
+    // Find if top files are present
+    let top_file: File = this.req.files.top[0];
+
     return {
       molecule: pdb_files[0],
       is_pdb,
       itps: itps_files,
-      top: this.req.files.top[0],
+      top: top_file,
       maps: map_files,
     };
   }

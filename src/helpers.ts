@@ -12,6 +12,7 @@ import MoleculeOrganizer from "./MoleculeOrganizer";
 import SearchWorker from "./search_worker";
 import Mailer from "./Mailer/Mailer";
 import fs, { promises as FsPromise } from 'fs';
+import path from 'path';
 
 export function isDebugMode() {
   return logger.level === "debug" || logger.level === "silly";
@@ -312,6 +313,19 @@ export function vanDerWaalsRadius(lennar_johns_1: number, lennar_johns_2: number
   const T = 0.191, S = 0.230, R = 0.254;
 
 
+}
+
+/**
+ * Get the basename of a file without the extension.
+ */
+export function basenameWithoutExt(src: string) {
+  const basename = path.basename(src);
+  const last_dot = basename.lastIndexOf('.');
+
+  if (last_dot !== -1) {
+    return basename.slice(0, last_dot);
+  }
+  return basename;
 }
 
 /**

@@ -61,7 +61,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
       response = await Database.stashed.save(molecule as StashedMolecule);
 
       // Inform moderators
-      informAdminFromNewMolecule(molecule as StashedMolecule, logged_user).catch(logger.error)
+      informAdminFromNewMolecule(molecule as StashedMolecule, logged_user).catch(logger.error);
     }
 
     if (response.ok) {

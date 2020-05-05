@@ -1,7 +1,7 @@
 import fs, { promises as FsPromise } from 'fs';
 import { MOLECULE_ROOT_DIR } from '../constants';
 import logger from '../logger';
-import { generateSnowflake } from '../helpers';
+import { generateSnowflake, basenameWithoutExt } from '../helpers';
 import JSZip from 'jszip';
 import md5File from 'md5-file/promise';
 import os from 'os';
@@ -153,6 +153,125 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     }
   }
 
+  async createSymlinksInTmpDir(
+    dir: string, 
+    pdb: Express.Multer.File, 
+    top: Express.Multer.File, 
+    itps: Express.Multer.File[], 
+    maps: Express.Multer.File[]
+  ) {
+    const pdb_name = path.basename(pdb.originalname);
+    const full_pdb_name = dir + "/" + pdb_name;
+
+    // Check if pdb has extension
+    const pdb_ext = pdb_name.split('.')[1];
+    if (!pdb_ext) {
+      throw new Error("Uploaded PDB/GRO file must have an extension");
+    }
+    else if (pdb_ext !== 'pdb' && pdb_ext !== 'gro') {
+      throw new Error("Uploaded PDB/GRO file must file extension '.pdb' or '.gro'.");
+    }
+
+    await FsPromise.symlink(pdb.path, dir + "/" + pdb_name);
+
+    const top_name = basenameWithoutExt(top.originalname) + '.top';
+    const full_top_name = dir + "/" + top_name;
+
+    await FsPromise.symlink(top.path, dir + "/" + top_name);
+   
+    const full_itp_files: string[] = [];
+    for (const file of itps) {
+      const itp_name = basenameWithoutExt(file.originalname) + '.itp';
+      full_itp_files.push(dir + "/" + itp_name);
+
+      await FsPromise.symlink(file.path, dir + "/" + itp_name);
+    }
+
+    const full_map_files: string[] = [];
+    for (const file of maps) {
+      const map_name = basenameWithoutExt(file.originalname) + '.map';
+      full_map_files.push(dir + "/" + map_name);
+
+      await FsPromise.symlink(file.path, dir + "/" + map_name);
+    }
+
+    return {
+      pdb: full_pdb_name,
+      top: full_top_name,
+      itps: full_itp_files,
+      maps: full_map_files,
+    };
+  }
+
+  /**
+   * Create a JSZip object with the following data:
+   * 
+   * @param itps_path Path to ITP files
+   * @param maps_path Path to MAP files
+   * @param conect_pdb Path to CONECT-ed PDB
+   * @param full_top Path to built TOP
+   * @param top_name Original basename of the TOP
+   * @param zip_destination_path ZIP path destination
+   */
+  async zipFromPaths(
+    itps_path: string[], 
+    maps_path: string[], 
+    conect_pdb: string, 
+    full_top: string, 
+    top_name: string,
+    zip_destination_path: string,
+  ) {
+    // Create ZIP
+    const zip = new JSZip();
+
+    const itp_files_info: FileSaveInfo[] = [];
+    const map_files_info: FileSaveInfo[] = [];
+    const targets = [itp_files_info, map_files_info];
+
+    // Copy map and itps
+    for (const item of [itps_path, maps_path]) {
+      const target = targets.shift()!;
+
+      for (const file of item) {
+        const f_name = path.basename(file);
+        const content = await FsPromise.readFile(file);
+        zip.file(f_name, content);
+
+        target.push({
+          size: content.length,
+          name: f_name,
+        });
+      }
+    }
+
+    const top_content = await FsPromise.readFile(full_top);
+    zip.file(top_name, top_content);
+
+    const pdb_content = await FsPromise.readFile(conect_pdb);
+    zip.file(path.basename(conect_pdb), pdb_content);
+
+    logger.debug("[MOLECULE-ORGANIZER] Saving in-memory ZIP file to disk.");
+
+    await new Promise((resolve, reject) => {
+      zip
+        .generateNodeStream({ streamFiles: true, compression: "DEFLATE", compressionOptions: { level: 6 } })
+        .pipe(fs.createWriteStream(zip_destination_path))
+        .on('finish', () => {
+          resolve();
+        })
+        .on('error', e => {
+          reject(e);
+        });
+    });
+
+    return {
+      pdb_length: pdb_content.length,
+      top_length: top_content.length,
+      itp_files_info,
+      map_files_info,
+    }
+  }
+
   /**
    * Check, compress and save a zipped version of the given ITP and PDB file.
    * 
@@ -174,52 +293,25 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     // TODO check ITP and PDB
     // ----------------------
 
-    logger.debug("[MOLECULE-ORGANIZER] Symlinking files into a temporary directory.");
     // Copy the files into a tmp dir
     const use_tmp_dir = await TmpDirHelper.get();
-
-    const pdb_name = path.basename(pdb_file.originalname);
-    const full_pdb_name = use_tmp_dir + "/" + pdb_name;
-
-    // Check if pdb has extension
-    const pdb_ext = pdb_name.split('.')[1];
-    if (!pdb_ext) {
-      throw new Error("Uploaded PDB/GRO file must have an extension");
-    }
-    else if (pdb_ext !== 'pdb' && pdb_ext !== 'gro') {
-      throw new Error("Uploaded PDB/GRO file must file extension '.pdb' or '.gro'.");
-    }
-
-    await FsPromise.symlink(pdb_file.path, use_tmp_dir + "/" + pdb_name);
-
-    const top_name = top_file.originalname.split('.')[0] + '.top';
-    const full_top_name = use_tmp_dir + "/" + top_name;
-
-    await FsPromise.symlink(top_file.path, use_tmp_dir + "/" + top_name);
-   
-    const full_itp_files: string[] = [];
-    for (const file of itp_files) {
-      const itp_name = file.originalname.split('.')[0] + '.itp';
-      full_itp_files.push(use_tmp_dir + "/" + itp_name);
-
-      await FsPromise.symlink(file.path, use_tmp_dir + "/" + itp_name);
-    }
-
-    const full_map_files: string[] = [];
-    for (const file of map_files) {
-      const map_name = file.originalname.split('.')[0] + '.map';
-      full_map_files.push(use_tmp_dir + "/" + map_name);
-
-      await FsPromise.symlink(file.path, use_tmp_dir + "/" + map_name);
-    }
+    
+    logger.debug("[MOLECULE-ORGANIZER] Symlinking files into a temporary directory: " + use_tmp_dir + ".");
+    
+    const { 
+      pdb: pdb_path, 
+      top: top_path, 
+      itps: itps_path, 
+      maps: maps_path 
+    } = await this.createSymlinksInTmpDir(use_tmp_dir, pdb_file, top_file, itp_files, map_files);
 
     logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ".");
     // Create the modified TOP and the modified pdb
-    const { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, full_top_name, full_itp_files, force_field);
+    const { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, force_field);
     logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created: " + path.basename(full_top));
 
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
-    const full_pdb = await Martinizer.createPdbWithConect(full_pdb_name, full_top, use_tmp_dir);
+    const full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir);
     logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(full_pdb) + ".");
 
     // Compressing and saving
@@ -227,48 +319,22 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const zip_name = this.getFilenameFor(save_id);
     const info_name = this.getInfoFilenameFor(save_id);
 
-    // Create ZIP
-    const zip = new JSZip();
+    const top_name = path.basename(top_path);
 
-    const itp_files_info: FileSaveInfo[] = [];
-    const map_files_info: FileSaveInfo[] = [];
-    const targets = [itp_files_info, map_files_info];
-
-    // Copy map and itps
-    for (const item of [full_itp_files, full_map_files]) {
-      const target = targets.shift()!;
-
-      for (const file of item) {
-        const f_name = path.basename(file);
-        const content = await FsPromise.readFile(file);
-        zip.file(f_name, content);
-  
-        target.push({
-          size: content.length,
-          name: f_name,
-        });
-      }
-    }
-
-    const top_content = await FsPromise.readFile(full_top);
-    zip.file(path.basename(top_name), top_content);
-
-    const pdb_content = await FsPromise.readFile(full_pdb);
-    zip.file(path.basename(full_pdb), pdb_content);
-
-    logger.debug("[MOLECULE-ORGANIZER] Saving in-memory ZIP file to disk.");
-
-    await new Promise((resolve, reject) => {
-      zip
-        .generateNodeStream({ streamFiles: true, compression: "DEFLATE", compressionOptions: { level: 6 } })
-        .pipe(fs.createWriteStream(zip_name))
-        .on('finish', () => {
-          resolve();
-        })
-        .on('error', e => {
-          reject(e);
-        });
-    });
+    // Compress and get save data
+    const { 
+      pdb_length, 
+      top_length, 
+      itp_files_info, 
+      map_files_info 
+    } = await this.zipFromPaths(
+      itps_path,
+      maps_path,
+      full_pdb,
+      full_top,
+      top_name,
+      zip_name
+    );
 
     logger.debug("[MOLECULE-ORGANIZER] Computing MD5 hash of ZIP file.");
 
@@ -276,14 +342,15 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const hash = await md5File(zip_name);
 
     // TODO write better infos of the ZIP in the JSON
+    // Send the save data
     const infos: MoleculeSaveInfo = {
       pdb: {
-        size: pdb_content.length,
+        size: pdb_length,
         name: path.basename(full_pdb)
       },
       top: {
-        size: top_content.length,
-        name: path.basename(top_name),
+        size: top_length,
+        name: top_name,
       },
       itp: itp_files_info,
       map: map_files_info,
