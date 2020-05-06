@@ -6,7 +6,7 @@ import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
 import zlib from 'zlib';
-import { FORCE_FIELD_DIR } from '../constants';
+import { FORCE_FIELD_DIR, CREATE_GO_PATH, PYTHON_3_PATH, CREATE_MAP_PATH, CONECT_PDB_PATH, CONECT_MDP_PATH, MARTINIZE_PATH, CREATE_MAP_PY_SCRIPT_PATH } from '../constants';
 import RadiusDatabase from '../Entities/RadiusDatabase';
 import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
@@ -14,12 +14,6 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
-
-const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
-const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
-const CREATE_MAP_PATH = path.resolve(__dirname, "../../utils/get_map.py");
-const CONECT_PDB_PATH = path.resolve(__dirname, "../../utils/create_conect_pdb.sh");
-const CONECT_MDP_PATH = path.resolve(__dirname, "../../utils/run.mdp");
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -143,7 +137,7 @@ export const Martinizer = new class Martinizer {
 
     // Check dssp ps
     // TODO: DSSP gives bad results... this should not append
-    let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
+    let command_line = MARTINIZE_PATH + " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
     if (full.ignore) {
@@ -321,7 +315,7 @@ export const Martinizer = new class Martinizer {
             const stdout = fs.createWriteStream(dir + '/go-virt-sites.stdout');
             const stderr = fs.createWriteStream(dir + '/go-virt-sites.stderr');
   
-            const child = exec(`python ${CREATE_GO_PATH} -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
+            const child = exec(`${PYTHON_3_PATH} "${CREATE_GO_PATH}" -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
               stdout.close();
               stderr.close();
   
@@ -503,7 +497,7 @@ export const Martinizer = new class Martinizer {
       const stdout = fs.createWriteStream(use_tmp_dir + '/distances.stdout');
       const stderr = fs.createWriteStream(use_tmp_dir + '/distances.stderr');
 
-      const child = exec(`python ${CREATE_MAP_PATH} -f "${use_tmp_dir}/_backbones.pdb" -o "${distances_file}"`, (err) => {
+      const child = exec(`${CREATE_MAP_PATH} ${CREATE_MAP_PY_SCRIPT_PATH} -f "${use_tmp_dir}/_backbones.pdb" -o "${distances_file}"`, (err) => {
         stdout.close();
         stderr.close();
 

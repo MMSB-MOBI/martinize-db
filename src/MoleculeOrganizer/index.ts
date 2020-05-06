@@ -4,7 +4,6 @@ import logger from '../logger';
 import { generateSnowflake, basenameWithoutExt } from '../helpers';
 import JSZip from 'jszip';
 import md5File from 'md5-file/promise';
-import os from 'os';
 import { Martinizer } from '../Builders/Martinizer';
 import path from 'path';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';

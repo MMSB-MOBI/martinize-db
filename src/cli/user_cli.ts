@@ -1,9 +1,8 @@
 import CliHelper, { CliListener } from "interactive-cli-helper";
 import CouchHelper, { Database } from "../Entities/CouchHelper";
 import { User } from "../Entities/entities";
-import readline from 'readline';
 import { USERNAME_REGEX, EMAIL_REGEX } from "../constants";
-import { generateSnowflake } from "../helpers";
+import { generateSnowflake, withRegex } from "../helpers";
 import { UserRole } from "../types";
 import { CLI } from "./cli";
 
@@ -12,7 +11,10 @@ const USER_CLI = new CliListener(
     list: 'List registred users',
     create: 'Create a new user',
     'get <id>/all': 'Get details about user <id> / about all users',
+    'grant <id>': 'Make user <id> an administrator',
+    'revoke <id>': 'Make user <id> a curator',
     'wipe <id>/all': 'Delete registred user <id> / all users',
+    'lookup <username>/<email>': 'Find user(s) with the following username/email',
   }, "Command is incorrect. Type \"user\" for help.")
 );
 
@@ -20,10 +22,66 @@ USER_CLI.addSubListener('list', async () => {
   const users = await Database.user.all();
 
   if (!users.length) {
-    return `This server does not contain any user.`;
+    return `This server does not contain any user. Create a user with user create.`;
   }
 
   return `Available users are \n- ${users.map(m => m._id).join('\n- ')}`;
+});
+
+USER_CLI.addSubListener('grant', async rest => {
+  if (!rest) {
+    return "Please enter a user ID. You can search users with lookup.";
+  }
+
+  try {
+    var user = await Database.user.get(rest);
+  } catch {
+    return "User not found.";
+  }
+
+  user.role = 'admin';
+  await Database.user.save(user);
+
+  return `User ${user.name} has been successfully updated.`;
+});
+
+USER_CLI.addSubListener('revoke', async rest => {
+  if (!rest) {
+    return "Please enter a user ID. You can search users with lookup.";
+  }
+
+  try {
+    var user = await Database.user.get(rest);
+  } catch {
+    return "User not found.";
+  }
+
+  user.role = 'curator';
+  await Database.user.save(user);
+
+  return `User ${user.name} has been successfully updated.`;
+});
+
+USER_CLI.addSubListener('lookup', async rest => {
+  if (!rest) {
+    return "Please enter a query.";
+  }
+
+  const users = await Database.user.find({
+    selector: {
+      $or: [{
+        name: withRegex(rest, true, "i"),
+      }, {
+        email: withRegex(rest, true, "i"),
+      }],
+    },
+  });
+
+  if (!users.length) {
+    return `No user matched your search.`;
+  }
+
+  return `Matched users are \n- ${users.map(m => `ID ${m._id}: ${m.name} (${m.email})`).join('\n- ')}`;
 });
 
 USER_CLI.addSubListener('create', async () => {

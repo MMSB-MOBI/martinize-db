@@ -39,10 +39,8 @@ export const MAX_REQUEST_PER_WORKER_THRESHOLD = 3;
 /** If `true`, every sended molecule to `/api/molecule/create` will be directly accepted without moderation. */
 export const DISABLE_MODERATION_PROCESS = false;
 
-export const INSANE_PATH = path.resolve(__dirname + "/../utils/insane.sh");
-
 /** Name of the e-mail sender. */
-export const DEFAULT_MAILER_NAME = "MArtinize Database";
+export const DEFAULT_MAILER_NAME = "MArtini Database";
 /** E-mail address of the mail sender. */
 export const DEFAULT_MAILER_ADDRESS = "martinize.db@ibcp.fr";
 /** Debug purpose only; If `string`, all e-mails will be sent to the following address. */
@@ -57,6 +55,28 @@ export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
     rejectUnauthorized: false
   }
 };
+
+/* - Martinizer constants - */
+/** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
+export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
+/** Link to script used to create go virtual env. It will be run with Python 3 executable. */
+export const CREATE_GO_PATH = "/Users/alki/IBCP/create_goVirt.py";
+/** Link to script that can start ccmap */
+export const CREATE_MAP_PATH = path.resolve(__dirname, "../utils/get_map.sh");
+/** Associated python script to ccmap */
+export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
+/** Link to script that can run GROMACS */
+export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
+/** Link to MDP file needed for GROMACS's grompp */
+export const CONECT_MDP_PATH = path.resolve(__dirname, "../utils/run.mdp");
+/** Link to Python 3 binary */
+export const PYTHON_3_PATH = "python";
+/** Path to script that starts martinize2 */
+export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
+
+/* - Membrane builder constants - */
+/** Full path to insane start script */
+export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
 
 /**
  * Default URLs.
