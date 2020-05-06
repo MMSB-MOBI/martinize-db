@@ -169,13 +169,22 @@ At the start of the script, you'll find a `GROMACS_LOADER` sh variable that you 
 
 When all of this is ready, you can start the server.
 
-### Start developement server
+### Test if everything is okay
 
+First, start the server in development mode.
 ```bash
 npm run start-dev
 ```
 
-If everything goes well, it should be configured properly.
+In the server CLI, type the following command.
+```
+test dry-run
+```
+
+If everything is okay, the following message must appear at the end.
+```
+cli: Run end successfully, you can inspect out files in {a_temporary_directory}.
+```
 
 ### Server parameters
 
@@ -261,6 +270,8 @@ cli: [
   }
 ]
 ```
+
+
 
 You can now login on the [website](http://localhost:4123/) !
 
