@@ -164,7 +164,7 @@ deactivate
 python3 -m venv martinize2venv 
 source martinize2venv/bin/activate
 pip install --upgrade pip
-pip install ccmap
+pip install ccmap pyproteins pyproteinsExt
 pip install git+https://github.com/marrink-lab/vermouth-martinize.git#vermouth
 
 # Copy the martini304 force field files into site packages (server should be cloned!)
@@ -284,13 +284,12 @@ Options:
 
 Example:
 ```bash
-# Set env variables, SERVER_URL and COUCHDB_HOST
 SERVER_URL=https://martinize-db.ibcp.fr
 COUCHDB_HOST=http://localhost:5984
 
 # Run the server on part 4123, with CLI log level verbose, 
 # also log in file server.log with minimum level of info
-npm run start -- -p 4123 -l verbose --file-log-level info --log-file server.log
+npm run start -- -p 4123 -l verbose --file-log-level info --log-file server.log -c $COUCHDB_HOST --server-url $SERVER_URL
 ```
 
 ### Command line interface

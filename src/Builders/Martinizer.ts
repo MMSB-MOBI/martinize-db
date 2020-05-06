@@ -6,7 +6,7 @@ import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
 import zlib from 'zlib';
-import { FORCE_FIELD_DIR, CREATE_GO_PATH, PYTHON_3_PATH, CREATE_MAP_PATH, CONECT_PDB_PATH, CONECT_MDP_PATH, MARTINIZE_PATH, CREATE_MAP_PY_SCRIPT_PATH } from '../constants';
+import { FORCE_FIELD_DIR, CREATE_GO_PATH, PYTHON_3_PATH, CREATE_MAP_PATH, CONECT_PDB_PATH, CONECT_MDP_PATH, MARTINIZE_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH } from '../constants';
 import RadiusDatabase from '../Entities/RadiusDatabase';
 import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
@@ -315,7 +315,7 @@ export const Martinizer = new class Martinizer {
             const stdout = fs.createWriteStream(dir + '/go-virt-sites.stdout');
             const stderr = fs.createWriteStream(dir + '/go-virt-sites.stderr');
   
-            const child = exec(`${PYTHON_3_PATH} "${CREATE_GO_PATH}" -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
+            const child = exec(`${CREATE_GO_PATH} "${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
               stdout.close();
               stderr.close();
   

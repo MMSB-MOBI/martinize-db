@@ -64,8 +64,8 @@ export default class CouchHelper {
     };
   }
 
-  ping() {
-    return this.link.db.list();
+  async ping() {
+    return this.link.db.use(CouchHelper.USER_COLLECTION).list();
   }
 
   get molecule() {
