@@ -16,9 +16,21 @@ The following software must be installed or available:
 
 ## Getting started
 
+### Node.js
+
+Node 14 can be installed on RHEL/CentOS/Fedora with the following command:
+```bash
+curl -sL https://rpm.nodesource.com/setup_14.x | sudo bash -
+sudo dnf install nodejs gcc g++ make cmake  # Some pkg needs compilation tools
+sudo npm install -g typescript
+```
+
+### Repository
+
 Clone the git repository and run `npm install`
 
 ```bash
+# sudo dnf install git
 git clone https://github.com/alkihis/martinize-db.git
 cd martinize-db
 npm i
@@ -40,25 +52,36 @@ npm run tsc
 Front-end compiled website must be situed in `static/www` directory.
 
 ```bash
-# Delete the possible existing compiled website in martinize-db server
-rm -rf static/www/*
+# Create the static/www folder in martinize-db
+mkdir static
+mkdir static/www
 
 # Clone the front-end repo
-cd
+cd ..
 git clone https://github.com/alkihis/martinize-db-client.git
 cd martinize-db-client
-
 # Install dependencies
 npm i
+
+cd ..
+
+# you will also need a ngl copy for type declarations (it's annoying but ngl bundle is made in a obscure manner..)
+git clone https://github.com/alkihis/ngl.git
+cd ngl
+npm i
+npm run dts
+cp -R -f declarations ../martinize-db-client/node_modules/@mmsb/ngl/
+
+cd ../martinize-db-client
 
 # Build the website
 npm run build
 
 # Compiled site is in build
-cp -R build/* {path/to/martinize-db}/static/www
+cp -R build/* ../martinize-db/static/www
 
 # Go back to martinize-db server
-cd ~/martinize-db
+cd ../martinize-db
 ```
 
 ## Setup server
@@ -95,6 +118,7 @@ cd .keys
 # When asked, do not enter passphrase, press enter
 ssh-keygen -t rsa -b 4096 -m PEM -f key_new.pem
 openssl rsa -in key_new.pem -pubout -outform PEM -out key_new
+cd ..
 ```
 
 
