@@ -12,7 +12,6 @@ The following software must be installed or available:
 - **GROMACS** 2016+, see part `Configuring GROMACS engine`
 - **Python 2** and **Python 3**, with the possibility to create `virtualenv` environnements 
 - **OpenSSL**, usually included in all environnements
-- **The createGoVirt.py** script
 
 ## Getting started
 
@@ -131,8 +130,6 @@ In file `src/constants.ts`:
 - `URLS`:
   - `SERVER`: Specify here server **public** URL. This will be used in sent emails.
   - `COUCH`: Specify here CouchDB URL.
-- `PYTHON_3_PATH`: Path to Python 3.6+ binary.
-- `CREATE_GO_PATH`: Path to `createGoVirt.py` script.
 - `DSSP_PATH`: (optional) Path to anaconda's DSSP.
 - `MAILER_ENFORCE_RECIPIENT`: Set this to `false`.
 - `DEFAULT_MAILER_ADDRESS`: Put here the e-mail address that will send e-mails to clients.
@@ -181,6 +178,7 @@ The following server parts are using Python script/utilities:
 - `ccmap`
 - `insane`
 - `martinize2`
+- `govirt`
 
 #### ccmap
 
@@ -206,6 +204,13 @@ Call to this script is done from `src/Builders/MembraneBuilder.ts` file, method 
 [Martinize 2](https://github.com/marrink-lab/vermouth-martinize) is started through `utils/martinize.sh`.
 
 As for INSANE, inspect this script to include the virtualenv `source` in order to use a Python binary that have vermouth-martinize2 package installed.
+
+
+### govirt
+
+The Go virt script (found in `utils/create_goVirt.py`) is supersetted by `utils/create_go_virt.sh` to allow usage of virtualenv.
+
+As for INSANE and Martinize2, nspect this script to include the virtualenv `source` in order to use the same virtualenv as martinize2 (numpy is needed).
 
 
 ### Configuring GROMACS engine
