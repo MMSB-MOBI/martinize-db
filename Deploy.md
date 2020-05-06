@@ -124,6 +124,35 @@ npm run tsc
 
 ### Python requirements
 
+#### Installing venvs on CentOS
+
+```bash
+sudo dnf install git python2 python3-devel*  # Needed to install ccmap from source
+sudo pip3 install virtualenv
+
+# venv for insane (Python 2)
+virtualenv --python=$(which python2) insanevenv
+source insanevenv/bin/activate
+pip install insane
+deactivate
+
+# venv for martinize2/ccmap/create_goVirt (Python 3)
+python3 -m venv martinize2venv 
+source martinize2venv/bin/activate
+pip install --upgrade pip
+pip install ccmap
+pip install git+https://github.com/marrink-lab/vermouth-martinize.git#vermouth
+
+# Copy the force field files into site packages (server should be cloned!)
+target=martinize2venv/lib/python3.6/site-packages/vermouth/data
+origin=martinize-db/vermouth-data
+
+cp -R $origin/force_fields/* $target/force_fields
+cp -R $origin/mappings/* $target/mappings
+
+deactivate
+```
+
 The following server parts are using Python script/utilities:
 - `ccmap`
 - `insane`
@@ -156,6 +185,32 @@ As for INSANE, inspect this script to include the virtualenv `source` in order t
 
 
 ### Configuring GROMACS engine
+
+#### Installation guide for a Docker/Virtual machine
+
+```bash
+# If needed, install c/c++/make/cmake
+bnf install cmake make gcc g++ tar wget
+
+# Download from gromacs server the gromacs source
+wget http://ftp.gromacs.org/pub/gromacs/gromacs-2020.2.tar.gz
+
+# Follow the gromacs compile guide
+tar xfz gromacs-2020.2.tar.gz
+cd gromacs-2020.2
+mkdir build
+cd build
+cmake .. -DGMX_BUILD_OWN_FFTW=ON -DREGRESSIONTEST_DOWNLOAD=ON
+make
+make check
+sudo make install
+
+# To each time you want to use gmx commands: You can create an alias where you want
+# This line or a remplacement should be present in `utils/create_conect_pdb.sh` in GROMACS_LOADER variable. 
+source /usr/local/bin/GMXRC # or source /usr/local/gromacs/bin/GMXRC
+```
+
+#### For every machine
 
 GROMACS is used to create PDB files from a set of PDB+ITP files. This operation is **very fast** (up to 5 seconds).
 
