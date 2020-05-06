@@ -143,7 +143,7 @@ pip install --upgrade pip
 pip install ccmap
 pip install git+https://github.com/marrink-lab/vermouth-martinize.git#vermouth
 
-# Copy the force field files into site packages (server should be cloned!)
+# Copy the martini304 force field files into site packages (server should be cloned!)
 target=martinize2venv/lib/python3.6/site-packages/vermouth/data
 origin=martinize-db/vermouth-data
 
