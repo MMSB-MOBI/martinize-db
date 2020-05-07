@@ -222,6 +222,9 @@ To stop/remove (f.e., to re-deploy it), remove container and remove its image.
 
 ```bash
 docker-compose stop && docker-compose rm -f
+
+# To reset couch: Remove container volumes
+docker-compose rm -v
 ```
 
 
