@@ -204,6 +204,7 @@ Call to this script is done from `src/Builders/MembraneBuilder.ts` file, method 
 [Martinize 2](https://github.com/marrink-lab/vermouth-martinize) is started through `utils/martinize.sh`.
 
 As for INSANE, inspect this script to include the virtualenv `source` in order to use a Python binary that have vermouth-martinize2 package installed.
+If you want to change this, call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
 
 
 ### govirt
@@ -211,6 +212,8 @@ As for INSANE, inspect this script to include the virtualenv `source` in order t
 The Go virt script (found in `utils/create_goVirt.py`) is supersetted by `utils/create_go_virt.sh` to allow usage of virtualenv.
 
 As for INSANE and Martinize2, nspect this script to include the virtualenv `source` in order to use the same virtualenv as martinize2 (numpy is needed).
+
+If you want to change this, call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
 
 
 ### Configuring GROMACS engine
