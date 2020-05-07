@@ -1,9 +1,21 @@
 import { ENABLE_JOB_MANAGER } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
+import path from 'path';
 
 
 export default new class ShellManager {
+  /**
+   * Script name to jobOpt ? Specify here parameters to fill in job opt ?
+   */
+  protected readonly SCRIPT_TO_ARGS: { [scriptName: string]: any } = {
+    'create_conect_pdb.sh': {},
+    'create_go_virt.sh': {},
+    'get_map.sh': {},
+    'insane.sh': {},
+    'martinize.sh': {},
+  };
+
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
@@ -57,6 +69,14 @@ export default new class ShellManager {
    * If job create -new files- in its directory, they *must* be copied to {working_directory} after the job.
    */
   protected async runWithJobManager(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+    const basename = path.basename(script_name);
+    // basename is shell .sh name without absolute path
+    const options = this.SCRIPT_TO_ARGS[basename];
+
+    if (!options) {
+      throw new Error("Script is not known, unable to load job manager settings");
+    }
+
     // todo
   }
 }();
