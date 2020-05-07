@@ -221,11 +221,7 @@ source docker_start_server.sh  # Run the script
 To stop/remove (f.e., to re-deploy it), remove container and remove its image.
 
 ```bash
-# Stop martinize_db then delete it.
-docker stop martinize_db && docker container rm martinize_db
-
-# Do the same with its couchdb counterpart
-docker stop martinize_couch_db && docker container rm martinize_couch_db
+docker-compose stop && docker-compose rm -f
 ```
 
 
