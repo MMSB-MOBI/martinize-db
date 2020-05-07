@@ -15,7 +15,9 @@ services:
     container_name: martinize_db
     depends_on: 
       - db
-    build: centos-systemfile.Dockerfile
+    build: 
+      context: .
+      dockerfile: centos-systemfile.Dockerfile
     ports:
       - "5000:4123"
     environment: 
