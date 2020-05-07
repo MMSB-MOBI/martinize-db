@@ -213,7 +213,7 @@ TODO: inside the container, must install Python3, Python2, insane+martinize2, co
 Enter inside the container, and start the shell script who automatically set a screen with the server.
 ```bash
 docker exec -it martinize_db bash  # Open a interactive bash shell in container
-source docker_start_server.sh  # Run the script
+# source docker_start_server.sh  # Run the script
 ```
 
 #### Stop or remove the deployment
