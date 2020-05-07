@@ -62,16 +62,7 @@ cd martinize-db-client
 # Install dependencies
 npm i
 
-cd ..
-
-# you will also need a ngl copy for type declarations (it's annoying but ngl bundle is made in a obscure manner..)
-git clone https://github.com/alkihis/ngl.git
-cd ngl
-npm i
-npm run dts
-cp -R -f declarations ../martinize-db-client/node_modules/@mmsb/ngl/
-
-cd ../martinize-db-client
+cp -R utils/declarations node_modules/@mmsb/ngl
 
 # Build the website
 npm run build
