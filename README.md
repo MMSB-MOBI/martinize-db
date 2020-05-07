@@ -10,7 +10,15 @@ Requirements:
 - Node 12+ and NPM 6+
 - A working SMTP server to send e-mails
 
+## Deploy
+
+An advanced deploy procedure has been written to [Deploy.md](./Deploy.md) file. Please ignore this file and see it instead.
+
 ## Setting up the project
+
+The following procedure assume GROMACS is installed,
+all your virtual environnements are set properly or 
+your python executables are aware of martinize, insane and other requirements.
 
 First, clone the project with `git`.
 ```bash
@@ -31,8 +39,6 @@ cd .keys
 ssh-keygen -t rsa -b 4096 -m PEM -f key_new.pem
 openssl rsa -in key_new.pem -pubout -outform PEM -out key_new
 ```
-
-**If you want to deploy the server quickly, you can directly switch to `Deploy > Deploy an already compiled version` section and ignore the following instructions.**
 
 ### Get started
 
@@ -86,13 +92,12 @@ Options:
 
 Example:
 ```bash
-# Set env variables, SERVER_URL and COUCHDB_HOST
 SERVER_URL=https://martinize-db.ibcp.fr
 COUCHDB_HOST=http://localhost:5984
 
 # Run the server on part 4123, with CLI log level verbose, 
 # also log in file server.log with minimum level of info
-npm run start -- -p 4123 -l verbose --file-log-level info --log-file server.log
+npm run start -- -p 4123 -l verbose --file-log-level info --log-file server.log -c $COUCHDB_HOST --server-url $SERVER_URL
 ```
 
 ### Command line interface
@@ -156,28 +161,15 @@ You can now login on the [website](http://localhost:4123/) !
 
 You must have the `martinize-db-client` project on your computer.
 
-#### In project `martinize-db-client`
-
-Start the build of the website.
-
-```bash
-npm run build
-```
+Please see in [Deploy.md](./Deploy.md) part `Include front-end website to this server` to compile and type properly martinize db client.
 
 #### In this project
 
 ***This project must have been built at least one time with `tsc`. Make sure `build` folder exists.***
 
-Copy the content of build directory of `martinize-db-client` in `static/www`.
-Then, compile the required files in a directory, and zip them.
+Compile the required files in a directory, and zip them.
 
 ```bash
-martinize_db_client_dir="../martinize-db-client/build"
-
-# Delete the existing website.
-rm -rf ./static/www/*
-# Replace it with content of current build
-cp -R $martinize_db_client_dir/* ./static/www
 
 # Copy the required files to a tmp folder
 mkdir deploy
@@ -191,17 +183,6 @@ rm -rf deploy
 ```
 
 You now have the required file `deploy.zip` in order to deploy with Docker! Follow instuctions of **`Deploy with Docker`** part.
-
-### Deploy an already compiled version
-
-Switch to branch `deploy` with `git`.
-
-```bash
-git checkout deploy
-```
-
-Ensure `deploy.zip` file is present in project directory.
-You can now skip to part **`Deploy with Docker`**.
 
 
 ### Deploy with Docker
@@ -224,6 +205,8 @@ Containers are ready to be used after `docker-compose`. Martinize Database serve
 Two containers are started: `martinize_couch_db` and `martinize_db`.
 
 In `martinize_db`, server is not started automatically, we must initialize the server inside the container.
+
+TODO: inside the container, must install Python3, Python2, insane+martinize2, compile GROMACS.
 
 Enter inside the container, and start the shell script who automatically set a screen with the server.
 ```bash
