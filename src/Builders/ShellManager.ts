@@ -47,6 +47,15 @@ export default new class ShellManager {
     }) as Promise<void>;
   }
 
+  /**
+   * Run a shell command {command} with the job manager inside {working_directory}.
+   * 
+   * {working_directory} may contain files needed by the job manager.
+   * Save stdout/stderr (if {save_std_name} is string) to {working_directory}/{save_std_name}.<stdout/stderr>.
+   * Autokill job (if {timeout} is defined) after {timeout} milliseconds.
+   * 
+   * If job create -new files- in its directory, they *must* be copied to {working_directory} after the job.
+   */
   protected async runWithJobManager(command: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     // todo
   }
