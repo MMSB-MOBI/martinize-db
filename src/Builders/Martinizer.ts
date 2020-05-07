@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { exec, ExecException } from 'child_process';
+import { ExecException } from 'child_process';
 import FormData from 'form-data';
 import fs, { promises as FsPromise } from 'fs';
 import path from 'path';
@@ -14,6 +14,7 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
+import ShellManager from './ShellManager';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -210,42 +211,7 @@ export const Martinizer = new class Martinizer {
         // Step: Martinize Init
         onStep?.(this.STEP_MARTINIZE_INIT);
 
-        await new Promise((resolve, reject) => {
-          const stdout_martinize = fs.createWriteStream(dir + '/martinize.stdout');
-          const stderr_martinize = fs.createWriteStream(dir + '/martinize.stderr');
-          const MTZ_STEP_INDICATOR = 'INFO - step - ';
-
-          const child = exec(command_line, { cwd: dir }, (err) => {
-            stdout_martinize.close();
-            stderr_martinize.close();
-            child.stderr?.removeAllListeners();
-  
-            if (err) {
-              reject({ error: err, stdout: dir + '/martinize.stdout', stderr: dir + '/martinize.stderr' });
-              return;
-            }
-            resolve();
-          });
-
-          child.stdout?.pipe(stdout_martinize);
-          child.stderr?.on('data', (chunk: Buffer) => {
-            const lines = chunk.toString().trim().split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith(MTZ_STEP_INDICATOR)) {
-                // Get the step name (every step is ended with a dot, so line.length-1 remove it)
-                const step_info = line.slice(MTZ_STEP_INDICATOR.length, line.length - 1);
-  
-                // Todo send to socket.io ?
-                logger.debug("[MARTINIZER-RUN] [Martinize Step] " + step_info);
-
-                onStep?.(this.STEP_MARTINIZE_RUNNING, step_info);
-              }
-            }
-
-            stderr_martinize.write(chunk);
-          });
-        });
+        await ShellManager.run(command_line, dir, 'martinize');
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
 
@@ -279,17 +245,6 @@ export const Martinizer = new class Martinizer {
       if (settings.use_go_virtual_sites) {
         let map_filename: string;
         
-        // Must create the go sites
-        const [out, ] = await new Promise((resolve, reject) => {
-          exec('cut -f1 -d \' \' output.pdb | grep -c ATOM', { cwd: dir }, (err, stdout, stderr) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            resolve([stdout, stderr]);
-          });
-        }) as [string, string];
-        
         // GET THE MAP FILE FROM A CUSTOM WAY.
         // Use the original pdb file !!!
         // todo change (ccmap create way too much distances, so the shell script takes forever)
@@ -311,25 +266,11 @@ export const Martinizer = new class Martinizer {
 
         // Ensure to have the script at the correct place...
         try {
-          await new Promise((resolve, reject) => {
-            const stdout = fs.createWriteStream(dir + '/go-virt-sites.stdout');
-            const stderr = fs.createWriteStream(dir + '/go-virt-sites.stderr');
-  
-            const child = exec(`${CREATE_GO_PATH} "${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --Natoms ${out.trim()} --moltype molecule_0`, { cwd: dir, maxBuffer: 1e9 }, err => {
-              stdout.close();
-              stderr.close();
-  
-              if (err) {
-                // Sometimes, the program crashes, I don't know why. To investigate
-                reject(err);
-                return;
-              }
-              resolve();
-            });
-  
-            child.stdout?.pipe(stdout);
-            child.stderr?.pipe(stderr);
-          });
+          // Must create the go sites
+          const command_line_go = `${CREATE_GO_PATH} "${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
+
+          await ShellManager.run(command_line_go, dir, 'go-virt-sites');
+
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create go virtual sites.",
@@ -480,37 +421,8 @@ export const Martinizer = new class Martinizer {
 
     logger.debug("[CCMAP] Calculating distances for backbone atoms.");
 
-    // Extract only the CA atoms from original PDB, as they're the only to count for contact map.
-    await new Promise((resolve, reject) => {
-      exec(`grep 'CA' "${path.resolve(pdb_filename)}" > "${use_tmp_dir + "/_backbones.pdb"}"`, { maxBuffer: 1e9 }, err => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        resolve();
-      });
-    });
-
     // Compute contacts with the CA pdb
-    await new Promise((resolve, reject) => {
-      const stdout = fs.createWriteStream(use_tmp_dir + '/distances.stdout');
-      const stderr = fs.createWriteStream(use_tmp_dir + '/distances.stderr');
-
-      const child = exec(`${CREATE_MAP_PATH} ${CREATE_MAP_PY_SCRIPT_PATH} -f "${use_tmp_dir}/_backbones.pdb" -o "${distances_file}"`, (err) => {
-        stdout.close();
-        stderr.close();
-
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-
-      child.stdout?.pipe(stdout);
-      child.stderr?.pipe(stderr);
-    }) as [string, string];
+    await ShellManager.run(`${CREATE_MAP_PATH} ${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`, use_tmp_dir, 'distances');
 
     const distances_exists = await fileExists(distances_file);
 
@@ -660,24 +572,7 @@ export const Martinizer = new class Martinizer {
     const command = `${CONECT_PDB_PATH} "${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
     const pdb_out = base_directory + "/output-conect.pdb";
 
-    await new Promise((resolve, reject) => {
-      const stdout = fs.createWriteStream(base_directory + "/gromacs.stdout");
-      const stderr = fs.createWriteStream(base_directory + "/gromacs.stderr");
-
-      const child = exec(command, { cwd: base_directory, timeout: this.MAX_JOB_EXECUTION_TIME }, err => {
-        stdout.close();
-        stderr.close();
-
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-
-      child.stdout?.pipe(stdout);
-      child.stderr?.pipe(stderr);
-    });
+    await ShellManager.run(command, base_directory, 'gromacs', this.MAX_JOB_EXECUTION_TIME);
 
     const exists = await FsPromise.access(pdb_out, fs.constants.F_OK).then(() => true).catch(() => false);
 

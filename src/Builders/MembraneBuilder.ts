@@ -1,7 +1,5 @@
 import { TopFile } from 'itp-parser';
 import fs, { promises as FsPromise } from 'fs';
-import { promisify } from 'util';
-import { exec } from 'child_process';
 import path from 'path';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
 import { INSANE_PATH, LIPIDS_ROOT_DIR } from '../constants';
@@ -12,8 +10,7 @@ import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
 import { Lipid } from '../Entities/entities';
-
-const ExecPromise = promisify(exec);
+import ShellManager from './ShellManager';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -204,24 +201,8 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug("[INSANE] Command line: " + command_line);
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
-    const stdout_insane = fs.createWriteStream(workdir + '/insane.stdout');
-    const stderr_insane = fs.createWriteStream(workdir + '/insane.stderr');
-
-    // Start insane (todo catch errors)
-    try {
-      const process_promise = ExecPromise(
-        command_line, 
-        { cwd: workdir }
-      );
-  
-      process_promise.child.stdout?.pipe(stdout_insane);
-      process_promise.child.stderr?.pipe(stderr_insane);
-
-      await process_promise;
-    } finally {
-      stdout_insane.close();
-      stderr_insane.close();
-    }
+    // Start insane // TODO catch error properly
+    await ShellManager.run(command_line, workdir, 'insane');
 
     // Create the new TOP file
 

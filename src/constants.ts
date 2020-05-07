@@ -31,6 +31,9 @@ export const SETTINGS_FILE = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
 
+/* - Job manager - */
+export const ENABLE_JOB_MANAGER = false;
+
 /* - SEARCH WORKERS SETTINGS - */
 export const MINUTES_BEFORE_WORKER_KILL = 2;
 export const MAX_POOL_SIZE = 10;
