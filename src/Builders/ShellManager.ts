@@ -1,32 +1,52 @@
-import { ENABLE_JOB_MANAGER } from '../constants';
+import { ENABLE_JOB_MANAGER, INSANE_PATH, CONECT_PDB_PATH, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
-import path from 'path';
+import { ArrayValues } from '../helpers';
+
+const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
+export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 
 export default new class ShellManager {
   /**
+   * Link a script name `SupportedScript` to a .sh path.
+   */
+  protected readonly NAME_TO_PATH: { [scriptName in SupportedScript]: string } = {
+    'conect': CONECT_PDB_PATH,
+    'go_virt': CREATE_GO_PATH,
+    'ccmap': CREATE_MAP_PATH,
+    'insane': INSANE_PATH,
+    'martinize': MARTINIZE_PATH,
+  };
+
+  /**
    * Script name to jobOpt ? Specify here parameters to fill in job opt ?
    */
-  protected readonly SCRIPT_TO_ARGS: { [scriptName: string]: any } = {
-    'create_conect_pdb.sh': {},
-    'create_go_virt.sh': {},
-    'get_map.sh': {},
-    'insane.sh': {},
-    'martinize.sh': {},
+  protected readonly NAME_TO_ARGS: { [scriptName in SupportedScript]: any } = {
+    'conect': {},
+    'go_virt': {},
+    'ccmap': {},
+    'insane': {},
+    'martinize': {},
   };
 
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-  async run(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  async run(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     if (ENABLE_JOB_MANAGER) {
       return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
     }
     return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);
   }
 
-  protected runWithChildProcess(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+    const path = this.NAME_TO_PATH[script_name];
+
+    if (!path) {
+      throw new Error("Script is not supported.");
+    }
+
     return new Promise((resolve, reject) => {
       let stdout: fs.WriteStream | undefined = undefined;
       let stderr: fs.WriteStream | undefined = undefined;
@@ -36,7 +56,7 @@ export default new class ShellManager {
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
 
-      const child = exec(`"${script_name}" ${args}`, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
+      const child = exec(`"${path}" ${args}`, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
@@ -68,10 +88,8 @@ export default new class ShellManager {
    * 
    * If job create -new files- in its directory, they *must* be copied to {working_directory} after the job.
    */
-  protected async runWithJobManager(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
-    const basename = path.basename(script_name);
-    // basename is shell .sh name without absolute path
-    const options = this.SCRIPT_TO_ARGS[basename];
+  protected async runWithJobManager(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+    const options = this.NAME_TO_ARGS[script_name];
 
     if (!options) {
       throw new Error("Script is not known, unable to load job manager settings");

@@ -2,7 +2,7 @@ import { TopFile } from 'itp-parser';
 import fs, { promises as FsPromise } from 'fs';
 import path from 'path';
 import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
-import { INSANE_PATH, LIPIDS_ROOT_DIR } from '../constants';
+import { LIPIDS_ROOT_DIR } from '../constants';
 import { Martinizer } from './Martinizer';
 import RadiusDatabase from '../Entities/RadiusDatabase';
 import logger from '../logger';
@@ -200,7 +200,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
     // Start insane // TODO catch error properly
-    await ShellManager.run(INSANE_PATH, command_line, workdir, 'insane');
+    await ShellManager.run('insane', command_line, workdir, 'insane');
 
     // Create the new TOP file
 
