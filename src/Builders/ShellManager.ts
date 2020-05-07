@@ -1,4 +1,4 @@
-import { ENABLE_JOB_MANAGER, INSANE_PATH, CONECT_PDB_PATH, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH } from '../constants';
+import { INSANE_PATH, CONECT_PDB_PATH, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, JobMethod, DEFAULT_JOB_METHOD } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -8,6 +8,11 @@ export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 
 export default new class ShellManager {
+  /**
+   * Which mode to use when tasks are started.
+   */
+  public mode: JobMethod = DEFAULT_JOB_METHOD;
+
   /**
    * Link a script name `SupportedScript` to a .sh path.
    */
@@ -34,7 +39,7 @@ export default new class ShellManager {
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
   async run(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
-    if (ENABLE_JOB_MANAGER) {
+    if (this.mode === 'jm') {
       return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
     }
     return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);

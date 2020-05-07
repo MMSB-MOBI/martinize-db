@@ -19,12 +19,15 @@ import TmpDirHelper from './TmpDirHelper/TmpDirHelper';
 import TEST_CLI from './cli/test.cli';
 import { SocketIoMartinizer } from './routes/molecule/martinize';
 import http from 'http';
+import ShellManager from './Builders/ShellManager';
 
 commander
   .version(VERSION)
   .option('-c, --couchdb-url <url>', 'Couch DB URL', String, process.env.COUCHDB_HOST || URLS.COUCH)
   .option('--server-url <url>', 'Server URL', String, process.env.SERVER_URL || URLS.SERVER)
   .option('-p, --port <port>', 'Emit port', Number, 4123)
+  .option('--job-manager', 'Force using job manager as shell runner')
+  .option('--child-process', 'Force using child process as shell runner')
   .option('--wipe-init')
   .option('--init-db')
   .option('--quit-after-init')
@@ -42,6 +45,19 @@ const app = express();
 
 if (commander.logLevel) {
   logger.level = commander.logLevel;
+}
+
+if (commander.jobManager && commander.childProcess) {
+  logger.log("fatal", "You can't specify job manager AND child process as shell executor. Please select one of those.");
+  process.exit(2);
+}
+else if (commander.jobManager) {
+  logger.debug('Using job manager as shell executor.');
+  ShellManager.mode = 'jm';
+}
+else if (commander.childProcess) {
+  logger.debug('Using child processes as shell executor.');
+  ShellManager.mode = 'child';
 }
 
 if (commander.logFile) {
@@ -124,7 +140,7 @@ app.use('/api', (err: any, req: express.Request, res: express.Response, next: Fu
 });
 
 // Serve the static folder
-logger.debug("Serving static website");
+logger.silly("Serving static website.");
 // File should be in build/
 app.use(StaticServer);
 
