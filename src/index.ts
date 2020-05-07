@@ -43,23 +43,28 @@ const app = express();
 /* - PARSE CLI ARGS - */
 /* ------------------ */
 
+// Log level
 if (commander.logLevel) {
   logger.level = commander.logLevel;
 }
 
+
+// Shell handler mode
 if (commander.jobManager && commander.childProcess) {
   logger.log("fatal", "You can't specify job manager AND child process as shell executor. Please select one of those.");
   process.exit(2);
 }
 else if (commander.jobManager) {
-  logger.debug('Using job manager as shell executor.');
   ShellManager.mode = 'jm';
 }
 else if (commander.childProcess) {
-  logger.debug('Using child processes as shell executor.');
   ShellManager.mode = 'child';
 }
 
+logger.silly(`Using ${ShellManager.mode === 'jm' ? 'job manager' : 'child processes'} as shell executor.`);
+
+
+// Log files
 if (commander.logFile) {
   logger.add(new Winston.transports.File({ 
       filename: commander.logFile, 
@@ -69,6 +74,8 @@ if (commander.logFile) {
   }));
 }
 
+
+// CouchDB options
 if (commander.couchdbUrl) {
   let url = commander.couchdbUrl;
 
@@ -85,6 +92,8 @@ if (commander.couchdbUrl) {
   URLS.COUCH = url;
 }
 
+
+// Init options
 if (commander.wipeInit) {
   logger.info("Wiping databases and creating them again");
   Database.wipeAndCreate()
