@@ -174,7 +174,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     await FsPromise.symlink(pdb.path, dir + "/" + pdb_name);
 
-    const top_name = basenameWithoutExt(top.originalname) + '.top';
+    const top_name = generateSnowflake() + '.top';
     const full_top_name = dir + "/" + top_name;
 
     await FsPromise.symlink(top.path, dir + "/" + top_name);
