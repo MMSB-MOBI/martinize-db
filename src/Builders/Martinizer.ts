@@ -138,7 +138,7 @@ export const Martinizer = new class Martinizer {
 
     // Check dssp ps
     // TODO: DSSP gives bad results... this should not append
-    let command_line = MARTINIZE_PATH + " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
+    let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
     if (full.ignore) {
@@ -211,7 +211,7 @@ export const Martinizer = new class Martinizer {
         // Step: Martinize Init
         onStep?.(this.STEP_MARTINIZE_INIT);
 
-        await ShellManager.run(command_line, dir, 'martinize');
+        await ShellManager.run(MARTINIZE_PATH, command_line, dir, 'martinize');
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
 
@@ -267,9 +267,9 @@ export const Martinizer = new class Martinizer {
         // Ensure to have the script at the correct place...
         try {
           // Must create the go sites
-          const command_line_go = `${CREATE_GO_PATH} "${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
+          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
 
-          await ShellManager.run(command_line_go, dir, 'go-virt-sites');
+          await ShellManager.run(CREATE_GO_PATH, command_line_go, dir, 'go-virt-sites');
 
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
@@ -422,7 +422,7 @@ export const Martinizer = new class Martinizer {
     logger.debug("[CCMAP] Calculating distances for backbone atoms.");
 
     // Compute contacts with the CA pdb
-    await ShellManager.run(`${CREATE_MAP_PATH} ${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`, use_tmp_dir, 'distances');
+    await ShellManager.run(CREATE_MAP_PATH, `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`, use_tmp_dir, 'distances');
 
     const distances_exists = await fileExists(distances_file);
 
@@ -569,10 +569,10 @@ export const Martinizer = new class Martinizer {
       await FsPromise.rename(pdb_or_gro_filename, tmp_original_filename);
     }
 
-    const command = `${CONECT_PDB_PATH} "${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+    const command = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
     const pdb_out = base_directory + "/output-conect.pdb";
 
-    await ShellManager.run(command, base_directory, 'gromacs', this.MAX_JOB_EXECUTION_TIME);
+    await ShellManager.run(CONECT_PDB_PATH, command, base_directory, 'gromacs', this.MAX_JOB_EXECUTION_TIME);
 
     const exists = await FsPromise.access(pdb_out, fs.constants.F_OK).then(() => true).catch(() => false);
 

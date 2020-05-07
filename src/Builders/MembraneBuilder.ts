@@ -158,9 +158,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     }
 
     // Build the command line with fixed options (or that requires treatment)
-    let command_line = `${INSANE_PATH} ` +
-      // Input PDB file
-      `-f "${molecule_pdb}" ` +
+    let command_line = `-f "${molecule_pdb}" ` +
       // Output files (system and topology) 
       "-o system.gro -p __insane.top " +
       // Box size
@@ -202,7 +200,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
     // Start insane // TODO catch error properly
-    await ShellManager.run(command_line, workdir, 'insane');
+    await ShellManager.run(INSANE_PATH, command_line, workdir, 'insane');
 
     // Create the new TOP file
 

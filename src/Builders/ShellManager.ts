@@ -5,16 +5,16 @@ import fs from 'fs';
 
 export default new class ShellManager {
   /**
-   * Run a given shell {command} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
+   * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-  async run(command: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  async run(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     if (ENABLE_JOB_MANAGER) {
-      return this.runWithJobManager(command, working_directory, save_std_name, timeout);
+      return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
     }
-    return this.runWithChildProcess(command, working_directory, save_std_name, timeout);
+    return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);
   }
 
-  protected runWithChildProcess(command: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  protected runWithChildProcess(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     return new Promise((resolve, reject) => {
       let stdout: fs.WriteStream | undefined = undefined;
       let stderr: fs.WriteStream | undefined = undefined;
@@ -24,7 +24,7 @@ export default new class ShellManager {
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
 
-      const child = exec(command, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
+      const child = exec(`"${script_name}" ${args}`, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
@@ -48,7 +48,7 @@ export default new class ShellManager {
   }
 
   /**
-   * Run a shell command {command} with the job manager inside {working_directory}.
+   * Run a given script {script_name} with args {args} with the job manager inside {working_directory}.
    * 
    * {working_directory} may contain files needed by the job manager.
    * Save stdout/stderr (if {save_std_name} is string) to {working_directory}/{save_std_name}.<stdout/stderr>.
@@ -56,7 +56,7 @@ export default new class ShellManager {
    * 
    * If job create -new files- in its directory, they *must* be copied to {working_directory} after the job.
    */
-  protected async runWithJobManager(command: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  protected async runWithJobManager(script_name: string, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     // todo
   }
 }();
