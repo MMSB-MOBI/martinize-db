@@ -20,7 +20,7 @@ The following software must be installed or available:
 Node 14 can be installed on RHEL/CentOS/Fedora with the following command:
 ```bash
 curl -sL https://rpm.nodesource.com/setup_14.x | sudo bash -
-sudo dnf install nodejs gcc g++ make cmake  # Some pkg needs compilation tools
+sudo dnf install nodejs gcc make cmake  # Some pkg needs compilation tools
 sudo npm install -g typescript
 ```
 
