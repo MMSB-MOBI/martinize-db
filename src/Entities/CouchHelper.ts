@@ -65,7 +65,14 @@ export default class CouchHelper {
   }
 
   async ping() {
-    return this.link.db.use(CouchHelper.USER_COLLECTION).list();
+    try {
+      await this.link.db.use(CouchHelper.USER_COLLECTION).list();
+
+    } catch (e) {
+      if (!e.message.startsWith('Database does not exist')) {
+        throw e;
+      }
+    }
   }
 
   get molecule() {
