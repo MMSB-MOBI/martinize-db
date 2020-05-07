@@ -187,8 +187,6 @@ You now have the required file `deploy.zip` in order to deploy with Docker! Foll
 
 ### Deploy with Docker
 
-> Now, you must rename `_old-docker-compose.yml` to `docker-compose.yml`.
-
 > In order to deploy, `docker` and `docker-compose` must be installed and configured properly.
 > Docker is not configured/installed? See [Configure_Docker_IBCP.md](./Configure_Docker_IBCP.md) file.
 
