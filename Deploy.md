@@ -251,7 +251,7 @@ When all of this is ready, you can start the server.
 
 First, start the server in development mode.
 ```bash
-npm run start-dev
+npm run start-dev -- -c http://admin:admin@db:5984 # Match if it is within docker-compose
 ```
 
 In the server CLI, type the following command.
