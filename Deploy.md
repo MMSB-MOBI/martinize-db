@@ -13,11 +13,19 @@ The following software must be installed or available:
 - **Python 2** and **Python 3**, with the possibility to create `virtualenv` environnements 
 - **OpenSSL**, usually included in all environnements
 
+In Docker, you can use the following lines to prepare installation:
+```bash
+dnf install gcc-c++ gcc cmake make tar wget openssl openssh perl python2 python3 git which python3-devel*
+curl -sL https://rpm.nodesource.com/setup_14.x | bash -
+dnf install nodejs
+npm install -g typescript
+```
+
 ## Getting started
 
 ### Node.js
 
-Node 14 can be installed on RHEL/CentOS/Fedora with the following command:
+If Node is not installed, Node 14 can be installed on RHEL/CentOS/Fedora with the following command:
 ```bash
 curl -sL https://rpm.nodesource.com/setup_14.x | sudo bash -
 sudo dnf install nodejs gcc make cmake  # Some pkg needs compilation tools
@@ -29,7 +37,6 @@ sudo npm install -g typescript
 Clone the git repository and run `npm install`
 
 ```bash
-# sudo dnf install git
 git clone https://github.com/alkihis/martinize-db.git
 cd martinize-db
 npm i
