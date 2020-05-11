@@ -1,7 +1,7 @@
 import CliHelper, { CliListener } from "interactive-cli-helper";
 import { Martinizer } from "../Builders/Martinizer";
 import path from "path";
-import { promises as FsPromise, fstat } from 'fs';
+import { promises as FsPromise } from 'fs';
 import { LIPIDS_ROOT_DIR } from "../constants";
 import { Lipid } from "../Entities/entities";
 import { Database } from "../Entities/CouchHelper";

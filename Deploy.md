@@ -171,21 +171,26 @@ The following server parts are using Python script/utilities:
 - `martinize2`
 - `govirt`
 
+### Setting Python virtual environnements
+
+On top of the following files, put the right path to `source ~/martinize2venv/bin/activate`:
+- `utils/get_map.sh`
+- `utils/martinize.sh`
+- `utils/create_go_virt.sh`
+
+On top of the following file, put the right path to `source ~/insanevenv/bin/activate`:
+- `utils/insane.sh`
+
+
 #### ccmap
 
 `CCMap` is started from script `utils/get_map.sh`.
-
-Inspect this script to include the virtualenv `source` in order to use a Python binary that have `ccmap` package installed.
-
-If you want to change this, call to this script is done from `src/Builders/Martinizer.ts` file, method `getCcMap` of singleton `Martinizer`.
+Call to this script is done from `src/Builders/Martinizer.ts` file, method `getCcMap` of singleton `Martinizer`.
 
 
 #### insane
 
 [INSANE](https://github.com/Tsjerk/Insane) is started from script `utils/insane.sh`.
-
-If you want to include a `source` to a virtualenv that contain INSANE, do it at the start of the script.
-**INSANE can be installed via PiP, with a `pip2 install --user insane`**.
 
 Call to this script is done from `src/Builders/MembraneBuilder.ts` file, method `run`.
 
@@ -193,18 +198,13 @@ Call to this script is done from `src/Builders/MembraneBuilder.ts` file, method 
 #### martinize2
 
 [Martinize 2](https://github.com/marrink-lab/vermouth-martinize) is started through `utils/martinize.sh`.
-
-As for INSANE, inspect this script to include the virtualenv `source` in order to use a Python binary that have vermouth-martinize2 package installed.
-If you want to change this, call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
+Call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
 
 
-### govirt
+#### govirt
 
 The Go virt script (found in `utils/create_goVirt.py`) is supersetted by `utils/create_go_virt.sh` to allow usage of virtualenv.
-
-As for INSANE and Martinize2, nspect this script to include the virtualenv `source` in order to use the same virtualenv as martinize2 (numpy is needed).
-
-If you want to change this, call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
+Call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
 
 
 ### Configuring GROMACS engine
@@ -213,7 +213,7 @@ If you want to change this, call to this script is done from `src/Builders/Marti
 
 ```bash
 # If needed, install c/c++/make/cmake
-bnf install cmake make gcc g++ tar wget
+bnf install cmake make gcc gcc-c++ tar wget
 
 # Download from gromacs server the gromacs source
 wget http://ftp.gromacs.org/pub/gromacs/gromacs-2020.2.tar.gz
@@ -230,7 +230,7 @@ sudo make install
 
 # To each time you want to use gmx commands: You can create an alias where you want
 # This line or a remplacement should be present in `utils/create_conect_pdb.sh` in GROMACS_LOADER variable. 
-source /usr/local/bin/GMXRC # or source /usr/local/gromacs/bin/GMXRC
+source /usr/local/gromacs/bin/GMXRC # or source /usr/local/bin/GMXRC
 ```
 
 #### For every machine
@@ -242,6 +242,8 @@ This script is called in `createPdbWithConect` method of `Martinizer` singleton 
 
 At the start of the script, you'll find a `GROMACS_LOADER` sh variable that you can configure to start GROMACS module.
 
+**In the variable `GROMACS_LOADER`, you should put the `source /usr/local/gromacs/bin/GMXRC` (see previous part) in order to load GROMACS in PATH**.
+
 
 ## Start the server
 
@@ -251,7 +253,7 @@ When all of this is ready, you can start the server.
 
 First, start the server in development mode.
 ```bash
-npm run start-dev -- -c http://admin:admin@db:5984 # Match if it is within docker-compose
+npm run start-dev -- -c http://admin:admin@db:5984  # Required if it is within docker-compose
 ```
 
 In the server CLI, type the following command.
