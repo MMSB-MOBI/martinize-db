@@ -146,7 +146,10 @@ npm run tsc
 #### Installing venvs on CentOS
 
 ```bash
-sudo dnf install git python2 python3-devel*  # Needed to install ccmap from source
+# If needed
+sudo dnf install git python2 python3-devel* 
+
+# sudo is not required for Docker envs
 sudo pip3 install virtualenv
 
 # venv for insane (Python 2)
@@ -186,7 +189,7 @@ On top of the following files, put the right path to `source ~/martinize2venv/bi
 - `utils/create_go_virt.sh`
 
 On top of the following file, put the right path to `source ~/insanevenv/bin/activate`:
-- `utils/insane.sh`
+- `utils/insane.sh`: **You should also change the `insane_path` variable to `python`.**
 
 
 #### ccmap
