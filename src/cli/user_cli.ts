@@ -8,17 +8,20 @@ import { CLI } from "./cli";
 
 const USER_CLI = new CliListener(
   CliHelper.formatHelp("user", {
-    list: 'List registred users',
-    create: 'Create a new user',
-    'get <id>/all': 'Get details about user <id> / about all users',
-    'grant <id>': 'Make user <id> an administrator',
-    'revoke <id>': 'Make user <id> a curator',
-    'wipe <id>/all': 'Delete registred user <id> / all users',
-    'lookup <username>/<email>': 'Find user(s) with the following username/email',
-  }, "Command is incorrect. Type \"user\" for help.")
+    commands: {
+      list: 'List registred users',
+      create: 'Create a new user',
+      'get <id>/all': 'Get details about user <id> / about all users',
+      'grant <id>': 'Make user <id> an administrator',
+      'revoke <id>': 'Make user <id> a curator',
+      'wipe <id>/all': 'Delete registred user <id> / all users',
+      'lookup <username>/<email>': 'Find user(s) with the following username/email',
+    },
+    onNoMatch: "Command is incorrect. Type \"user\" for help.",
+  })
 );
 
-USER_CLI.addSubListener('list', async () => {
+USER_CLI.command('list', async () => {
   const users = await Database.user.all();
 
   if (!users.length) {
@@ -28,7 +31,7 @@ USER_CLI.addSubListener('list', async () => {
   return `Available users are \n- ${users.map(m => m._id).join('\n- ')}`;
 });
 
-USER_CLI.addSubListener('grant', async rest => {
+USER_CLI.command('grant', async rest => {
   if (!rest) {
     return "Please enter a user ID. You can search users with lookup.";
   }
@@ -45,7 +48,7 @@ USER_CLI.addSubListener('grant', async rest => {
   return `User ${user.name} has been successfully updated.`;
 });
 
-USER_CLI.addSubListener('revoke', async rest => {
+USER_CLI.command('revoke', async rest => {
   if (!rest) {
     return "Please enter a user ID. You can search users with lookup.";
   }
@@ -62,7 +65,7 @@ USER_CLI.addSubListener('revoke', async rest => {
   return `User ${user.name} has been successfully updated.`;
 });
 
-USER_CLI.addSubListener('lookup', async rest => {
+USER_CLI.command('lookup', async rest => {
   if (!rest) {
     return "Please enter a query.";
   }
@@ -84,7 +87,7 @@ USER_CLI.addSubListener('lookup', async rest => {
   return `Matched users are \n- ${users.map(m => `ID ${m._id}: ${m.name} (${m.email})`).join('\n- ')}`;
 });
 
-USER_CLI.addSubListener('create', async () => {
+USER_CLI.command('create', async () => {
   console.log("You're about to create a new user.")
 
   let name = "";
@@ -195,7 +198,7 @@ USER_CLI.addSubListener('create', async () => {
   }
 });
 
-USER_CLI.addSubListener('get', rest => {
+USER_CLI.command('get', rest => {
   rest = rest.trim();
 
   if (!rest) {
@@ -215,7 +218,7 @@ USER_CLI.addSubListener('get', rest => {
   return Database.user.get(rest);
 });
 
-USER_CLI.addSubListener('wipe', async rest => {
+USER_CLI.command('wipe', async rest => {
   rest = rest.trim();
   
   if (!rest) {

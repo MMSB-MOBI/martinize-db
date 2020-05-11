@@ -2,8 +2,6 @@ import CliHelper, { CliListener } from 'interactive-cli-helper';
 import Mailer from '../Mailer/Mailer';
 
 const NAME_TO_TEMPLATE: { [templateName: string]: string } = {
-  "1": "mail_ask",
-  "2": "mail_created",
   "ask": "mail_ask",
   "created": "mail_created",
 };
@@ -12,11 +10,14 @@ const TEST_RECIPIENT = "tulouca@gmail.com";
 
 export const MAIL_CLI = new CliListener(
   CliHelper.formatHelp("mail", {
-    "test-send": `Send a test mail to ${TEST_RECIPIENT}. Available templates: 'ask', 'created'.`,
-  }, "Command is incorrect. Type \"mail\" for help.")
+    commands: {
+      "test-send": `Send a test mail to ${TEST_RECIPIENT}. Available templates: ${Object.keys(NAME_TO_TEMPLATE)}.`,
+    },
+    onNoMatch: "Command is incorrect. Type \"mail\" for help.",
+  })
 );
 
-MAIL_CLI.addSubListener('test-send', rest => {
+MAIL_CLI.command('test-send', rest => {
   rest = rest.trim();
 
   if (!(rest in NAME_TO_TEMPLATE)) {
@@ -51,7 +52,7 @@ MAIL_CLI.addSubListener('test-send', rest => {
   }
 
   return "Unable to find desired model.";
-});
+}, { onSuggest: () => Object.keys(NAME_TO_TEMPLATE) });
 
 export default MAIL_CLI;
 

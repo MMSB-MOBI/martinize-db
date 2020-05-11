@@ -5,13 +5,16 @@ import { Molecule, StashedMolecule } from "../Entities/entities";
 
 const MOLECULE_CLI = new CliListener(
   CliHelper.formatHelp("molecule", {
-    list: 'List registred molecules',
-    'get <id>': 'Get details about molecule <id>',
-    'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
-  }, "Command is incorrect. Type \"molecule\" for help.")
+    commands: {
+      list: 'List registred molecules',
+      'get <id>': 'Get details about molecule <id>',
+      'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
+    },
+    onNoMatch: "Command is incorrect. Type \"molecule\" for help.",
+  })
 );
 
-MOLECULE_CLI.addSubListener('list', async () => {
+MOLECULE_CLI.command('list', async () => {
   const mols = await Database.molecule.all();
   const stashed = await Database.stashed.all();
 
@@ -25,7 +28,7 @@ MOLECULE_CLI.addSubListener('list', async () => {
   return (mols.length ? normal : "") + (mols.length && stashed.length ? "\n" : "") + (stashed.length ? stash : "");
 });
 
-MOLECULE_CLI.addSubListener('get', async rest => {
+MOLECULE_CLI.command('get', async rest => {
   rest = rest.trim();
 
   if (!rest) {
@@ -45,7 +48,7 @@ MOLECULE_CLI.addSubListener('get', async rest => {
   }
 });
 
-MOLECULE_CLI.addSubListener('wipe', async rest => {
+MOLECULE_CLI.command('wipe', async rest => {
   rest = rest.trim();
   
   if (!rest) {

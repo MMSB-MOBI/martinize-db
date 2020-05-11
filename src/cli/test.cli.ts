@@ -10,21 +10,23 @@ import MembraneBuilder from "../Builders/MembraneBuilder";
 import TmpDirHelper from "../TmpDirHelper/TmpDirHelper";
 
 const TEST_CLI = new CliListener(CliHelper.formatHelp('test', {
-  map: 'Create a map with the web server with the specified file',
-  ccmap: 'Create a map with the Python CCMap package with the specified file',
-  'elastic-bonds': 'Generate the elastic bonds definitions with the given folder. It must contain a TOP file, PDB file and ITP(s)',
-  'go-sites': 'Generate the elastic bonds definitions with the given folder. It must contain a ITPs files describing a Go model',
-  'add-lipid': 'Add a lipid, followed by a lipid filename (search in {workdir}/lipids/2_2).',
-  'lipid-prefixes': 'Get lipid directory prefix name by force field.',
-  'auto-import-lipid <forceField>': 'Import all the itp files inside a lipid directory found by its related force field.',
-  'dry-run': 'Run a Martinize + Go + INSANE + GROMACS test in order to test features.',
+  commands: {
+    map: 'Create a map with the web server with the specified file',
+    ccmap: 'Create a map with the Python CCMap package with the specified file',
+    'elastic-bonds': 'Generate the elastic bonds definitions with the given folder. It must contain a TOP file, PDB file and ITP(s)',
+    'go-sites': 'Generate the elastic bonds definitions with the given folder. It must contain a ITPs files describing a Go model',
+    'add-lipid': 'Add a lipid, followed by a lipid filename (search in {workdir}/lipids/2_2).',
+    'lipid-prefixes': 'Get lipid directory prefix name by force field.',
+    'auto-import-lipid <forceField>': 'Import all the itp files inside a lipid directory found by its related force field.',
+    'dry-run': 'Run a Martinize + Go + INSANE + GROMACS test in order to test features.',
+  }
 }));
 
-TEST_CLI.addSubListener('map', rest => Martinizer.getMap(rest));
+TEST_CLI.command('map', rest => Martinizer.getMap(rest));
 
-TEST_CLI.addSubListener('ccmap', rest => Martinizer.getCcMap(rest));
+TEST_CLI.command('ccmap', rest => Martinizer.getCcMap(rest));
 
-TEST_CLI.addSubListener('elastic-bonds', async rest => {
+TEST_CLI.command('elastic-bonds', async rest => {
   const itps: string[] = [];
   let top_file: string = "", pdb_file: string = "";
 
@@ -55,7 +57,7 @@ TEST_CLI.addSubListener('elastic-bonds', async rest => {
   return "Relations has been written to '" + (rest + 'relations.json') + "'.";
 });
 
-TEST_CLI.addSubListener('go-sites', async rest => {
+TEST_CLI.command('go-sites', async rest => {
   const itps: string[] = [];
   let top_file: string = "";
 
@@ -83,7 +85,7 @@ TEST_CLI.addSubListener('go-sites', async rest => {
   return "Relations has been written to '" + (rest + 'relations.json') + "'.";
 });
 
-TEST_CLI.addSubListener('add-lipid', async rest => {
+TEST_CLI.command('add-lipid', async rest => {
   const name = LIPIDS_ROOT_DIR + "2_2/" + rest + '.itp';
 
   const lipid: Lipid = {
@@ -97,11 +99,11 @@ TEST_CLI.addSubListener('add-lipid', async rest => {
   return lipid;
 });
 
-TEST_CLI.addSubListener('lipid-prefixes', () => {
-  return CliHelper.formatHelp("    force field  prefix", RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION); 
+TEST_CLI.command('lipid-prefixes', () => {
+  return CliHelper.formatHelp("    force field  prefix", { commands: RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION }); 
 });
 
-TEST_CLI.addSubListener('auto-import-lipid', async force_field => {
+TEST_CLI.command('auto-import-lipid', async force_field => {
   const prefix = RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field];
 
   if (!prefix) {
@@ -282,7 +284,7 @@ TER     156      ALA A  20
 END
 `;
 
-TEST_CLI.addSubListener('dry-run', async () => {
+TEST_CLI.command('dry-run', async () => {
   // Martinize the KWALP (with Go sites, use GROMACS)
   const pdb_dir = await TmpDirHelper.get();
 

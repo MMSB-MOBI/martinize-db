@@ -4,14 +4,17 @@ import AbstractDatabase from "../Entities/AbstractDatabase";
 
 const DATABASE_CLI = new CliListener(
   CliHelper.formatHelp("database", {
-    'create <name>/all': 'Create a single or all databases. Available names are: ' + CouchHelper.DBS.join(', ') + '.',
-    'wipe <name>/all': 'Delete a single or all databases.',
-    info: 'Check existence of each database and show their document count.',
-    'get <database> <docId>': 'Get a document by id in a selected database.',
-  }, "Command is incorrect. Type \"database\" for help.")
+    commands: {
+      'create <name>/all': 'Create a single or all databases. Available names are: ' + CouchHelper.DBS.join(', ') + '.',
+      'wipe <name>/all': 'Delete a single or all databases.',
+      info: 'Check existence of each database and show their document count.',
+      'get <database> <docId>': 'Get a document by id in a selected database.',
+    },
+    onNoMatch: "Command is incorrect. Type \"database\" for help.",
+  })
 );
 
-DATABASE_CLI.addSubListener('create', async rest => {
+DATABASE_CLI.command('create', async rest => {
   rest = rest.trim();
   
   if (!rest) {
@@ -29,7 +32,7 @@ DATABASE_CLI.addSubListener('create', async rest => {
   return `Database ${rest} has been created.`;
 });
 
-DATABASE_CLI.addSubListener('wipe', async rest => {
+DATABASE_CLI.command('wipe', async rest => {
   rest = rest.trim();
   
   if (!rest) {
@@ -47,7 +50,7 @@ DATABASE_CLI.addSubListener('wipe', async rest => {
   return `Database ${rest} has been wiped.`;
 });
 
-DATABASE_CLI.addSubListener('get', async rest => {
+DATABASE_CLI.command('get', async rest => {
   const [database, id] = rest.split(/ +/);
   if (!database || !id) {
     return `You must specify database name and id. Available names are ${CouchHelper.DBS.join(', ')}.`;
@@ -56,7 +59,7 @@ DATABASE_CLI.addSubListener('get', async rest => {
   return Database.link.use(database).get(id);
 });
 
-DATABASE_CLI.addSubListener('info', async () => {
+DATABASE_CLI.command('info', async () => {
   // Show: Database info (document count in each)
   async function infoAbout(database: AbstractDatabase<any>) {
     return {

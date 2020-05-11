@@ -164,7 +164,7 @@ SocketIoMartinizer(HTTP_SERVER);
 /* -------------------------- */
 
 async function startCli() {
-  const old_onclose = CLI.onclose!.bind(CLI);
+  const old_onclose = CLI.onclose.bind(CLI);
 
   CLI.onclose = async function() {
     await TmpDirHelper.clean();
@@ -174,27 +174,29 @@ async function startCli() {
   };
 
   // Cli starter
-  CLI.addSubListener('exit', async () => {
-    await CLI.onclose!();
+  CLI.command('exit', async () => {
+    await CLI.onclose();
     process.exit(0);
   });
 
-  CLI.addSubListener('molecule', MOLECULE_CLI);
-  CLI.addSubListener('user', USER_CLI);
-  CLI.addSubListener('worker', WORKER_CLI);
-  CLI.addSubListener('mail', MAIL_CLI);
-  CLI.addSubListener('database', DATABASE_CLI);
-  CLI.addSubListener('test', TEST_CLI);
+  CLI.command('molecule', MOLECULE_CLI);
+  CLI.command('user', USER_CLI);
+  CLI.command('worker', WORKER_CLI);
+  CLI.command('mail', MAIL_CLI);
+  CLI.command('database', DATABASE_CLI);
+  CLI.command('test', TEST_CLI);
   
-  CLI.addSubListener(
+  CLI.command(
     /^(\?|help)$/,  
     CliHelper.formatHelp("Martinize Database Server", {
-      molecule: "Access and manage published / stashed molecules.",
-      user: "Manage existing users, or create new ones.",
-      worker: "View started search workers and kill existing instances.",
-      mail: "Send test e-mails from defined templates.",
-      database: "Create and wipe Couch databases.",
-      exit: "Stop the server.",
+      commands: {
+        molecule: "Access and manage published / stashed molecules.",
+        user: "Manage existing users, or create new ones.",
+        worker: "View started search workers and kill existing instances.",
+        mail: "Send test e-mails from defined templates.",
+        database: "Create and wipe Couch databases.",
+        exit: "Stop the server.",
+      }
     })
   );
 

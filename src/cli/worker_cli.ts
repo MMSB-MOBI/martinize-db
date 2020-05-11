@@ -4,21 +4,24 @@ import { MINUTES_BEFORE_WORKER_KILL } from "../constants";
 
 const WORKER_CLI = new CliListener(
   CliHelper.formatHelp("worker", {
-    spawn: 'Spawn a new worker',
-    'assign timeout <id>': 'Set a kill timeout for worker <id>',
-    list: 'List started workers',
-    'get <id>': 'Get details about worker <id>',
-    'kill <id>/all': 'Kill worker <id> / Kill all workers',
-  }, "Command is incorrect. Type \"worker\" for help.")
+    commands: {
+      spawn: 'Spawn a new worker',
+      'assign timeout <id>': 'Set a kill timeout for worker <id>',
+      list: 'List started workers',
+      'get <id>': 'Get details about worker <id>',
+      'kill <id>/all': 'Kill worker <id> / Kill all workers',
+    },
+    onNoMatch: "Command is incorrect. Type \"worker\" for help."
+  })
 );
 
-WORKER_CLI.addSubListener('spawn', () => {
+WORKER_CLI.command('spawn', () => {
   const id = SearchWorker.spawn(false);
 
   return `A new worker has been spawned with ID ${id}.`;
 });
 
-WORKER_CLI.addSubListener('assign timeout', rest => {
+WORKER_CLI.command('assign timeout', rest => {
   const id = rest.trim();
 
   if (!id) {
@@ -34,7 +37,7 @@ WORKER_CLI.addSubListener('assign timeout', rest => {
   return `Worker ${id} will be killed in ${MINUTES_BEFORE_WORKER_KILL} minutes.`;
 });
 
-WORKER_CLI.addSubListener('list', () => {
+WORKER_CLI.command('list', () => {
   const workers = SearchWorker.available;
 
   if (Object.keys(workers).length === 0) {
@@ -48,7 +51,7 @@ WORKER_CLI.addSubListener('list', () => {
   }`;
 });
 
-WORKER_CLI.addSubListener('get', rest => {
+WORKER_CLI.command('get', rest => {
   const workers = SearchWorker.available;
   const id = rest.trim();
 
@@ -64,7 +67,7 @@ WORKER_CLI.addSubListener('get', rest => {
   return `Worker ${id}: Occupation ${w[0]}`;
 });
 
-WORKER_CLI.addSubListener('kill', rest => {
+WORKER_CLI.command('kill', rest => {
   const id = rest.trim();
   
   if (!id) {

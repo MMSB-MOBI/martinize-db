@@ -197,19 +197,16 @@ On top of the following file, put the right path to `source ~/insanevenv/bin/act
 `CCMap` is started from script `utils/get_map.sh`.
 Call to this script is done from `src/Builders/Martinizer.ts` file, method `getCcMap` of singleton `Martinizer`.
 
-
 #### insane
 
 [INSANE](https://github.com/Tsjerk/Insane) is started from script `utils/insane.sh`.
 
 Call to this script is done from `src/Builders/MembraneBuilder.ts` file, method `run`.
 
-
 #### martinize2
 
 [Martinize 2](https://github.com/marrink-lab/vermouth-martinize) is started through `utils/martinize.sh`.
 Call to this script is done from `src/Builders/Martinizer.ts` file, method `run` of singleton `Martinizer`.
-
 
 #### govirt
 
