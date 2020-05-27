@@ -1,29 +1,64 @@
-import { Worker } from 'worker_threads';
-import { simpleflake } from 'simpleflakes';
 import nano = require('nano');
 import { Molecule } from '../Entities/entities';
-import logger from '../logger';
 import CouchHelper from '../Entities/CouchHelper';
 import { MINUTES_BEFORE_WORKER_KILL, MAX_POOL_SIZE, MAX_REQUEST_PER_WORKER_THRESHOLD, URLS } from '../constants';
-
-interface WorkerIncomingMessage {
-  type: "search_end" | "error";
-  uuid: string;
-  molecules?: Molecule[];
-  length?: number;
-  error?: any;
-}
+import WorkerThreadManager, { WorkerPool } from 'worker-thread-manager';
 
 interface WorkerSendMessage {
   type: "new_search" | "clean";
 }
 
 interface WorkerStartTask extends WorkerSendMessage {
-  uuid: string;
   query: nano.MangoQuery;
   as_all?: boolean;
 }
 
+interface WorkerResult {
+  molecules: Molecule[];
+  length: number;
+}
+
+export const SearchWorker = new class SearchWorker {
+  protected _pool?: WorkerPool<WorkerStartTask, WorkerResult>;
+
+  protected get pool() {
+    if (!this._pool) {
+      this._pool = WorkerThreadManager.spawn<WorkerStartTask, WorkerResult>(
+        __dirname + '/worker.js',
+        {
+          spawnerThreshold: MAX_REQUEST_PER_WORKER_THRESHOLD,
+          poolLength: MAX_POOL_SIZE,
+          // 2 minutes life max without task
+          stopOnNoTask: MINUTES_BEFORE_WORKER_KILL * 60 * 1000,
+          workerData: {
+            molecule_collection: CouchHelper.MOLECULE_COLLECTION,
+            couch_url: URLS.COUCH,
+          },
+        }
+      );
+    }
+
+    return this._pool;
+  }
+
+  async query(query: nano.MangoQuery, send_all = false) {
+    const task: WorkerStartTask = {
+      type: 'new_search',
+      query,
+      as_all: send_all
+    };
+
+    return this.pool!.run(task);
+  }
+
+  clearCache() {
+    return this.pool.send({ type: 'clean' } as WorkerStartTask);
+  }
+}
+
+export default SearchWorker;
+
+/* 
 export const SearchWorker = new class SearchWorker {
   protected workers: Map<string, Worker> = new Map;
   protected workers_occupation: Map<string, [number, NodeJS.Timeout?]> = new Map;
@@ -78,9 +113,6 @@ export const SearchWorker = new class SearchWorker {
     return mols;
   } 
 
-  /**
-   * Get a worker that is unexploited.
-   */
   protected getAvailableWorker() : [Worker, [number, NodeJS.Timeout?], string] {
     let selected_worker_id: string;
     if (!this.workers.size) {
@@ -116,9 +148,6 @@ export const SearchWorker = new class SearchWorker {
     return [selected_worker, selected_worker_occ, selected_worker_id];
   }
 
-  /**
-   * Spawn a new worker. This does not initialize timeout for killing him.
-   */
   spawn(with_log = true) {
     const worker_id = simpleflake().toString();
     const worker = new Worker(__dirname + '/worker.js', {
@@ -192,5 +221,4 @@ export const SearchWorker = new class SearchWorker {
     return this.workers.has(id);
   }
 }();
-
-export default SearchWorker;
+ */

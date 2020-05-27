@@ -2,13 +2,18 @@ import { parentPort, workerData } from 'worker_threads';
 import { Molecule } from '../Entities/entities';
 import nano = require('nano');
 import md5 from 'md5';
+import { WorkerChild } from 'worker-thread-manager';
 
-interface WorkerIncomingMessage {
-  type: "search_end" | "error";
-  uuid: string;
-  molecules?: Molecule[];
-  length?: number;
-  error?: any;
+/* TYPES */
+
+interface WorkerInitData {
+  molecule_collection: string;
+  couch_url: string;
+}
+
+interface WorkerResult {
+  molecules: Molecule[];
+  length: number;
 }
 
 interface WorkerSendMessage {
@@ -25,19 +30,28 @@ interface MoleculeResultTree {
   [tree_id: string]: Molecule[];
 }
 
-// Read from dat invoked by parent
-const WORKER_ID: string = workerData.id;
-const MOLECULE_COLLECTION: string = workerData.molecule_collection;
-const COUCH_URL: string = workerData.couch_url;
 
-// Create couch connection
-const CONNECTION = nano({ url: COUCH_URL, requestDefaults: { proxy: null } });
-const MOLECULE_DATABASE = CONNECTION.use<Molecule>(MOLECULE_COLLECTION);
-const QUERY_LIMIT = 9999999;
+/* WORKER DATA */
+
+// Init variables
+const CONSTANTS = {
+  molecule_db: '',
+  couch: '',
+  query_limit: 999999999,
+};
+
+function getDb() {
+  // Create couch connection
+  return nano({ 
+    url: CONSTANTS.couch, 
+    requestDefaults: { proxy: null } 
+  }).use<Molecule>(CONSTANTS.molecule_db);
+}
 
 // Create cache
 let Cache: { [hash: string]: MoleculeResultTree } = {};
 
+// Keep only the most recent cached results
 setInterval(() => {
   // Keep the 10 most recent cached
   const keys = Object.keys(Cache);
@@ -49,27 +63,12 @@ setInterval(() => {
   }
 }, 2 * 60 * 1000);
 
-// -----------------------
-// - LISTEN FOR MESSAGES -
-// -----------------------
-parentPort!.on('message', (msg: WorkerSendMessage) => {
-  if (msg.type === "new_search") {
-    startNewSearch(msg as WorkerStartTask);
-  }
-  if (msg.type === "clean") {
-    cleanCache();
-  }
-});
+/* WORKER LIFECYCLE */
 
+async function onTask(data: WorkerStartTask) {
+  const query_hash = md5(JSON.stringify(data.query));
 
-// Worker functions
-function cleanCache() {
-  Cache = {};
-}
-
-async function startNewSearch(msg: WorkerStartTask) {
-  const task_id = msg.uuid;
-  const query_hash = md5(JSON.stringify(msg.query));
+  const db = getDb();
 
   // Do the search
   let molecule_tree: MoleculeResultTree;
@@ -77,18 +76,18 @@ async function startNewSearch(msg: WorkerStartTask) {
     molecule_tree = Cache[query_hash];
   }
   else {
-    const query = { ...msg.query };
-    query.limit = QUERY_LIMIT;
+    const query = { ...data.query };
+    query.limit = CONSTANTS.query_limit;
     // This will be applied later
     query.skip = 0;
 
-    const molecules = await MOLECULE_DATABASE.find(query)
-      .catch((e: any) => {
-        sendErrorMessage(task_id, e);
-      });
+    const molecules = await db.find(query);
 
     if (!molecules) {
-      return;
+      return {
+        molecules: [],
+        length: 0,
+      };
     }
 
     // Create the trees
@@ -109,45 +108,51 @@ async function startNewSearch(msg: WorkerStartTask) {
   }
 
   // Molecule tree is okay
-  const skip = msg.query.skip || 0;
-  const limit = msg.query.limit || 25;
+  const skip = data.query.skip || 0;
+  const limit = data.query.limit || 25;
 
   Cache[query_hash] = molecule_tree;
 
-  if (msg.as_all) {
+  if (data.as_all) {
     // Fusion all tree an returns the .slice(skip, skip+limit)
     // This requires Node 11 !
     const all_mols = Object.values(molecule_tree).flat();
   
-    sendEndMessage(task_id, all_mols.slice(skip, skip + limit), all_mols.length);
-    return;
+    const molecules = all_mols.slice(skip, skip + limit);
+
+    return {
+      molecules,
+      length: all_mols.length,
+    };
   }
 
   // Return tree skip, skip+limit
   const trees = Object.values(molecule_tree);
 
-  const concerned_molecules = trees
+  const molecules = trees
     .slice(skip, skip + limit)
     .map(e => e[0]); // Keep the most recent
   
-  sendEndMessage(task_id, concerned_molecules, trees.length);
-}
-
-
-// Utilities
-function sendEndMessage(task_id: string, molecules: Molecule[], full_length: number) {
-  parentPort!.postMessage({
-    type: "search_end",
-    uuid: task_id,
+  return {
     molecules,
-    length: full_length,
-  } as WorkerIncomingMessage);
+    length: trees.length,
+  };
 }
 
-function sendErrorMessage(task_id: string, error: any) {
-  parentPort!.postMessage({
-    type: "error",
-    uuid: task_id,
-    error
-  } as WorkerIncomingMessage);
+function onStartup(data: WorkerInitData) {
+  CONSTANTS.couch = data.couch_url;
+  CONSTANTS.molecule_db = data.molecule_collection;
 }
+
+function onMessage(data: { type: string }) {
+  if (data.type !== 'clean')
+    return;
+
+  Cache = {};
+}
+
+new WorkerChild<WorkerStartTask, WorkerResult, WorkerInitData>({
+  onTask,
+  onStartup,
+  onMessage
+}).listen();

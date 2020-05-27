@@ -9,7 +9,6 @@ import { sendError } from './helpers';
 import CouchHelper, { Database } from './Entities/CouchHelper';
 import MOLECULE_CLI from './cli/molecule_cli';
 import USER_CLI from './cli/user_cli';
-import WORKER_CLI from './cli/worker_cli';
 import { CLI } from './cli/cli';
 import MAIL_CLI from './cli/mail_cli';
 import StaticServer from './static_server';
@@ -181,7 +180,6 @@ async function startCli() {
 
   CLI.command('molecule', MOLECULE_CLI);
   CLI.command('user', USER_CLI);
-  CLI.command('worker', WORKER_CLI);
   CLI.command('mail', MAIL_CLI);
   CLI.command('database', DATABASE_CLI);
   CLI.command('test', TEST_CLI);
