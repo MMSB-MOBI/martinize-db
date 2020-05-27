@@ -204,6 +204,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     if (req.body.rotate && req.body.rotate !== 'none') {
       if (req.body.rotate === 'angle') {
         opts.rotate_angle = convertOrThrow(req.body.rotate_angle);
+        opts.rotate = 'angle';
       }
       else {
         opts.rotate = req.body.rotate;

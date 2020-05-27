@@ -16,17 +16,17 @@
   ],
   "category_tree": {
     "GO:0001": {
-      "name": "Molecular",
+      "name": "Sugars",
       "children": {
         "GO:0002": {
-          "name": "Test Go 2",
+          "name": "Proteins",
           "children": {}
         },
         "GO:0003": {
-          "name": "Test Go 3",
+          "name": "Polymers",
           "children": {
             "GO:0004": {
-              "name": "Test Go 4",
+              "name": "Amino acids",
               "children": {}
             }
           }
