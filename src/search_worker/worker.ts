@@ -1,8 +1,7 @@
-import { parentPort, workerData } from 'worker_threads';
-import { Molecule } from '../Entities/entities';
+import { WorkerChild } from 'worker-thread-manager';
 import nano = require('nano');
 import md5 from 'md5';
-import { WorkerChild } from 'worker-thread-manager';
+import { Molecule } from '../Entities/entities';
 
 /* TYPES */
 
@@ -16,12 +15,7 @@ interface WorkerResult {
   length: number;
 }
 
-interface WorkerSendMessage {
-  type: "new_search" | "clean";
-}
-
-interface WorkerStartTask extends WorkerSendMessage {
-  uuid: string;
+interface WorkerStartTask {
   query: nano.MangoQuery;
   as_all?: boolean;
 }
