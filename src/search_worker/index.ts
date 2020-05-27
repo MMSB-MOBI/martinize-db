@@ -1,8 +1,8 @@
+import WorkerThreadManager, { WorkerPool } from 'worker-thread-manager';
 import nano = require('nano');
 import { Molecule } from '../Entities/entities';
 import CouchHelper from '../Entities/CouchHelper';
 import { MINUTES_BEFORE_WORKER_KILL, MAX_POOL_SIZE, MAX_REQUEST_PER_WORKER_THRESHOLD, URLS } from '../constants';
-import WorkerThreadManager, { WorkerPool } from 'worker-thread-manager';
 
 interface WorkerSendMessage {
   type: "new_search" | "clean";
@@ -48,7 +48,7 @@ export const SearchWorker = new class SearchWorker {
       as_all: send_all
     };
 
-    return this.pool!.run(task);
+    return this.pool.run(task);
   }
 
   clearCache() {
