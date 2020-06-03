@@ -38,8 +38,8 @@ export default new class ShellManager {
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-  async run(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
-    if (this.mode === 'jm') {
+  async run(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode) {
+    if (mode === 'jm') {
       return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
     }
     return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);
