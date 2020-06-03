@@ -59,6 +59,11 @@ export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
     rejectUnauthorized: false
   }
 };
+/** Default parameters for Mailer. See `ms-jobmanager` package documentation. */
+export const JOB_MANAGER_SETTINGS = {
+  address: '127.0.0.1',
+  port: 1234
+};
 
 /* - Martinizer constants - */
 /** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
@@ -73,6 +78,7 @@ export const CREATE_MAP_PATH = path.resolve(__dirname, "../utils/get_map.sh");
 export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
 /** Link to script that can run GROMACS */
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
+export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
 export const CONECT_MDP_PATH = path.resolve(__dirname, "../utils/run.mdp");
 /** Link to Python 3 binary */
@@ -90,8 +96,8 @@ export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-  SERVER: "http://localhost:4123",
-  COUCH: "http://localhost:5984",
+  SERVER: "mad-dev.ibcp.fr:", //3003
+  COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
 };
 
 /* - Regular expressions used to check recieved parameters - */

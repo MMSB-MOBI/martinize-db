@@ -12,10 +12,14 @@ import NodeStreamZip from 'node-stream-zip';
 import Errors, { ErrorType } from '../Errors';
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {
+
+  
   constructor() {
+  
     try {
       fs.mkdirSync(MOLECULE_ROOT_DIR);
     } catch {}
+
   }
 
   /**
@@ -323,7 +327,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
     try {
-      var full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir);
+      var full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir, false);
     } catch (e) {
       logger.warn("[MOLECULE-ORGANIZER] Unable to create full PDB with GROMACS. Provided files might be incorrects.");
 
