@@ -30,6 +30,7 @@ export const LIPIDS_ROOT_DIR =path.resolve(__dirname, "../lipids/") + "/";
 export const SETTINGS_FILE = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
+export const DEFAULT_TMP_BASE_DIR = path.resolve(__dirname, '../.tmp') + '/';
 
 /* - Job manager - */
 export type JobMethod = 'jm' | 'child';

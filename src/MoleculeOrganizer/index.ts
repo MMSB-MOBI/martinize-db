@@ -6,7 +6,7 @@ import JSZip from 'jszip';
 import md5File from 'md5-file/promise';
 import { Martinizer } from '../Builders/Martinizer';
 import path from 'path';
-import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../TmpDirHelper';
 // @ts-ignore 
 import NodeStreamZip from 'node-stream-zip';
 import Errors, { ErrorType } from '../Errors';

@@ -1,12 +1,18 @@
 import { promises as FsPromise } from 'fs';
 import os from 'os';
-import logger from '../logger';
+import logger from './logger';
+import { simpleflake } from 'simpleflakes';
+import { DEFAULT_TMP_BASE_DIR } from './constants';
+
+export type TmpDirMode = 'os' | 'directory';
 
 /**
  * Singleton that helps managing temporary directories.
  */
 export const TmpDirHelper = new class TmpDirHelper {
   protected cache: [string, number][] = [];
+
+  public mode: TmpDirMode = 'os';
 
   constructor() {
     // register the callback every 30 minutes
@@ -23,12 +29,36 @@ export const TmpDirHelper = new class TmpDirHelper {
    * Get a new temporary directory. Returns its path, without trailing /.
    */
   async get() {
-    const tmp_dir = os.tmpdir();
-    const dir = await FsPromise.mkdtemp(tmp_dir + "/");
+    let dir: string;
+
+    if (this.mode === 'os') {
+      dir = await this.getRandomTmpDirFromOs();
+    }
+    else {
+      dir = await this.getRandomTmpDirFromBaseDirectory();
+    }
 
     this.cache.push([dir, Date.now()]);
 
     return dir;
+  }
+
+  protected async getRandomTmpDirFromOs() {
+    const tmp_dir = os.tmpdir();
+    const dir = await FsPromise.mkdtemp(tmp_dir + "/");
+
+    return dir;
+  }
+
+  protected async getRandomTmpDirFromBaseDirectory() {
+    const base = DEFAULT_TMP_BASE_DIR;
+    const suffix = simpleflake().toString();
+
+    const dir = base + suffix;
+
+    await FsPromise.mkdir(dir, { recursive: true });
+
+    return dir
   }
 
   /**

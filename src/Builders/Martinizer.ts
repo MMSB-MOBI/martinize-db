@@ -11,7 +11,7 @@ import RadiusDatabase from '../Entities/RadiusDatabase';
 import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
 import logger from '../logger';
-import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
 import ShellManager from './ShellManager';

@@ -6,7 +6,7 @@ import MembraneBuilder, { LipidMap, PbcString, AvailablePbcStrings, InsaneSettin
 import { SettingsJson } from '../../types';
 import { SETTINGS_FILE } from '../../constants';
 import Errors, { ErrorType } from '../../Errors';
-import TmpDirHelper from '../../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../../TmpDirHelper';
 import path from 'path';
 
 const MembraneBuilderRouter = Router();
