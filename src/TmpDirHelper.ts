@@ -1,4 +1,4 @@
-import { promises as FsPromise } from 'fs';
+import fs, { promises as FsPromise } from 'fs';
 import os from 'os';
 import logger from './logger';
 import { simpleflake } from 'simpleflakes';
@@ -36,6 +36,7 @@ export const TmpDirHelper = new class TmpDirHelper {
     }
     else {
       dir = await this.getRandomTmpDirFromBaseDirectory();
+      console.log(dir, 'created');
     }
 
     this.cache.push([dir, Date.now()]);
@@ -90,9 +91,14 @@ export const TmpDirHelper = new class TmpDirHelper {
   }
 
   protected removeDirectories(dir_entries: string[]) {
-    return Promise.all(
-      dir_entries.map(e => FsPromise.rmdir(e, { recursive: true }).catch(console.error))
-    ).then(() => {});
+    for (const e of dir_entries) {
+      // recursive does not work with non-sync method
+      try {
+        fs.rmdirSync(e, { recursive: true });
+      } catch {
+        logger.error('[TmpDirHelper] Unable to erase temporary directory. (' + e + ')');
+      }
+    }
   }
 };
 
