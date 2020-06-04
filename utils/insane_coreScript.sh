@@ -11,4 +11,4 @@ cd $basedir
 # insane path
 insane_path="insane"
 
-$insane_path $insaneArgs
+$insane_path $insaneArgs 1>insane.log 2>insane.err

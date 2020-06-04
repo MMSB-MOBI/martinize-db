@@ -10,7 +10,7 @@ import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
 import { Lipid } from '../Entities/entities';
-import ShellManager, { jobInputs } from './ShellManager';
+import ShellManager, { JobInputs } from './ShellManager';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -199,7 +199,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug("[INSANE] Command line: " + command_line);
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
-    let jobOpt:jobInputs = { 
+    let jobOpt:JobInputs = { 
       "exportVar" : {
           "basedir" : workdir,
           "insaneArgs" : command_line,

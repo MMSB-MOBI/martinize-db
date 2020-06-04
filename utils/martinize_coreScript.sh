@@ -10,4 +10,4 @@ echo "$martinizeArgs $basedir"
 cd $basedir
 martinize2_path="martinize2"
 
-$martinize2_path $martinizeArgs
+$martinize2_path $martinizeArgs 1>martinize2.log 2>martinize2.err
