@@ -57,7 +57,7 @@ export const TmpDirHelper = new class TmpDirHelper {
 
     const dir = base + suffix;
 
-    await FsPromise.mkdir(dir, { recursive: true });
+    await FsPromise.mkdir(dir, { recursive: true, mode: 0o777 });
 
     return dir
   }
