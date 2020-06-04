@@ -58,6 +58,8 @@ export const TmpDirHelper = new class TmpDirHelper {
     const dir = base + suffix;
 
     await FsPromise.mkdir(dir, { recursive: true, mode: 0o777 });
+    // Mode does not work with mkdir, must do the chmod
+    await FsPromise.chmod(dir, 0o777);
 
     return dir
   }
