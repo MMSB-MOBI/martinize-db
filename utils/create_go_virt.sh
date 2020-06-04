@@ -5,7 +5,10 @@
 # execution context the correct python interpreter/venv is already set-up
 # Place here commands to load the virtual env that contains python3 with numpy (martinize2 venv)
 
-source $GO_VIRT_VENV
+if [ -z "$venv" ]
+then
+  source $venv/bin/activate
+fi
 
 # path
 python_path="python"
