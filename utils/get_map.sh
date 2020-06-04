@@ -5,7 +5,7 @@
 # Place here commands to load the virtual env that contains ccmap
 # Insert HERE the path to Python binary (do NOT include path to get_map.py)
 
-if [ -z "$venv" ]
+if [ ! -z "$venv" ]
 then
   source $venv/bin/activate
 fi
