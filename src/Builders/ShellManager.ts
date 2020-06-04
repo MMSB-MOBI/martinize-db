@@ -1,8 +1,9 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
-const jobManager = require('ms-jobmanager');
+// @ts-ignore
+import * as JobManager from 'ms-jobmanager';
 import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
@@ -32,10 +33,17 @@ export default new class ShellManager {
     'martinize': MARTINIZE_PATH,
   };
 
+  /**
+   * Assign the following variables into child processes env.
+   */
   protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
     'conect': {},
-    'go_virt': {},
-    'ccmap': {},
+    'go_virt': {
+      venv: GO_VIRT_VENV_SRC
+    },
+    'ccmap': {
+      venv: GO_VIRT_VENV_SRC
+    },
     'insane': {},
     'martinize': {},
   };
@@ -75,13 +83,6 @@ export default new class ShellManager {
     }
   };
 
-  get job_manager() {
-    if (this._jm) return this._jm;
-    return this._jm = new Promise(resolve => jobManager.start({ 
-      'port': JOB_MANAGER_SETTINGS.port,
-      'TCPip': JOB_MANAGER_SETTINGS.address
-    }).on('ready', resolve));
-  }
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
@@ -158,7 +159,8 @@ export default new class ShellManager {
 
     const dumpFile = (srcStream:any, targetPath:any) => new Promise((resolve, reject) => {
       const targetStream = fs.createWriteStream(targetPath);
-      targetStream.on("finish", resolve);
+      targetStream.on('finish', resolve);
+      targetStream.on('error', reject);
       srcStream.pipe(targetStream);
     });
 
@@ -166,19 +168,39 @@ export default new class ShellManager {
     await this.job_manager;
     logger.info(`About to run this: ${inspect(jobOpt)}`);
     
-    return new Promise( (resolve, reject) => {
-        let jobCreatePdbWithConect = jobManager.push(jobOpt);
-        jobCreatePdbWithConect.on("completed",(stdout:Stream, stderr:Stream) => {
-          logger.info(`jobCreatePdbWithConect completed`);
-          if (save_std_name) {
-           ( async () => {
-              await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout' );
-              await dumpFile(stderr, working_directory + '/' + save_std_name + '.stderr' );             
-            } )().then(resolve);
-            return;
-          }
-          resolve();
+    return new Promise((resolve, reject) => {
+      const jobCreatePdbWithConect = JobManager.push(jobOpt);
+
+      jobCreatePdbWithConect.on('completed', (stdout:Stream, stderr:Stream) => {
+        logger.debug(`jobCreatePdbWithConect completed`);
+
+        if (save_std_name) {
+          (async () => {
+            await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout' );
+            await dumpFile(stderr, working_directory + '/' + save_std_name + '.stderr' );             
+          })()
+            .then(resolve)
+            .catch(reject);
+          
+          return;
+        }
+
+        resolve();
       });
-  }) as Promise<void>;
-}
+
+      jobCreatePdbWithConect.on('error', reject);
+    }) as Promise<void>;
+  }
+
+  get job_manager() {
+    if (this._jm) return this._jm;
+    return this._jm = new Promise((resolve, reject) => 
+      JobManager.start({ 
+        'port': JOB_MANAGER_SETTINGS.port,
+        'TCPip': JOB_MANAGER_SETTINGS.address
+      })
+        .on('ready', resolve)
+        .on('error', reject)
+    );
+  }
 }();

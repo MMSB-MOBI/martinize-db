@@ -221,7 +221,7 @@ export const Martinizer = new class Martinizer {
 
         await ShellManager.run(
           'martinize', 
-          ShellManager.mode == "jm" ? jobOpt : command_line, 
+          ShellManager.mode === "jm" ? jobOpt : command_line, 
           dir, 
           'martinize'
         );
@@ -441,7 +441,14 @@ export const Martinizer = new class Martinizer {
     logger.debug("[CCMAP] Calculating distances for backbone atoms.");
 
     // Compute contacts with the CA pdb
-    await ShellManager.run('ccmap', `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`, use_tmp_dir, 'distances');
+    await ShellManager.run(
+      'ccmap', 
+      `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`, 
+      use_tmp_dir, 
+      'distances',
+      undefined,
+      'child'
+    );
 
     const distances_exists = await fileExists(distances_file);
 
@@ -579,7 +586,7 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water:Boolean = false) {
+  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false) {
     let tmp_original_filename: string | null = null;
     logger.debug("PDB WITH CONNECT")
     if (pdb_or_gro_filename.endsWith('output-conect.pdb')) {
@@ -589,38 +596,32 @@ export const Martinizer = new class Martinizer {
     }
 
     const pdb_out = base_directory + "/output-conect.pdb";
-    let command:any = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
-    if (ShellManager.mode == "jm") {
-     
-    /*  let inputs:{[k:string]:any} = {};
-      inputs[ `${path.basename(tmp_original_filename ?? pdb_or_gro_filename)}` ] = tmp_original_filename ?? pdb_or_gro_filename;
-      inputs[ `${path.basename(top_filename)}` ] = top_filename;
-      inputs[ `${path.basename(CONECT_MDP_PATH)}` ] = CONECT_MDP_PATH;
-    */
-      command = { "exportVar" : {
+    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+
+    const command: JobInputs = { 
+      exportVar: {
         "basedir" : base_directory,
         "PDB_OR_GRO_FILE" : `${path.basename(tmp_original_filename ?? pdb_or_gro_filename)}`,
         "TOP_FILE" : `${path.basename(top_filename)}`,
         "MDP_FILE" : CONECT_MDP_PATH,
-        "DEL_WATER_BOOL" : remove_water ? "YES" : "NO"
-        }
-        /*,
-        "inputs" : {
-          "PDB_OR_GRO_FILE_PATH" : tmp_original_filename ?? pdb_or_gro_filename,
-          "TOP_FILE_PATH" : top_filename,
-          "MDP_FILE_PATH" : CONECT_MDP_PATH
-        }*/
-      };
+        "DEL_WATER_BOOL" : remove_water ? "YES" : "NO",
+      },
+      inputs: {}
+    };
 
-      await ShellManager.run('conect', command, base_directory, 'gromacs', this.MAX_JOB_EXECUTION_TIME);
+    await ShellManager.run(
+      'conect', 
+      ShellManager.mode === 'jm' ? command : command_line, 
+      base_directory, 
+      'gromacs', 
+      this.MAX_JOB_EXECUTION_TIME
+    );
 
-      if (tmp_original_filename) {
-        // Rename the output to original name
-        await FsPromise.rename(pdb_out, base_directory + '/output-conect.gromacs.pdb');
-        await FsPromise.rename(tmp_original_filename, pdb_or_gro_filename);
-      }
+    if (tmp_original_filename) {
+      // Rename the output to original name
+      await FsPromise.rename(pdb_out, base_directory + '/output-conect.gromacs.pdb');
+      await FsPromise.rename(tmp_original_filename, pdb_or_gro_filename);
     }
-
     const exists = await FsPromise.access(pdb_out, fs.constants.F_OK).then(() => true).catch(() => false);
 
     if (!exists) {
@@ -969,92 +970,3 @@ export const Martinizer = new class Martinizer {
     });
   }
 }();
-
-/**
- * TODO: insert a new bounds from real atom i and real atom j.
- * 
- * 1 - Find the go node of each atom
- * ```ts
- * const go_i = real_to_index[i], go_j = real_to_index[j];
- * ```
- * 
- * 2 - Find the name of each go node
- * ```ts 
- * const go_i_name = index_to_name[go_i], go_j_name = index_to_name[go_j];
- * ```
- * 
- * 3 - Insert the bound inside the right ITP (molecule_0_go-table)
- * ```ts
- * itp_file.headlines.push(`${go_i_name}    ${go_j_name}    1  ${number???}  9.4140000000`)
- * ```
- * 
- * 4 - Add the bound in the scene
- * ```ts
- * // todo have atoms coords & links (points) stored
- * const { stage, component, coords, points } = this.state;
- * 
- * // Remove the old go bonds component
- * stage.remove(component);
- * 
- * // Add the relations i, j in the points
- * points.push([i, j]);
- * 
- * // Redraw all the bounds (very quick)
- * const { component: new_cmp, representation } = drawBondsInStage(stage, points, coords, 'go');
- * 
- * // Save the new component
- * this.setState({ component: new_cmp, representation });
- * ```
- * 
- * ----
- * 
- * TODO: remove a bound from real atom i and real atom j.
- * 
- * 1 - Find the go node of each atom
- * ```ts
- * const go_i = real_to_index[i], go_j = real_to_index[j];
- * ```
- * 
- * 2 - Find the name of each go node
- * ```ts 
- * const go_i_name = index_to_name[go_i], go_j_name = index_to_name[go_j];
- * ```
- * 
- * 3 - Delete the bound of the right ITP (molecule_0_go-table)
- * ```ts
- * const index = itp_file.headlines.findIndex(e => {
- *  const [name_1, name_2,] = e.split(/\s+/).filter(l => l);
- *  
- *  return (name_1 === go_i_name && name_2 === go_i_name) || (name_2 === go_i_name && name_1 === go_i_name);
- * });
- * 
- * if (index !== -1) {
- *  // Remove line at index {index}
- *  itp_file.headlines.splice(index, 1);
- * }
- * ```
- * 
- * 4 - Remove the bound in the scene
- * ```ts
- * // todo have atoms coords & links (points) stored
- * const { stage, component, coords, points } = this.state;
- * 
- * // Remove the old go bonds component
- * stage.remove(component);
- * 
- * // Remove the tuple where there is a relation between i and j
- * const new_points = points.filter(e => {
- *  if (e[0] === i && e[1] === j) return false;
- *  if (e[1] === i && e[0] === j) return false;
- * 
- *  return true;
- * });
- * 
- * // Redraw all the bounds (very quick)
- * const { component: new_cmp, representation } = drawBondsInStage(stage, new_points, coords, 'go');
- * 
- * // Save the new component
- * this.setState({ component: new_cmp, representation, points: new_points });
- * ```
- * 
- */

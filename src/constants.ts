@@ -51,7 +51,7 @@ export const DEFAULT_MAILER_NAME = "MArtini Database";
 /** E-mail address of the mail sender. */
 export const DEFAULT_MAILER_ADDRESS = "martinize.db@ibcp.fr";
 /** Debug purpose only; If `string`, all e-mails will be sent to the following address. */
-export const MAILER_ENFORCE_RECIPIENT: false | string = "tulouca@gmail.com";
+export const MAILER_ENFORCE_RECIPIENT: false | string = false;
 /** Default parameters for Mailer. See `nodemailer` package documentation. */
 export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
   host: 'smtp.ibcp.fr',
@@ -100,7 +100,7 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-  SERVER: "mad-dev.ibcp.fr:", //3003
+  SERVER: "mad-dev.ibcp.fr", //3003
   COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
 };
 
