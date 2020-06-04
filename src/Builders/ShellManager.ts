@@ -67,9 +67,9 @@ export default new class ShellManager {
    */
   async run(script_name: SupportedScript, args: string|jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     logger.debug(`HERE !!!${this.mode}`);
-    if (this.mode === 'jm') {
+    if (this.mode === 'jm')
       return this.runWithJobManager(script_name, <jobInputs>args, working_directory, save_std_name, timeout);
-    }
+    
     return this.runWithChildProcess(script_name, <string>args, working_directory, save_std_name, timeout);
   }
 
