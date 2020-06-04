@@ -24,6 +24,14 @@ export default new class ShellManager {
     'martinize': MARTINIZE_PATH,
   };
 
+  protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: {} } = {
+    'conect': {},
+    'go_virt': {},
+    'ccmap': {},
+    'insane': {},
+    'martinize': {},
+  };
+
   /**
    * Script name to jobOpt ? Specify here parameters to fill in job opt ?
    */
@@ -38,7 +46,14 @@ export default new class ShellManager {
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-  async run(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode) {
+  async run(
+    script_name: SupportedScript, 
+    args: string, 
+    working_directory: string,
+    save_std_name?: string | false, 
+    timeout?: number, 
+    mode: JobMethod = this.mode
+  ) {
     if (mode === 'jm') {
       return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
     }
@@ -47,6 +62,7 @@ export default new class ShellManager {
 
   protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const path = this.NAME_TO_PATH[script_name];
+    const variables = this.VARIABLES_TO_NAME[script_name];
 
     if (!path) {
       throw new Error("Script is not supported.");
@@ -61,7 +77,12 @@ export default new class ShellManager {
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
 
-      const child = exec(`"${path}" ${args}`, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
+      const child = exec(`"${path}" ${args}`, { 
+        cwd: working_directory, 
+        maxBuffer: 1e9, 
+        timeout, 
+        env: Object.assign({}, process.env, variables) 
+      }, (err) => {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
