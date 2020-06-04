@@ -1,7 +1,7 @@
 import CliHelper, { CliListener } from "interactive-cli-helper";
 import { Martinizer } from "../Builders/Martinizer";
 import path from "path";
-import { promises as FsPromise } from 'fs';
+import { promises as FsPromise, statSync, chmodSync } from 'fs';
 import { LIPIDS_ROOT_DIR } from "../constants";
 import { Lipid } from "../Entities/entities";
 import { Database } from "../Entities/CouchHelper";
@@ -126,6 +126,16 @@ TEST_CLI.command('auto-import-lipid', async force_field => {
     await Database.lipid.add(lipid, force_field);
   }
 });
+
+TEST_CLI.command('tmp-dir', async () => {
+  const dir = await TmpDirHelper.get();
+
+  const stat = statSync(dir);
+  return {
+    stat,
+    mode: stat.mode.toString(8)
+  }
+}); 
 
 export default TEST_CLI;
 

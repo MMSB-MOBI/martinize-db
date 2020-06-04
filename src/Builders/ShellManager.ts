@@ -10,7 +10,7 @@ import { Stream } from 'stream';
 const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
-export interface jobInputs {
+export interface JobInputs {
     exportVar?:  { [key: string]: string },
     inputs: { [key: string]: any }
 };
@@ -30,6 +30,14 @@ export default new class ShellManager {
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
     'martinize': MARTINIZE_PATH,
+  };
+
+  protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
+    'conect': {},
+    'go_virt': {},
+    'ccmap': {},
+    'insane': {},
+    'martinize': {},
   };
 
   /**
@@ -77,17 +85,17 @@ export default new class ShellManager {
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-  async run(script_name: SupportedScript, args: string|jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
-    logger.debug(`HERE !!!${this.mode}`);
-    if (this.mode === 'jm')
-      return this.runWithJobManager(script_name, <jobInputs>args, working_directory, save_std_name, timeout);
-    
-    return this.runWithChildProcess(script_name, <string>args, working_directory, save_std_name, timeout);
+  async run(script_name: SupportedScript, args: string | JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode) {
+    if (mode === 'jm') {
+      return this.runWithJobManager(script_name, args as JobInputs, working_directory, save_std_name, timeout);
+    }
+    return this.runWithChildProcess(script_name, args as string, working_directory, save_std_name, timeout);
   }
 
   protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const path = this.NAME_TO_PATH[script_name];
-    logger.debug("CHILD PROCESS");
+    const variables = this.VARIABLES_TO_NAME[script_name];
+
     if (!path) {
       throw new Error("Script is not supported.");
     }
@@ -101,7 +109,12 @@ export default new class ShellManager {
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
 
-      const child = exec(`"${path}" ${args}`, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
+      const child = exec(`"${path}" ${args}`, { 
+        cwd: working_directory, 
+        maxBuffer: 1e9, 
+        timeout, 
+        env: Object.assign({}, process.env, variables) 
+      }, (err) => {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
@@ -133,7 +146,7 @@ export default new class ShellManager {
    * 
    * If job create -new files- in its directory, they *must* be copied to {working_directory} after the job.
    */
-  protected async runWithJobManager(script_name: SupportedScript, jobData: jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  protected async runWithJobManager(script_name: SupportedScript, jobData: JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = {...options, ...jobData};
 

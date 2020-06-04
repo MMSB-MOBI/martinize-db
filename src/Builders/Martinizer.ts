@@ -14,7 +14,7 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
-import ShellManager, { jobInputs } from './ShellManager';
+import ShellManager, { JobInputs } from './ShellManager';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -210,16 +210,21 @@ export const Martinizer = new class Martinizer {
       try {
         // Step: Martinize Init
         onStep?.(this.STEP_MARTINIZE_INIT);
-        let jobOpt:jobInputs = { 
-          "exportVar" : {
-              "basedir" : dir,
-              "martinizeArgs" : command_line,
-          },
-          "inputs" : {}
-        };   
 
-        await ShellManager.run('martinize', ShellManager.mode == "jm" ?
-          jobOpt : command_line, dir, 'martinize');
+        let jobOpt: JobInputs = { 
+          exportVar: {
+            basedir: dir,
+            martinizeArgs: command_line,
+          },
+          inputs: {},
+        };
+
+        await ShellManager.run(
+          'martinize', 
+          ShellManager.mode == "jm" ? jobOpt : command_line, 
+          dir, 
+          'martinize'
+        );
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
 
@@ -277,8 +282,14 @@ export const Martinizer = new class Martinizer {
           // Must create the go sites
           const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
 
-          await ShellManager.run('go_virt', command_line_go, dir, 'go-virt-sites', undefined, 'child');
-
+          await ShellManager.run(
+            'go_virt', 
+            command_line_go, 
+            dir, 
+            'go-virt-sites', 
+            undefined, 
+            'child'
+          );
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create go virtual sites.",
