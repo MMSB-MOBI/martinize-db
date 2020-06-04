@@ -39,7 +39,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
   { name: 'pdb', maxCount: 1 },
   { name: 'map', maxCount: 99 },
 ]), (req, res) => {
-  (async () => {
+  (async () => {  //console.log("HERE>>");console.log(req.files);
     const logged_user = req.full_user!;
     
     const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;

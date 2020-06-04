@@ -6,15 +6,8 @@ function to_stderr() {
   >&2 echo $@
 }
 
-#touch "/data/dev/mad/tmp/dummy" 
-pwd
 echo "cd $basedir"
 cd $basedir
-">$(whoami)<"
-touch "test_create.log"
-echo "Early exit"
-
-return
 
 if [[ -z "$PDB_OR_GRO_FILE" || -z "$TOP_FILE" || -z "$MDP_FILE" || -z "$DEL_WATER_BOOL" ]]
 then
@@ -71,5 +64,3 @@ printf '0\n' > $tmp_stdin
 gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin  >trjconv2.out 2>trjconv2.err
 
 echo "File $output_conect has been written."
-
-

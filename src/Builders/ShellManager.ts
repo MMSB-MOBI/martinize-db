@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, JobMethod, DEFAULT_JOB_METHOD } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -35,24 +35,36 @@ export default new class ShellManager {
   /**
    * Script name to jobOpt ? Specify here parameters to fill in job opt ?
    */
+  private engine = { 
+    "engineSpecs" : 'slurm',
+    "binariesSpec" : { 
+      "submitBin" : "/data/www_dev/mad/bin/slurm/bin/sbatch",
+      "cancelBin" : "/data/www_dev/mad/bin/slurm/bin/scancel",
+      "queueBin"  : "/data/www_dev/mad/bin/slurm/bin/squeue"
+    }
+  }
+
   protected readonly NAME_TO_ARGS: { [scriptName in SupportedScript]: any } = {
     'conect': {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
       'jobProfile' : "mad-dev",
-      'engineOverride' : { 
-          "engineSpecs" : 'slurm',
-          "binariesSpec" : { 
-            "submitBin" : "/data/www_dev/mad/bin/slurm/bin/sbatch",
-            "cancelBin" : "/data/www_dev/mad/bin/slurm/bin/scancel",
-            "queueBin"  : "/data/www_dev/mad/bin/slurm/bin/squeue"
-          }
-      }
+      'engineOverride' : this.engine
     },
     'go_virt': {},
     'ccmap': {},
-    'insane': {},
-    'martinize': {},
+    'insane': {
+      'script' : INSANE_PATH_JM,
+      'modules': ['insane'],
+      'jobProfile' : "mad-dev",
+      'engineOverride' : this.engine
+    },
+    'martinize': {
+      'script' : MARTINIZE_PATH_JM,
+      'modules': ['martinize2'],
+      'jobProfile' : "mad-dev",
+      'engineOverride' : this.engine
+    }
   };
 
   get job_manager() {

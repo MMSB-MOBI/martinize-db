@@ -23,13 +23,14 @@ try {
 export { KEYS };
 
 /* - DEFAULT DIRECTORIES - */
-export const MOLECULE_ROOT_DIR = path.resolve(__dirname, "../molecules/") + "/";
-export const MARTINIZER_ROOT_DIR = path.resolve(__dirname, "../molecules/martinizer/") + "/";
-export const UPLOAD_ROOT_DIR = path.resolve(__dirname, "../uploads/") + "/";
+export const MOLECULE_ROOT_DIR = "/data/dev/mad/molecules/";
+export const MARTINIZER_ROOT_DIR = "/data/dev/mad/molecules/martinizer/";
+export const UPLOAD_ROOT_DIR = "/data/dev/mad/uploads/";
+
 export const LIPIDS_ROOT_DIR =path.resolve(__dirname, "../lipids/") + "/";
 export const SETTINGS_FILE = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR = path.resolve(__dirname, "../templates/") + "/";
-export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
+export const FORCE_FIELD_DIR = "/data/databases/mobi/force_fields/";
 export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
 
 
@@ -72,6 +73,7 @@ export const JOB_MANAGER_SETTINGS = {
 export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
+export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
 /** Link to script used to create go virtual sites. */
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */
@@ -82,16 +84,16 @@ export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_m
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-export const CONECT_MDP_PATH = path.resolve(__dirname, "../utils/run.mdp");
+export const CONECT_MDP_PATH = "/data/databases/mobi/force_fields/run.mdp";
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
 export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
-
+export const MARTINIZE_PATH_JM = path.resolve(__dirname, "../utils/martinize_coreScript.sh");
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
-
+export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
 /**
  * Default URLs.
  * - `SERVER` is the public URL of the server. Don't forget to set it in order to have working URLs in e-mails !

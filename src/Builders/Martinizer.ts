@@ -14,7 +14,7 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
-import ShellManager from './ShellManager';
+import ShellManager, { jobInputs } from './ShellManager';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -210,8 +210,16 @@ export const Martinizer = new class Martinizer {
       try {
         // Step: Martinize Init
         onStep?.(this.STEP_MARTINIZE_INIT);
+        let jobOpt:jobInputs = { 
+          "exportVar" : {
+              "basedir" : dir,
+              "martinizeArgs" : command_line,
+          },
+          "inputs" : {}
+        };   
 
-        await ShellManager.run('martinize', command_line, dir, 'martinize');
+        await ShellManager.run('martinize', ShellManager.mode == "jm" ?
+          jobOpt : command_line, dir, 'martinize');
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
 
@@ -269,7 +277,7 @@ export const Martinizer = new class Martinizer {
           // Must create the go sites
           const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
 
-          await ShellManager.run('go_virt', command_line_go, dir, 'go-virt-sites');
+          await ShellManager.run('go_virt', command_line_go, dir, 'go-virt-sites', undefined, 'child');
 
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
@@ -582,7 +590,7 @@ export const Martinizer = new class Martinizer {
         "basedir" : base_directory,
         "PDB_OR_GRO_FILE" : `${path.basename(tmp_original_filename ?? pdb_or_gro_filename)}`,
         "TOP_FILE" : `${path.basename(top_filename)}`,
-        "MDP_FILE" : `${path.basename(CONECT_MDP_PATH)}`,
+        "MDP_FILE" : CONECT_MDP_PATH,
         "DEL_WATER_BOOL" : remove_water ? "YES" : "NO"
         }
         /*,

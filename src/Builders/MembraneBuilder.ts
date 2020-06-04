@@ -10,7 +10,7 @@ import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
 import { Lipid } from '../Entities/entities';
-import ShellManager from './ShellManager';
+import ShellManager, { jobInputs } from './ShellManager';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -199,8 +199,16 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug("[INSANE] Command line: " + command_line);
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
+    let jobOpt:jobInputs = { 
+      "exportVar" : {
+          "basedir" : workdir,
+          "insaneArgs" : command_line,
+      },
+      "inputs" : {}
+    };   
+
     // Start insane // TODO catch error properly
-    await ShellManager.run('insane', command_line, workdir, 'insane');
+    await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : command_line, workdir, 'insane');
 
     // Create the new TOP file
 
