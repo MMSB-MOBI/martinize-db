@@ -24,8 +24,8 @@ export default new class ShellManager {
     'martinize': MARTINIZE_PATH,
   };
 
-  protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: {} } = {
-    'conect': {},
+  protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
+    'conect': { },
     'go_virt': {},
     'ccmap': {},
     'insane': {},
