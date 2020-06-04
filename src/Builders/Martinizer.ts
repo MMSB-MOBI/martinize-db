@@ -11,7 +11,7 @@ import RadiusDatabase from '../Entities/RadiusDatabase';
 import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
 import logger from '../logger';
-import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
 import ShellManager from './ShellManager';
@@ -579,16 +579,18 @@ export const Martinizer = new class Martinizer {
       inputs[ `${path.basename(CONECT_MDP_PATH)}` ] = CONECT_MDP_PATH;
     */
       command = { "exportVar" : {
+        "basedir" : base_directory,
         "PDB_OR_GRO_FILE" : `${path.basename(tmp_original_filename ?? pdb_or_gro_filename)}`,
         "TOP_FILE" : `${path.basename(top_filename)}`,
         "MDP_FILE" : `${path.basename(CONECT_MDP_PATH)}`,
         "DEL_WATER_BOOL" : remove_water ? "YES" : "NO"
-        },
+        }
+        /*,
         "inputs" : {
           "PDB_OR_GRO_FILE_PATH" : tmp_original_filename ?? pdb_or_gro_filename,
           "TOP_FILE_PATH" : top_filename,
           "MDP_FILE_PATH" : CONECT_MDP_PATH
-        }
+        }*/
       };
 
       await ShellManager.run('conect', command, base_directory, 'gromacs', this.MAX_JOB_EXECUTION_TIME);

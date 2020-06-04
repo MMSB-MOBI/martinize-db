@@ -30,6 +30,8 @@ export const LIPIDS_ROOT_DIR =path.resolve(__dirname, "../lipids/") + "/";
 export const SETTINGS_FILE = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
+export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
+
 
 /* - Job manager - */
 export type JobMethod = 'jm' | 'child';
@@ -62,7 +64,7 @@ export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
 /** Default parameters for Mailer. See `ms-jobmanager` package documentation. */
 export const JOB_MANAGER_SETTINGS = {
   address: '127.0.0.1',
-  port: 1234
+  port: 2345
 };
 
 /* - Martinizer constants - */

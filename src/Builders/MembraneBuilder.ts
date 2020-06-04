@@ -1,7 +1,7 @@
 import { TopFile } from 'itp-parser';
 import fs, { promises as FsPromise } from 'fs';
 import path from 'path';
-import TmpDirHelper from '../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../TmpDirHelper';
 import { LIPIDS_ROOT_DIR } from '../constants';
 import { Martinizer } from './Martinizer';
 import RadiusDatabase from '../Entities/RadiusDatabase';

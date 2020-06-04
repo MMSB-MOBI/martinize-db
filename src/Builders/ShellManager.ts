@@ -39,7 +39,15 @@ export default new class ShellManager {
     'conect': {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
-      'jobProfile' : "crispr-dev",
+      'jobProfile' : "mad-dev",
+      'engineOverride' : { 
+          "engineSpecs" : 'slurm',
+          "binariesSpec" : { 
+            "submitBin" : "/data/www_dev/mad/bin/slurm/bin/sbatch",
+            "cancelBin" : "/data/www_dev/mad/bin/slurm/bin/scancel",
+            "queueBin"  : "/data/www_dev/mad/bin/slurm/bin/squeue"
+          }
+      }
     },
     'go_virt': {},
     'ccmap': {},
@@ -116,7 +124,7 @@ export default new class ShellManager {
   protected async runWithJobManager(script_name: SupportedScript, jobData: jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = {...options, ...jobData};
-    
+
     logger.debug("JM PROCESS");
     
     if (!options) {
@@ -129,6 +137,7 @@ export default new class ShellManager {
       srcStream.pipe(targetStream);
     });
 
+    logger.debug("Getting Job manager connection...");
     await this.job_manager;
     logger.info(`About to run this: ${inspect(jobOpt)}`);
     

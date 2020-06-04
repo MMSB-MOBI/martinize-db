@@ -1,6 +1,6 @@
 import express from 'express';
 import commander from 'commander';
-import { VERSION, URLS } from './constants';
+import { VERSION, URLS, DEFAULT_TMP_BASE_DIR } from './constants';
 import logger, { FORMAT_FILE } from './logger';
 import Winston from 'winston';
 import ApiRouter from './routes';
@@ -9,13 +9,12 @@ import { sendError } from './helpers';
 import CouchHelper, { Database } from './Entities/CouchHelper';
 import MOLECULE_CLI from './cli/molecule_cli';
 import USER_CLI from './cli/user_cli';
-import WORKER_CLI from './cli/worker_cli';
 import { CLI } from './cli/cli';
 import MAIL_CLI from './cli/mail_cli';
 import StaticServer from './static_server';
 import CliHelper from 'interactive-cli-helper';
 import DATABASE_CLI from './cli/databases_cli';
-import TmpDirHelper from './TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from './TmpDirHelper';
 import TEST_CLI from './cli/test.cli';
 import { SocketIoMartinizer } from './routes/molecule/martinize';
 import http from 'http';
@@ -27,6 +26,7 @@ commander
   .option('--server-url <url>', 'Server URL', String, process.env.SERVER_URL || URLS.SERVER)
   .option('-p, --port <port>', 'Emit port', Number, 4123)
   .option('--job-manager', 'Force using job manager as shell runner')
+  .option('--os-tmp', 'Use automatic OSes temporary directory manager instead of ' + DEFAULT_TMP_BASE_DIR + ' base directory')
   .option('--child-process', 'Force using child process as shell runner')
   .option('--wipe-init')
   .option('--init-db')
@@ -61,7 +61,15 @@ else if (commander.childProcess) {
   ShellManager.mode = 'child';
 }
 
+if (commander.osTmp) {
+  TmpDirHelper.mode = 'os';
+}
+else {
+  TmpDirHelper.mode = 'directory';
+}
+
 logger.silly(`Using ${ShellManager.mode === 'jm' ? 'job manager' : 'child processes'} as shell executor.`);
+logger.silly(`Using ${TmpDirHelper.mode === 'os' ? 'os tmp dir manager' : 'custom tmp directory'} as base for creating temporary directories.`);
 
 
 // Log files
@@ -181,7 +189,6 @@ async function startCli() {
 
   CLI.command('molecule', MOLECULE_CLI);
   CLI.command('user', USER_CLI);
-  CLI.command('worker', WORKER_CLI);
   CLI.command('mail', MAIL_CLI);
   CLI.command('database', DATABASE_CLI);
   CLI.command('test', TEST_CLI);

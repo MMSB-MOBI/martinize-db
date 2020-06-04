@@ -6,7 +6,7 @@ import MembraneBuilder, { LipidMap, PbcString, AvailablePbcStrings, InsaneSettin
 import { SettingsJson } from '../../types';
 import { SETTINGS_FILE } from '../../constants';
 import Errors, { ErrorType } from '../../Errors';
-import TmpDirHelper from '../../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../../TmpDirHelper';
 import path from 'path';
 
 const MembraneBuilderRouter = Router();
@@ -204,6 +204,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     if (req.body.rotate && req.body.rotate !== 'none') {
       if (req.body.rotate === 'angle') {
         opts.rotate_angle = convertOrThrow(req.body.rotate_angle);
+        opts.rotate = 'angle';
       }
       else {
         opts.rotate = req.body.rotate;

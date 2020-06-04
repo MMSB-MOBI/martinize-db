@@ -131,6 +131,7 @@ In file `src/constants.ts`:
 - `DSSP_PATH`: (optional) Path to anaconda's DSSP.
 - `MAILER_ENFORCE_RECIPIENT`: Set this to `false`.
 - `DEFAULT_MAILER_ADDRESS`: Put here the e-mail address that will send e-mails to clients.
+- `DEFAULT_TMP_BASE_DIR`: Base directory to creating run temporary directories (if argument `--os-tmp` is not given).
 
 Usually, you don't need to modify other constants.
 
@@ -288,6 +289,7 @@ Options:
   -l, --log-level <logLevel>   Log level [debug|silly|verbose|info|warn|error] (default: "info")
   --file-log-level <logLevel>  Log level (written to file) [debug|silly|verbose|info|warn|error] (default: "info")
   --log-file <logFile>         File log level
+  --os-tmp                     Use /tmp/ as root for temporary directories. If this argument is not given, root will be DEFAULT_TMP_BASE_DIR constant value.
 ```
 
 Example:

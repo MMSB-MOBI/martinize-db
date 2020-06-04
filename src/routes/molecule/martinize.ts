@@ -11,7 +11,7 @@ import logger from '../../logger';
 import path from 'path';
 import { Database } from '../../Entities/CouchHelper';
 import SocketIo from 'socket.io';
-import TmpDirHelper from '../../TmpDirHelper/TmpDirHelper';
+import TmpDirHelper from '../../TmpDirHelper';
 import { Server } from 'http';
 
 type MartinizeRunFailedPayload = { 

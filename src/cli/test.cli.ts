@@ -7,7 +7,7 @@ import { Lipid } from "../Entities/entities";
 import { Database } from "../Entities/CouchHelper";
 import RadiusDatabase from "../Entities/RadiusDatabase";
 import MembraneBuilder from "../Builders/MembraneBuilder";
-import TmpDirHelper from "../TmpDirHelper/TmpDirHelper";
+import TmpDirHelper from "../TmpDirHelper";
 
 const TEST_CLI = new CliListener(CliHelper.formatHelp('test', {
   commands: {
