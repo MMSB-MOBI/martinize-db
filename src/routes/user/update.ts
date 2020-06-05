@@ -81,7 +81,7 @@ UpdateUserRouter.post('/', (req, res) => {
       // User is now approved, please send him an email
       await Mailer.send({ 
         to: user.email, 
-        subject: "MArtinize Database - " + user.name + ": Your account has been approved" 
+        subject: "MArtini Database - " + user.name + ": Your account has been approved" 
       }, 'mail_created', { 
         title: user.name + ": Your account has been approved",
         new_user: {

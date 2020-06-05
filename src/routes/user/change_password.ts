@@ -39,7 +39,7 @@ ChangePasswordUserRouter.post('/', (req, res) => {
     // Send an email
     Mailer.send({
       to: user.email,
-      subject: "MArtinize Database - Password changed",
+      subject: "MArtini Database - Password changed",
     }, 'mail_changed_password', {
       user: {
         name: user.name
