@@ -47,10 +47,6 @@ export default new class Mailer {
   }
 
   protected async mail(options: nodemailer.SendMailOptions) {
-    // TODO REMOVE !!
-    logger.warn("You're not at IBCP, can't send mail yet. Simulating good response...");
-    return { messageId: '000' };
-
     const info = await this.transporter.sendMail(options);
 
     return info as { messageId: string };
