@@ -100,7 +100,7 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-  SERVER: "mad-dev.ibcp.fr", //3003
+  SERVER: "http://mad-dev.ibcp.fr", //3003
   COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
 };
 
