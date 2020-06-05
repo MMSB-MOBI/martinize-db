@@ -84,7 +84,6 @@ UpdateUserRouter.post('/', (req, res) => {
         subject: "MArtinize Database - " + user.name + ": Your account has been approved" 
       }, 'mail_created', { 
         title: user.name + ": Your account has been approved",
-        site_url: "http://localhost:3000",
         new_user: {
           name: user.name,
         },
