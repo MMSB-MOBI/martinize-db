@@ -49,6 +49,7 @@ export default new class Mailer {
   protected async mail(options: nodemailer.SendMailOptions) {
     const info = await this.transporter.sendMail(options);
 
+    logger.debug('Sended email:' + info.messageId);
     return info as { messageId: string };
   }
 }();
