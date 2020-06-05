@@ -50,9 +50,17 @@ export default new class Mailer {
   }
 
   protected async mail(options: nodemailer.SendMailOptions) {
-    const info = await this.transporter.sendMail(options);
+    try {
+      const info = await this.transporter.sendMail(options);
 
-    logger.debug('Sended email:' + info.messageId);
-    return info as { messageId: string };
+      logger.debug('Sended email:' + info.messageId);
+      return info as { messageId: string };
+    } catch (e) {
+      logger.error('Unable to send email to ' + options.sender + ' / ' + e);
+      logger.debug(options);
+      logger.debug(e);
+
+      throw new Error('Unable to send email.');
+    }
   }
 }();
