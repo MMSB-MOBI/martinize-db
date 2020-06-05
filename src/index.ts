@@ -195,7 +195,7 @@ async function startCli() {
   
   CLI.command(
     /^(\?|help)$/,  
-    CliHelper.formatHelp("Martinize Database Server", {
+    CliHelper.formatHelp("Martini Database Server", {
       commands: {
         molecule: "Access and manage published / stashed molecules.",
         user: "Manage existing users, or create new ones.",
@@ -263,7 +263,7 @@ async function main() {
   }
 
   HTTP_SERVER.listen(commander.port, () => {
-    logger.info(`Martinize Database Server version ${VERSION} is listening on port ${commander.port}.`);
+    logger.info(`Martini Database Server version ${VERSION} is listening on port ${commander.port}.`);
     startCli();
   });
 }

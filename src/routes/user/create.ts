@@ -85,7 +85,7 @@ CreateUserRouter.post('/', (req, res) => {
     }
     else {
       // Inform administrators (do not wait)
-      informAdminFromAskCreation(user).catch(logger.error)
+      informAdminFromAskCreation(user).catch(logger.error);
 
       res.json({
         created: sanitize({ ...user, password: null }),

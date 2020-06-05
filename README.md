@@ -1,8 +1,8 @@
-# Martinize Database Server
+# Martini Database Server
 
-> Provides JWT-authentification-based REST API for MArtinize Database, Molecule Coarse-Grainer and Membrane Builder.
+> Provides JWT-authentification-based REST API for MArtini Database, Molecule Coarse-Grainer and Membrane Builder.
  
-This program serves the MArtinize Database server (**MAD**).
+This program serves the MArtini Database server (**MAD**).
 
 Requirements:
 - A running Couch Database server 
@@ -198,7 +198,7 @@ You now have the required file `deploy.zip` in order to deploy with Docker! Foll
 docker-compose up -d --build
 ```
 
-Containers are ready to be used after `docker-compose`. Martinize Database server default port 4123 will be redirected to host port 5000.
+Containers are ready to be used after `docker-compose`. Martini Database server default port 4123 will be redirected to host port 5000.
 
 #### Initialize the server
 

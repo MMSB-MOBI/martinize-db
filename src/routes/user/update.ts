@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { errorCatcher, methodNotAllowed, sanitize } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
-import { USERNAME_REGEX, EMAIL_REGEX, URLS } from '../../constants';
+import { USERNAME_REGEX, EMAIL_REGEX } from '../../constants';
 import Mailer from '../../Mailer/Mailer';
 
 const UpdateUserRouter = Router();
@@ -81,10 +81,9 @@ UpdateUserRouter.post('/', (req, res) => {
       // User is now approved, please send him an email
       await Mailer.send({ 
         to: user.email, 
-        subject: "MArtinize Database - " + user.name + ": Your account has been approved" 
+        subject: "MArtini Database - " + user.name + ": Your account has been approved" 
       }, 'mail_created', { 
         title: user.name + ": Your account has been approved",
-        site_url: URLS.SERVER,
         new_user: {
           name: user.name,
         },

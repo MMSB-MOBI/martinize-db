@@ -32,7 +32,7 @@ DestroyStashedRouter.delete('/:id', (req, res) => {
     await Mailer.send(
       { 
         to: owner.email, 
-        subject: "Molecule rejected - MArtinize Database" 
+        subject: "Molecule rejected - MArtini Database" 
       }, 
       'mail_molecule_rejected',
       {
