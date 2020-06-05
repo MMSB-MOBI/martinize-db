@@ -164,9 +164,9 @@ export default new class ShellManager {
       srcStream.pipe(targetStream);
     });
 
-    logger.debug("Getting Job manager connection...");
+    logger.silly("Getting Job manager connection...");
     await this.job_manager;
-    logger.info(`About to run this: ${inspect(jobOpt)}`);
+    logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
     
     return new Promise((resolve, reject) => {
       const jobCreatePdbWithConect = JobManager.push(jobOpt);
