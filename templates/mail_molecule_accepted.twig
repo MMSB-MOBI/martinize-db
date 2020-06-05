@@ -1,0 +1,18 @@
+{% extends "index.twig" %}
+
+{% block content %}
+  <p>
+    <strong>Dear {{ name }},</strong>
+  </p>
+  <br />
+
+  Your molecule <strong>"{{ molecule.name }}"</strong> version <strong>{{ molecule.version }}</strong> has been approved on Martini Database.
+
+  <br />
+
+  You can view <strong><a href="{{ molecule_url }}">your newly accepted molecule here</a></strong>.
+
+  <br />
+
+  <em>This e-mail is automatically sent to you. Please do not reply to this e-mail address.</em>
+{% endblock %}

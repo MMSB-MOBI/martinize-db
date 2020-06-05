@@ -4,6 +4,8 @@ import { Database } from '../../Entities/CouchHelper';
 import Errors, { ErrorType } from '../../Errors';
 import { StashedMolecule, Molecule } from '../../Entities/entities';
 import logger from '../../logger';
+import Mailer from '../../Mailer/Mailer';
+import { URLS } from '../../constants';
 
 const AcceptModerationRouter = Router();
 
@@ -44,6 +46,17 @@ AcceptModerationRouter.post('/', (req, res) => {
     } catch (e) {
       logger.error("Unable to delete stashed mol", e);
     }
+
+    // Send mail to molecule sender
+    const sender = await Database.user.get(full.owner);
+    Mailer.send({
+      to: sender.email,
+      subject: "MArtini Database - Molecule approved",
+    }, 'mail_molecule_accepted', {
+      name: sender.name,
+      molecule: full,
+      molecule_url: URLS.SERVER + '/molecule/' + full.alias + '?version=' + full.id,
+    }).catch(logger.error);
 
     res.json(sanitize(full));
   })().catch(errorCatcher(res));
