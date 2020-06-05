@@ -16,6 +16,9 @@ export default new class Mailer {
     if (!options.site_url) {
       options.site_url = URLS.SERVER;
     }
+    if (!options.static_site_url) {
+      options.static_site_url = URLS.SERVER;
+    }
 
     const file = TEMPLATE_DIR + template_name + (template_name.endsWith('.twig') ? "" : ".twig");
 
