@@ -906,13 +906,7 @@ export const Martinizer = new class Martinizer {
     return { bounds, details };
   } 
 
-  /**
-   * Zip a directory.
-   * 
-   * Todo: worker thread
-   * @param dir 
-   */
-  async zipDirectory(dir: string) {
+  protected async zip(dir: string) {
     const zip = new JSZip;
 
     for (const file of await FsPromise.readdir(dir)) {
@@ -925,12 +919,31 @@ export const Martinizer = new class Martinizer {
       }
     }
 
-    return zip.generateAsync({
+    return zip;
+  }
+
+  /**
+   * Zip a directory.
+   * 
+   * Todo: worker thread
+   * @param dir 
+   */
+  async zipDirectory(dir: string) {
+    return (await this.zip(dir)).generateAsync({
       compression: "DEFLATE",
       compressionOptions: { level: 6 },
       type: "arraybuffer",
     });
   }
+
+  async zipDirectoryString(dir: string) {
+    return (await this.zip(dir)).generateAsync({
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 },
+      type: 'array',
+    });
+  }
+  
 }();
 
 /**

@@ -200,7 +200,12 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug(`[INSANE] Running INSANE with given settings.`);
 
     // Start insane // TODO catch error properly
-    await ShellManager.run('insane', command_line, workdir, 'insane');
+    try {
+      await ShellManager.run('insane', command_line, workdir, 'insane');
+    } catch (e) {
+      // Handle error and throw the right error
+      throw new InsaneError('insane_crash', workdir, 'error' in e ? e.error.stack : e.stack);
+    }
 
     // Create the new TOP file
 
@@ -214,13 +219,17 @@ export const MembraneBuilder = new class MembraneBuilder {
     */
     
     logger.debug(`[INSANE] Creating TOP file.`);
-    const { top: full_top } = await Martinizer.createTopFile(
-      workdir,
-      molecule_top,
-      molecule_itps,
-      force_field
-    );
-
+    try {
+      var { top: full_top } = await Martinizer.createTopFile(
+        workdir,
+        molecule_top,
+        molecule_itps,
+        force_field
+      );
+    } catch (e) {
+      throw new InsaneError('top_file_crash', workdir, e.stack);
+    }
+    
     logger.debug(`[INSANE] Reading built TOP file and INSANE generate TOP file.`);
     const insane_top = await TopFile.read(workdir + "/__insane.top");
 
@@ -254,7 +263,11 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     // Ok, all should be ready. Start gromacs!
     logger.debug(`[INSANE] Creating the CONECT-ed PDB with GROMACS.`);
-    const pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system.gro", prepared_top, workdir);
+    try {
+      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system.gro", prepared_top, workdir);
+    } catch (e) {
+      throw new InsaneError('gromacs_crash', workdir, e.stack);
+    }
 
     // Build the ITP list without the force field ones
     const itps_ff = RadiusDatabase.getFilesForForceField(force_field);
@@ -350,5 +363,13 @@ export const MembraneBuilder = new class MembraneBuilder {
     }
   }
 };
+
+export class InsaneError extends Error {
+  constructor(
+    public message: 'insane_crash' | 'gromacs_crash' | 'top_file_crash', 
+    public workdir: string, 
+    public trace: string
+  ) { super(message); }
+}
 
 export default MembraneBuilder;
