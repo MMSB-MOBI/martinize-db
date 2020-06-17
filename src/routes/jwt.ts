@@ -51,6 +51,7 @@ export default jwt({
     "/api/settings/lipids",
     "/api/molecule",
     "/api/molecule/download",
+    "/api/molecule/list",
     "/api/molecule/get",
     "/api/molecule/martinize",
     "/api/molecule/membrane_builder",
