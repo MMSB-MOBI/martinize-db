@@ -28,7 +28,10 @@ DownloadForceFieldRoute.get('/download', (req, res) => {
     const zip = new JSZip();
 
     if (typeof filenames === 'string') {
-      res.sendFile(FORCE_FIELD_DIR + filenames);
+      res.sendFile(FORCE_FIELD_DIR + filenames, { 
+        headers: { 'Content-Disposition': 'attachement; filename=' + filenames } 
+      });
+      return;
     }
 
     for (const file of filenames) {
