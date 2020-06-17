@@ -27,6 +27,10 @@ DownloadForceFieldRoute.get('/download', (req, res) => {
     const filenames = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[name as string];
     const zip = new JSZip();
 
+    if (typeof filenames === 'string') {
+      res.sendFile(FORCE_FIELD_DIR + filenames);
+    }
+
     for (const file of filenames) {
       zip.file(file, await FsPromise.readFile(FORCE_FIELD_DIR + file));
     }
