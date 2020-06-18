@@ -65,7 +65,7 @@ export default new class ShellManager {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
       'jobProfile' : "mad-dev",
-      'engineOverride' : this.engine
+      'sysSettingsKey' : "mad-dev"
     },
     'go_virt': {},
     'ccmap': {},
@@ -73,13 +73,13 @@ export default new class ShellManager {
       'script' : INSANE_PATH_JM,
       'modules': ['insane'],
       'jobProfile' : "mad-dev",
-      'engineOverride' : this.engine
+      'sysSettingsKey' : "mad-dev"
     },
     'martinize': {
       'script' : MARTINIZE_PATH_JM,
       'modules': ['martinize2'],
       'jobProfile' : "mad-dev",
-      'engineOverride' : this.engine
+      'sysSettingsKey' : "mad-dev"
     }
   };
 

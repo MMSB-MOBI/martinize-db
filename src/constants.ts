@@ -65,7 +65,7 @@ export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
 /** Default parameters for Mailer. See `ms-jobmanager` package documentation. */
 export const JOB_MANAGER_SETTINGS = {
   address: '127.0.0.1',
-  port: 2345
+  port: 1234
 };
 
 /* - Martinizer constants - */
