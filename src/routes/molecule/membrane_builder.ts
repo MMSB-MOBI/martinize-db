@@ -2,12 +2,15 @@ import { Router } from 'express';
 import { methodNotAllowed, errorCatcher, cleanMulterFiles } from '../../helpers';
 import Uploader from '../Uploader';
 import { promises as FsPromise } from 'fs';
-import MembraneBuilder, { LipidMap, PbcString, AvailablePbcStrings, InsaneSettings } from '../../Builders/MembraneBuilder';
+import MembraneBuilder, { LipidMap, PbcString, AvailablePbcStrings, InsaneSettings, InsaneError } from '../../Builders/MembraneBuilder';
 import { SettingsJson } from '../../types';
 import { SETTINGS_FILE } from '../../constants';
 import Errors, { ErrorType } from '../../Errors';
 import TmpDirHelper from '../../TmpDirHelper';
 import path from 'path';
+import { Martinizer } from '../../Builders/Martinizer';
+import logger from '../../logger';
+import { inspect } from 'util';
 
 const MembraneBuilderRouter = Router();
 
@@ -219,20 +222,40 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       opts.orient = true;
     }
 
-    const { pdbs: { water, no_water }, top, itps } = await MembraneBuilder.run({
-      force_field,
-      lipids,
-      upper_leaflet,
-      ...molecule_entries,
-      settings: opts,
-    });
+    try {
+      const { pdbs: { water, no_water }, top, itps } = await MembraneBuilder.run({
+        force_field,
+        lipids,
+        upper_leaflet,
+        ...molecule_entries,
+        settings: opts,
+      });
+  
+      res.json({
+        water: await getFormattedFile(water),
+        no_water: await getFormattedFile(no_water),
+        top: await getFormattedFile(top),
+        itps: await Promise.all(itps.map(i => getFormattedFile(i))),
+      });
+    } catch (e) {
+      logger.error('[INSANE] Insane run failed.');
 
-    res.json({
-      water: await getFormattedFile(water),
-      no_water: await getFormattedFile(no_water),
-      top: await getFormattedFile(top),
-      itps: await Promise.all(itps.map(i => getFormattedFile(i))),
-    });
+      if (e instanceof InsaneError) {
+        const dir = e.workdir;
+
+        res
+          .status(400)
+          .json({
+            error: e.message,
+            trace: e.trace,
+            zip: await Martinizer.zipDirectoryString(dir)
+          });
+      }
+      else {
+        logger.error(inspect(e));
+        throw e;
+      }
+    }
   })().catch(errorCatcher(res));
 });
 

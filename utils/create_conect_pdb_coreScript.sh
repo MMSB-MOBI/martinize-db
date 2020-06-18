@@ -37,23 +37,23 @@ then
   gro_box="$pdb"
 else
   # Create the box
-  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc  >editconf.out 2>editconf.err
+  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc  >editconf.stdout 2>editconf.stderr
 fi
 
 # Create the computed topology .tpr
-gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" >grompp.out 2>grompp.err
+gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" >grompp.stdout 2>grompp.stderr
 
 if [ $DEL_WATER_BOOL == "YES" ]
 then
   # File to give on stdin to make_ndx
   printf '!"W"\nq\n' > $tmp_stdin
   # Create index with a category without W
-  gmx make_ndx -f "$gro_box" -o "$index_ndx" < $tmp_stdin >make_ndx.out 2>make_ndx.err
+  gmx make_ndx -f "$gro_box" -o "$index_ndx" < $tmp_stdin >make_ndx.stdout 2>make_ndx.stderr
 
   # File to give on stdin to trjconv
   printf '!W\n' > $tmp_stdin
   # Create the PDB with conect entries without water 
-  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >trjconv.out 2>trjconv.err
+  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >trjconv.stdout 2>trjconv.stderr
 
   echo "File $output_conect_no_water has been written."
 fi
@@ -61,6 +61,6 @@ fi
 # File to give on stdin to trjconv
 printf '0\n' > $tmp_stdin
 # Create the PDB with conect entries with water 
-gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin  >trjconv2.out 2>trjconv2.err
+gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin  >trjconv2.stdout 2>trjconv2.stderr
 
 echo "File $output_conect has been written."

@@ -55,6 +55,8 @@ export default jwt({
     "/api/molecule/martinize",
     "/api/molecule/membrane_builder",
     "/api/user/contact",
+    "/api/force_fields/list",
+    "/api/force_fields/download",
     /^\/api\/molecule\/representation\/.+$/,
   ] }
 );
