@@ -31,6 +31,7 @@ commander
   .option('--wipe-init')
   .option('--init-db')
   .option('--quit-after-init')
+  .option('--keep-cache', "Don't delete tmp cache directory after 45 min")
   .option('-l, --log-level <logLevel>', 'Log level [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--file-log-level <logLevel>', 'Log level (written to file) [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--log-file <logFile>', 'File log level')
@@ -66,6 +67,10 @@ if (commander.osTmp) {
 }
 else {
   TmpDirHelper.mode = 'directory';
+}
+
+if (! commander.keepCache){
+  TmpDirHelper.program_clean(); 
 }
 
 logger.silly(`Using ${ShellManager.mode === 'jm' ? 'job manager' : 'child processes'} as shell executor.`);

@@ -15,14 +15,18 @@ export const TmpDirHelper = new class TmpDirHelper {
   public mode: TmpDirMode = 'os';
 
   constructor() {
-    // register the callback every 30 minutes
+    
+  }
+
+  async program_clean(){
+    logger.debug("Program cache cleaning")
     setInterval(() => {
 
       // Remove every item aged more than now - 45 minutes
-      this.clean(
-        Date.now() - (1000 * 60 * 45)
-      );
-    }, 1000 * 60 * 30);
+        this.clean(
+          Date.now() - (1000 * 60 * 2)
+        );
+      }, 1000 * 60 * 2);
   }
 
   /**
