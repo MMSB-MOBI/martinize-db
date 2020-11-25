@@ -34,7 +34,7 @@
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "express-jwt": "^5.3.3",
+    "express-jwt": "^6.0.0",
     "form-data": "^3.0.0",
     "interactive-cli-helper": "^2.0.3",
     "itp-parser": "^2.1.2",
