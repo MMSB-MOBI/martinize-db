@@ -32,7 +32,7 @@ LostPasswordUserRouter.post('/', (req, res) => {
     // Send an email
     Mailer.send({
       to: user.email,
-      subject: "MArtinize Database - Restore your password",
+      subject: "MArtini Database - Restore your password",
     }, 'mail_lost_password', {
       user: {
         name: user.name

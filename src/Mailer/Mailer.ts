@@ -16,6 +16,9 @@ export default new class Mailer {
     if (!options.site_url) {
       options.site_url = URLS.SERVER;
     }
+    if (!options.static_site_url) {
+      options.static_site_url = URLS.SERVER;
+    }
 
     const file = TEMPLATE_DIR + template_name + (template_name.endsWith('.twig') ? "" : ".twig");
 
@@ -47,12 +50,17 @@ export default new class Mailer {
   }
 
   protected async mail(options: nodemailer.SendMailOptions) {
-    // TODO REMOVE !!
-    logger.warn("You're not at IBCP, can't send mail yet. Simulating good response...");
-    return { messageId: '000' };
+    try {
+      const info = await this.transporter.sendMail(options);
 
-    const info = await this.transporter.sendMail(options);
+      logger.debug('Sended email:' + info.messageId);
+      return info as { messageId: string };
+    } catch (e) {
+      logger.error('Unable to send email to ' + options.sender + ' / ' + e);
+      logger.debug(options);
+      logger.debug(e);
 
-    return info as { messageId: string };
+      throw new Error('Unable to send email.');
+    }
   }
 }();

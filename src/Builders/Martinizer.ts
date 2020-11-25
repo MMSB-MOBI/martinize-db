@@ -269,8 +269,14 @@ export const Martinizer = new class Martinizer {
           // Must create the go sites
           const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
 
-          await ShellManager.run('go_virt', command_line_go, dir, 'go-virt-sites');
-
+          await ShellManager.run(
+            'go_virt', 
+            command_line_go, 
+            dir, 
+            'go-virt-sites', 
+            undefined, 
+            'child'
+          );
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create go virtual sites.",

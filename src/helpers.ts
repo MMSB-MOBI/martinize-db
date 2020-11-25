@@ -113,7 +113,7 @@ export function signToken(payload: TokenPayload, id: string) {
       { 
         algorithm: 'RS256', 
         expiresIn: "720d", // 2 years durability
-        issuer: "Martinize Database Server 1", 
+        issuer: "MArtini Database Server 1", 
         jwtid: id, // ID généré avec snowflake
       }, 
       (err, encoded) => { // Quand le token est généré (ou non), accepte/rejette la promesse
@@ -256,18 +256,21 @@ export async function informAdminFromAskCreation(new_user: User) {
     limit: 99999
   });
 
+  const promises: any[] = [];
   for (const admin of admins) {
     // Send a mail
-    await Mailer.send({
+    promises.push(Mailer.send({
       to: admin.email,
-      subject: "MArtinize Database - New account request",
+      subject: "MArtini Database - New account request",
     }, "mail_ask", {
       new_user: {
         name: new_user.name
       },
       name: admin.name
-    });
+    }));
   }
+
+  await Promise.all(promises);
 }
 
 export async function informAdminFromNewMolecule(new_molecule: StashedMolecule, submitter: User) {
@@ -276,17 +279,20 @@ export async function informAdminFromNewMolecule(new_molecule: StashedMolecule, 
     limit: 99999
   });
 
+  const promises: any[] = [];
   for (const admin of admins) {
     // Send a mail
-    await Mailer.send({
+    promises.push(Mailer.send({
       to: admin.email,
-      subject: "MArtinize Database - New molecule submitted",
+      subject: "MArtini Database - New molecule submitted",
     }, "mail_molecule_submitted", {
       submitter,
       name: admin.name,
       molecule: new_molecule
-    });
+    }));
   }
+
+  await Promise.all(promises);
 }
 
 export async function informAdminContact(content: string, sender: string) {
@@ -295,17 +301,20 @@ export async function informAdminContact(content: string, sender: string) {
     limit: 99999
   });
 
+  const promises: any[] = [];
   for (const admin of admins) {
     // Send a mail
-    await Mailer.send({
+    promises.push(Mailer.send({
       to: admin.email,
-      subject: "MArtinize Database - New question asked from contact page",
+      subject: "MArtini Database - New question asked from contact page",
     }, "mail_contact", {
       content,
       name: admin.name,
       email: sender
-    });
+    }));
   }
+
+  await Promise.all(promises);
 }
 
 // Example: 4.700000e-01    4.990000e+00

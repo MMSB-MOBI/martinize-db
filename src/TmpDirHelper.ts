@@ -36,7 +36,6 @@ export const TmpDirHelper = new class TmpDirHelper {
     }
     else {
       dir = await this.getRandomTmpDirFromBaseDirectory();
-      console.log(dir, 'created');
     }
 
     this.cache.push([dir, Date.now()]);
@@ -57,7 +56,9 @@ export const TmpDirHelper = new class TmpDirHelper {
 
     const dir = base + suffix;
 
-    await FsPromise.mkdir(dir, { recursive: true, mode: 0o777 });
+    await FsPromise.mkdir(dir, { recursive: true });
+    // Mode does not work with mkdir, must do the chmod
+    await FsPromise.chmod(dir, 0o777);
 
     return dir
   }

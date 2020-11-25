@@ -32,6 +32,14 @@ export default new class ShellManager {
     'martinize': MARTINIZE_PATH,
   };
 
+  protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
+    'conect': {},
+    'go_virt': {},
+    'ccmap': {},
+    'insane': {},
+    'martinize': {},
+  };
+
   /**
    * Script name to jobOpt ? Specify here parameters to fill in job opt ?
    */
@@ -65,17 +73,37 @@ export default new class ShellManager {
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
+<<<<<<< HEAD
   async run(script_name: SupportedScript, args: string|jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     logger.debug(`HERE !!!${this.mode}`);
     if (this.mode === 'jm')
       return this.runWithJobManager(script_name, <jobInputs>args, working_directory, save_std_name, timeout);
     
     return this.runWithChildProcess(script_name, <string>args, working_directory, save_std_name, timeout);
+=======
+  async run(
+    script_name: SupportedScript, 
+    args: string, 
+    working_directory: string,
+    save_std_name?: string | false, 
+    timeout?: number, 
+    mode: JobMethod = this.mode
+  ) {
+    if (mode === 'jm') {
+      return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
+    }
+    return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);
+>>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
   }
 
   protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const path = this.NAME_TO_PATH[script_name];
+<<<<<<< HEAD
     logger.debug("CHILD PROCESS");
+=======
+    const variables = this.VARIABLES_TO_NAME[script_name];
+
+>>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
     if (!path) {
       throw new Error("Script is not supported.");
     }
@@ -89,7 +117,12 @@ export default new class ShellManager {
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
 
-      const child = exec(`"${path}" ${args}`, { cwd: working_directory, maxBuffer: 1e9, timeout }, (err) => {
+      const child = exec(`"${path}" ${args}`, { 
+        cwd: working_directory, 
+        maxBuffer: 1e9, 
+        timeout, 
+        env: Object.assign({}, process.env, variables) 
+      }, (err) => {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
