@@ -33,6 +33,9 @@ export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "
 export const FORCE_FIELD_DIR      = "/data/databases/mobi/force_fields/";
 export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
 
+/* - Couch database - */
+export const DB_PREFIX = "maddev-"
+
 
 /* - Job manager - */
 export type JobMethod = 'jm' | 'child';
