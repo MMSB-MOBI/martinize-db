@@ -23,11 +23,15 @@ try {
 export { KEYS };
 
 /* - DEFAULT DIRECTORIES - */
+export const MOLECULE_ROOT_DIR    = "/data/dev/mad/molecules/";
+export const MARTINIZER_ROOT_DIR  = "/data/dev/mad/molecules/martinizer/";
+export const UPLOAD_ROOT_DIR      = "/data/dev/mad/uploads/";
 
+export const LIPIDS_ROOT_DIR      = "/data/databases/mobi/lipids/";
 export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
-/* - Couch database - */ 
-export const DB_PREFIX = "maddev-" //prefix for couch collections
+export const FORCE_FIELD_DIR      = "/data/databases/mobi/force_fields/";
+export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
 
 
 /* - Job manager - */
