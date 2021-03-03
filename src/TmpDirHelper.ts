@@ -24,9 +24,9 @@ export const TmpDirHelper = new class TmpDirHelper {
 
       // Remove every item aged more than now - 45 minutes
         this.clean(
-          Date.now() - (1000 * 60 * 2)
+          Date.now() - (1000 * 60 * 45)
         );
-      }, 1000 * 60 * 2);
+      }, 1000 * 60 * 30);
   }
 
   /**
