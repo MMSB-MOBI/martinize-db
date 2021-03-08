@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -68,7 +68,12 @@ export default new class ShellManager {
       'sysSettingsKey' : "mad-dev"
     },
     'go_virt': {},
-    'ccmap': {},
+    'ccmap': {
+      'script': CREATE_MAP_PATH_JM,
+      'modules': ['mad-ccmap'],
+      'jobProfile': "mad-dev",
+      'sysSettingsKey' : "mad-dev"
+    },
     'insane': {
       'script' : INSANE_PATH_JM,
       'modules': ['insane'],
@@ -109,7 +114,7 @@ export default new class ShellManager {
         stdout = fs.createWriteStream(working_directory + '/' + save_std_name + '.stdout');
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
-
+      logger.silly(`run command line : "${path}" ${args}`); 
       const child = exec(`"${path}" ${args}`, { 
         cwd: working_directory, 
         maxBuffer: 1e9, 

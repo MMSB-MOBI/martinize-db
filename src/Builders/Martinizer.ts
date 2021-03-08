@@ -440,14 +440,24 @@ export const Martinizer = new class Martinizer {
 
     logger.debug("[CCMAP] Calculating distances for backbone atoms.");
 
+    const jobOpt: JobInputs = { 
+      exportVar: {
+        WORKDIR: use_tmp_dir,
+        INPUT_PDB: path.resolve(pdb_filename),
+        DISTANCES: distances_file,
+        PYTHON_SCRIPT: CREATE_MAP_PY_SCRIPT_PATH
+      },
+      inputs: {},
+    };
+
+    const command_line = `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`
+
     // Compute contacts with the CA pdb
     await ShellManager.run(
       'ccmap', 
-      `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`, 
+      ShellManager.mode === "jm" ? jobOpt : command_line, 
       use_tmp_dir, 
       'distances',
-      undefined,
-      'child'
     );
 
     const distances_exists = await fileExists(distances_file);

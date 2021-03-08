@@ -81,6 +81,7 @@ export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */
 export const CREATE_MAP_PATH = path.resolve(__dirname, "../utils/get_map.sh");
+export const CREATE_MAP_PATH_JM = path.resolve(__dirname, "../utils/get_map_coreScript.sh");
 /** Associated python script to ccmap */
 export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
 /** Link to script that can run GROMACS */
