@@ -47,13 +47,13 @@ gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" >grompp.stdout 2>grom
 
 if [ $DEL_WATER_BOOL == "YES" ]
 then
-  echo Delete water (1) : gmx make_ndx -f "$gro_box" -o "$index_ndx"
+  echo "Delete water (1)" : gmx make_ndx -f "$gro_box" -o "$index_ndx"
   # File to give on stdin to make_ndx
   printf '!"W"\nq\n' > $tmp_stdin
   # Create index with a category without W
   gmx make_ndx -f "$gro_box" -o "$index_ndx" < $tmp_stdin >make_ndx.stdout 2>make_ndx.stderr
 
-  echo Delete water (2) : gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect
+  echo "Delete water (2)" : gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect
   # File to give on stdin to trjconv
   printf '!W\n' > $tmp_stdin
   # Create the PDB with conect entries without water 
