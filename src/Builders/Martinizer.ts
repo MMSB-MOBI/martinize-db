@@ -280,15 +280,24 @@ export const Martinizer = new class Martinizer {
         // Ensure to have the script at the correct place...
         try {
           // Must create the go sites
-          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype molecule_0`;
+          const moltype = "molecule_0"
+          const jobOptGo: JobInputs = { 
+            exportVar: {
+              WORKDIR: dir,
+              INPUT_PDB: pdb_file,
+              MAP_FILE: map_filename,
+              MOLTYPE: moltype
+            },
+            inputs: {},
+          };
+          
+          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype ${moltype}`;
 
           await ShellManager.run(
             'go_virt', 
-            command_line_go, 
+            ShellManager.mode === "jm" ? jobOptGo : command_line_go, 
             dir, 
             'go-virt-sites', 
-            undefined, 
-            'child'
           );
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
@@ -445,7 +454,6 @@ export const Martinizer = new class Martinizer {
         WORKDIR: use_tmp_dir,
         INPUT_PDB: path.resolve(pdb_filename),
         DISTANCES: distances_file,
-        PYTHON_SCRIPT: CREATE_MAP_PY_SCRIPT_PATH
       },
       inputs: {},
     };
