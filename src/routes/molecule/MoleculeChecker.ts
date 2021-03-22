@@ -10,10 +10,43 @@ import { SettingsJson, CategoryTree } from '../../types';
 import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
 import logger from '../../logger';
 
+
+import { SimuFile } from '../../MoleculeOrganizer';
+import { GoTerms } from '../../types';
+
+export interface SimuRequest{
+  full_user: {
+    id: string,
+    role: "admin"
+  };
+  body: {
+    name: string,
+    alias: string,
+    smiles: string,
+    version: string,
+    category: keyof typeof GoTerms,
+    command_line: string,
+    comments: string,
+    create_way: string,
+    force_field: string,
+    validation: string,
+    citation: string,
+    parent: string | null
+  };
+  files: {
+    itp: SimuFile[],
+    pdb: SimuFile[],
+    top: SimuFile[] | [],
+    map: SimuFile[] | []
+  };
+}
+
+
+
 type File = Express.Multer.File;
 
 export class MoleculeChecker {
-  constructor(protected req: Request) {}
+  constructor(protected req: Request | SimuRequest) {}
 
   /**
    * Check a molecule about to be published to {Molecule} database
@@ -60,6 +93,7 @@ export class MoleculeChecker {
   protected async checker(stashed: boolean, edition: boolean) {
     let actual_version: BaseMolecule | undefined = undefined;
 
+    
     if (edition) {
       const id = this.req.body.id;
       if (!id) {
@@ -77,7 +111,7 @@ export class MoleculeChecker {
         return Errors.throw(ErrorType.MoleculeNotFound);
       }
     }
-
+    
     const molecule = await this.constructBaseMoleculeFromRequest(actual_version);
 
     // Must set the following fields: files, created_at, hash
@@ -85,6 +119,7 @@ export class MoleculeChecker {
     // Test if files are attached to the request
     if (!this.areFilesPresent()) {
       if (!edition) {
+        console.log("on passe par l'absence de fichiers");
         return Errors.throw(ErrorType.MissingParameters);
       }
       else {
@@ -95,11 +130,13 @@ export class MoleculeChecker {
 
         // Check if the file exists
         if (!(await MoleculeOrganizer.exists(molecule.files))) {
+          console.log("on passe par l'inexistence des fichiers");
           return Errors.throw(ErrorType.MissingFiles);
         }
 
         // Refresh the hash
         molecule.hash = await MoleculeOrganizer.hash(molecule.files);
+        console.log("hash", molecule.hash);
       }
     }
     // Must insert files into upload directory
@@ -155,9 +192,13 @@ export class MoleculeChecker {
     }
 
     // Find the ITP files
-    const itps_files: File[] = this.req.files.itp;
-    const pdb_files: File[] = this.req.files.pdb;
-    const top_files: File[] = this.req.files.top;
+    const itps_files: (File | SimuFile)[] = this.req.files.itp;
+    const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
+    const top_files: (File | SimuFile)[] = this.req.files.top;
+
+    console.log("itp", itps_files);
+    console.log("pdb", pdb_files);
+    console.log("top", top_files);
 
     // Requires one itp file at least
     if (!itps_files || !top_files || !pdb_files || !itps_files.length || !pdb_files.length || !top_files.length) {
@@ -172,7 +213,7 @@ export class MoleculeChecker {
     }
 
     // Find the ITP files
-    const itps_files: File[] = this.req.files.itp;
+    const itps_files: (File | SimuFile)[] = this.req.files.itp;
 
 
     // Check the weight of each ITP file
@@ -181,17 +222,17 @@ export class MoleculeChecker {
     }
 
     // Get the PDB files
-    const pdb_files: File[] = this.req.files.pdb;
+    const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
     const is_pdb = !!this.req.files.pdb;
 
     if (pdb_files.length !== 1) {
       return Errors.throw(ErrorType.TooManyFiles);
     }
 
-    const map_files: File[] = this.req.files.map || [];
+    const map_files: (File | SimuFile)[] = this.req.files.map || [];
 
     // Find if top files are present
-    let top_file: File = this.req.files.top[0];
+    let top_file: File | SimuFile = this.req.files.top[0];
 
     return {
       molecule: pdb_files[0],
@@ -225,6 +266,7 @@ export class MoleculeChecker {
     }
 
     const body = this.req.body;
+
 
     // If the molecule doesn't have any ID, set it
     if (!mol.id) {

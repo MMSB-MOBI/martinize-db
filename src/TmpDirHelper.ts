@@ -12,7 +12,7 @@ export type TmpDirMode = 'os' | 'directory';
 export const TmpDirHelper = new class TmpDirHelper {
   protected cache: [string, number][] = [];
 
-  public mode: TmpDirMode = 'os';
+  public mode: TmpDirMode = "directory";
 
   constructor() {
     
@@ -37,9 +37,11 @@ export const TmpDirHelper = new class TmpDirHelper {
 
     if (this.mode === 'os') {
       dir = await this.getRandomTmpDirFromOs();
+      console.log("os");
     }
     else {
       dir = await this.getRandomTmpDirFromBaseDirectory();
+      console.log(dir);
     }
 
     this.cache.push([dir, Date.now()]);

@@ -9,6 +9,14 @@ import { DISABLE_MODERATION_PROCESS } from '../../constants';
 import { MoleculeChecker } from './MoleculeChecker';
 import logger from '../../logger';
 
+
+
+//import * as test from "../../test";
+
+
+let util = require('util');
+
+
 const CreateMoleculeRouter = Router();
 
 // Middleware that wipe uploaded files after request
@@ -48,6 +56,10 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     // Insert the molecule
     let response: nano.DocumentInsertResponse;
     let molecule: BaseMolecule;
+
+    //console.log(req.full_user);
+    //console.log(req.body);
+    //console.log(req.files);
 
     try {
       const checker = new MoleculeChecker(req);

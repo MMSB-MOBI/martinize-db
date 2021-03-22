@@ -10,6 +10,15 @@ import TmpDirHelper from '../TmpDirHelper';
 // @ts-ignore 
 import NodeStreamZip from 'node-stream-zip';
 import Errors, { ErrorType } from '../Errors';
+import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
+
+
+export interface SimuFile {
+  originalname: string;
+  path: string;
+  size: number
+}
+
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {
 
@@ -159,11 +168,12 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
   async createSymlinksInTmpDir(
     dir: string, 
-    pdb: Express.Multer.File, 
-    top: Express.Multer.File, 
-    itps: Express.Multer.File[], 
-    maps: Express.Multer.File[]
+    pdb: Express.Multer.File | SimuFile, 
+    top: Express.Multer.File | SimuFile , 
+    itps: (Express.Multer.File | SimuFile)[], 
+    maps: (Express.Multer.File | SimuFile)[]
   ) {
+    console.log("entree dans creation lien symbolique");
     const pdb_name = path.basename(pdb.originalname);
     const full_pdb_name = dir + "/" + pdb_name;
 
@@ -180,6 +190,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     const top_name = generateSnowflake() + '.top';
     const full_top_name = dir + "/" + top_name;
+    console.log(full_top_name);
 
     await FsPromise.symlink(top.path, dir + "/" + top_name);
    
@@ -198,6 +209,8 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
       await FsPromise.symlink(file.path, dir + "/" + map_name);
     }
+
+    console.log("sortie dans creation lien symbolique");
 
     return {
       pdb: full_pdb_name,
@@ -286,10 +299,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * pdb_file can also be a GRO file, it doesn't matter. It is converted by GROMACS.
    */
   async save(
-    itp_files: Express.Multer.File[], 
-    pdb_file: Express.Multer.File, 
-    top_file: Express.Multer.File, 
-    map_files: Express.Multer.File[],
+    itp_files: (Express.Multer.File | SimuFile)[] , 
+    pdb_file: (Express.Multer.File | SimuFile), 
+    top_file: (Express.Multer.File | SimuFile), 
+    map_files: (Express.Multer.File | SimuFile)[],
     force_field: string
   ) : Promise<MoleculeSave> {
     logger.verbose("[MOLECULE-ORGANIZER] Saving upload " + itp_files.map(e => e.originalname).join(', ') + " and " + pdb_file.originalname);
@@ -299,6 +312,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     // Copy the files into a tmp dir
     const use_tmp_dir = await TmpDirHelper.get();
+    //console.log(use_tmp_dir);
     
     logger.debug("[MOLECULE-ORGANIZER] Symlinking files into a temporary directory: " + use_tmp_dir + ".");
     

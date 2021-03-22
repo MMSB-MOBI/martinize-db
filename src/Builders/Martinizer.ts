@@ -425,6 +425,7 @@ export const Martinizer = new class Martinizer {
         continue;
       }
       top_write_stream.write(line + '\n');
+
     }
 
     top_write_stream.close();

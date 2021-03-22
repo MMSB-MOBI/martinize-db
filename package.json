@@ -6,7 +6,7 @@
   "scripts": {
     "init": "node build/index.js --wipe-init -l debug --quit-after-init",
     "start": "node build/index.js",
-    "start-dev": "node build/index.js -l debug --os-tmp",
+    "start-dev": "node build/index.js -l debug",
     "start-silly": "node build/index.js -l silly --os-tmp",
     "tsc": "./node_modules/typescript/bin/tsc"
   },
