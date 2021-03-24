@@ -157,7 +157,6 @@ export class MoleculeChecker {
           throw e;
         }
         if (e instanceof Error) {
-          console.log(files.itps);
           return Errors.throw(ErrorType.InvalidMoleculeFiles, { detail: e.message });
         }
         return Errors.throw(ErrorType.InvalidMoleculeFiles);
@@ -349,7 +348,8 @@ export class MoleculeChecker {
     molecule.parent = parent.id;
   }
 
-  protected async checkName(name: string, tree_id: string) {
+  // changed from protected to public
+  public async checkName(name: string, tree_id: string) {
     if (!name.match(NAME_REGEX)) {
       return Errors.throw(ErrorType.InvalidName);
     }
@@ -358,7 +358,7 @@ export class MoleculeChecker {
 
     for (const mol of mols) {
       if (mol.tree_id !== tree_id) {
-        return Errors.throw(ErrorType.NameAlreadyExists);
+        return Errors.throw(ErrorType.NameAlreadyExists, {'id':mol.id});
       }
     }
   }

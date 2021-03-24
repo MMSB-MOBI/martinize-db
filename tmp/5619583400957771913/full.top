@@ -1,0 +1,16 @@
+#include "martini_v2.2.itp"
+#include "martini_v2.0_PPC_01.itp"
+
+[system]
+This is an auto generated system
+
+[molecules]
+;moleculetype	count
+PPC	1#include "martini_.itp"
+
+[system]
+This is an auto generated system
+
+[molecules]
+;moleculetype	count
+PPC	1
