@@ -1,0 +1,424 @@
+/home/achopin/Documents/martinize/martinize-db/utils/create_conect_pdb.sh: line 47: [: ==: unary operator expected
+                     :-) GROMACS - gmx editconf, 2020.5 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx editconf, version 2020.5
+Executable:   /softwares/gromacs/2020.5//bin//gmx
+Data prefix:  /softwares/gromacs/2020.5/
+Working dir:  /home/achopin/Documents/martinize/martinize-db/tmp/5618943724292171251
+Command line:
+  gmx editconf -f /home/achopin/Documents/martinize/martinize-db/tmp/5618943724292171251/Paeruginosa_LPC.gro -o __box__.gro -box 15 15 18 -noc
+
+
+GROMACS reminds you: "I invented the term 'Object-Oriented', and I can tell you I did not have C++ in mind." (Alay Kay, author of Smalltalk)
+
+                      :-) GROMACS - gmx grompp, 2020.5 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx grompp, version 2020.5
+Executable:   /softwares/gromacs/2020.5//bin//gmx
+Data prefix:  /softwares/gromacs/2020.5/
+Working dir:  /home/achopin/Documents/martinize/martinize-db/tmp/5618943724292171251
+Command line:
+  gmx grompp -f /home/achopin/Documents/martinize/martinize-db/utils/run.mdp -c __box__.gro -p /home/achopin/Documents/martinize/martinize-db/tmp/5618943724292171251/full.top -o __run__.tpr
+
+Ignoring obsolete mdp entry 'ns_type'
+Setting the LD random seed to -1149277190
+Generated 0 of the 780 non-bonded parameter combinations
+
+ERROR 1 [file martini_v2.1_PARC_01.itp, line 18]:
+  Invalid directive atomsi
+
+
+ERROR 2 [file martini_v2.1_PARC_01.itp, line 20]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 3 [file martini_v2.1_PARC_01.itp, line 21]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 4 [file martini_v2.1_PARC_01.itp, line 22]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 5 [file martini_v2.1_PARC_01.itp, line 23]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 6 [file martini_v2.1_PARC_01.itp, line 24]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 7 [file martini_v2.1_PARC_01.itp, line 25]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 8 [file martini_v2.1_PARC_01.itp, line 26]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 9 [file martini_v2.1_PARC_01.itp, line 27]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 10 [file martini_v2.1_PARC_01.itp, line 28]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 11 [file martini_v2.1_PARC_01.itp, line 29]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 12 [file martini_v2.1_PARC_01.itp, line 30]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 13 [file martini_v2.1_PARC_01.itp, line 31]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 14 [file martini_v2.1_PARC_01.itp, line 32]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 15 [file martini_v2.1_PARC_01.itp, line 33]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 16 [file martini_v2.1_PARC_01.itp, line 34]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 17 [file martini_v2.1_PARC_01.itp, line 35]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 18 [file martini_v2.1_PARC_01.itp, line 36]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 19 [file martini_v2.1_PARC_01.itp, line 37]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 20 [file martini_v2.1_PARC_01.itp, line 38]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 21 [file martini_v2.1_PARC_01.itp, line 39]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 22 [file martini_v2.1_PARC_01.itp, line 40]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 23 [file martini_v2.1_PARC_01.itp, line 41]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 24 [file martini_v2.1_PARC_01.itp, line 42]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 25 [file martini_v2.1_PARC_01.itp, line 43]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 26 [file martini_v2.1_PARC_01.itp, line 44]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 27 [file martini_v2.1_PARC_01.itp, line 45]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 28 [file martini_v2.1_PARC_01.itp, line 46]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 29 [file martini_v2.1_PARC_01.itp, line 47]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 30 [file martini_v2.1_PARC_01.itp, line 48]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 31 [file martini_v2.1_PARC_01.itp, line 49]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 32 [file martini_v2.1_PARC_01.itp, line 50]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 33 [file martini_v2.1_PARC_01.itp, line 51]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 34 [file martini_v2.1_PARC_01.itp, line 52]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 35 [file martini_v2.1_PARC_01.itp, line 53]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 36 [file martini_v2.1_PARC_01.itp, line 54]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 37 [file martini_v2.1_PARC_01.itp, line 55]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 38 [file martini_v2.1_PARC_01.itp, line 56]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 39 [file martini_v2.1_PARC_01.itp, line 57]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 40 [file martini_v2.1_PARC_01.itp, line 58]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 41 [file martini_v2.1_PARC_01.itp, line 59]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 42 [file martini_v2.1_PARC_01.itp, line 60]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 43 [file martini_v2.1_PARC_01.itp, line 61]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 44 [file martini_v2.1_PARC_01.itp, line 62]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 45 [file martini_v2.1_PARC_01.itp, line 63]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 46 [file martini_v2.1_PARC_01.itp, line 64]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 47 [file martini_v2.1_PARC_01.itp, line 65]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 48 [file martini_v2.1_PARC_01.itp, line 66]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 49 [file martini_v2.1_PARC_01.itp, line 67]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 50 [file martini_v2.1_PARC_01.itp, line 68]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 51 [file martini_v2.1_PARC_01.itp, line 69]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 52 [file martini_v2.1_PARC_01.itp, line 70]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 53 [file martini_v2.1_PARC_01.itp, line 71]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 54 [file martini_v2.1_PARC_01.itp, line 72]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 55 [file martini_v2.1_PARC_01.itp, line 73]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 56 [file martini_v2.1_PARC_01.itp, line 74]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 57 [file martini_v2.1_PARC_01.itp, line 75]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 58 [file martini_v2.1_PARC_01.itp, line 76]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 59 [file martini_v2.1_PARC_01.itp, line 77]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 60 [file martini_v2.1_PARC_01.itp, line 78]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 61 [file martini_v2.1_PARC_01.itp, line 79]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 62 [file martini_v2.1_PARC_01.itp, line 80]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 63 [file martini_v2.1_PARC_01.itp, line 81]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 64 [file martini_v2.1_PARC_01.itp, line 82]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 65 [file martini_v2.1_PARC_01.itp, line 83]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 66 [file martini_v2.1_PARC_01.itp, line 84]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 67 [file martini_v2.1_PARC_01.itp, line 85]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 68 [file martini_v2.1_PARC_01.itp, line 86]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 69 [file martini_v2.1_PARC_01.itp, line 87]:
+  Expected a molecule type name and nrexcl
+
+
+ERROR 70 [file martini_v2.1_PARC_01.itp, line 91]:
+  Atom index (1) in bonds out of bounds (1-0).
+  This probably means that you have inserted topology section "bonds"
+  in a part belonging to a different molecule than you intended to.
+  In that case move the "bonds" section to the right molecule.
+
+
+-------------------------------------------------------
+Program:     gmx grompp, version 2020.5
+Source file: src/gromacs/gmxpreprocess/toppush.cpp (line 1947)
+
+Fatal error:
+There were 70 errors in input file(s)
+
+For more information and tips for troubleshooting, please check the GROMACS
+website at http://www.gromacs.org/Documentation/Errors
+-------------------------------------------------------
+/home/achopin/Documents/martinize/martinize-db/utils/create_conect_pdb.sh: line 59: [: ==: unary operator expected
+                     :-) GROMACS - gmx trjconv, 2020.5 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx trjconv, version 2020.5
+Executable:   /softwares/gromacs/2020.5//bin//gmx
+Data prefix:  /softwares/gromacs/2020.5/
+Working dir:  /home/achopin/Documents/martinize/martinize-db/tmp/5618943724292171251
+Command line:
+  gmx trjconv -s __run__.tpr -f __box__.gro -o output-conect.pdb -conect
+
+
+-------------------------------------------------------
+Program:     gmx trjconv, version 2020.5
+Source file: src/gromacs/commandline/cmdlineparser.cpp (line 275)
+Function:    void gmx::CommandLineParser::parse(int*, char**)
+
+Error in user input:
+Invalid command-line options
+  In command-line option -s
+    File '__run__.tpr' does not exist or is not accessible.
+    The file could not be opened.
+      Reason: No such file or directory
+      (call to fopen() returned error code 2)
+
+For more information and tips for troubleshooting, please check the GROMACS
+website at http://www.gromacs.org/Documentation/Errors
+-------------------------------------------------------

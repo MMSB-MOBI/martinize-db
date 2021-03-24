@@ -37,11 +37,9 @@ export const TmpDirHelper = new class TmpDirHelper {
 
     if (this.mode === 'os') {
       dir = await this.getRandomTmpDirFromOs();
-      console.log("os");
     }
     else {
       dir = await this.getRandomTmpDirFromBaseDirectory();
-      console.log(dir);
     }
 
     this.cache.push([dir, Date.now()]);

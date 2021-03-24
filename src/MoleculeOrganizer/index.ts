@@ -173,7 +173,6 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     itps: (Express.Multer.File | SimuFile)[], 
     maps: (Express.Multer.File | SimuFile)[]
   ) {
-    console.log("entree dans creation lien symbolique");
     const pdb_name = path.basename(pdb.originalname);
     const full_pdb_name = dir + "/" + pdb_name;
 
@@ -190,7 +189,6 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     const top_name = generateSnowflake() + '.top';
     const full_top_name = dir + "/" + top_name;
-    console.log(full_top_name);
 
     await FsPromise.symlink(top.path, dir + "/" + top_name);
    
@@ -209,8 +207,6 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
       await FsPromise.symlink(file.path, dir + "/" + map_name);
     }
-
-    console.log("sortie dans creation lien symbolique");
 
     return {
       pdb: full_pdb_name,
@@ -312,7 +308,6 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     // Copy the files into a tmp dir
     const use_tmp_dir = await TmpDirHelper.get();
-    //console.log(use_tmp_dir);
     
     logger.debug("[MOLECULE-ORGANIZER] Symlinking files into a temporary directory: " + use_tmp_dir + ".");
     

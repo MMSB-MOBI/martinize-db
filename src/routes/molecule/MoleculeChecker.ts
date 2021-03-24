@@ -119,7 +119,7 @@ export class MoleculeChecker {
     // Test if files are attached to the request
     if (!this.areFilesPresent()) {
       if (!edition) {
-        console.log("on passe par l'absence de fichiers");
+        
         return Errors.throw(ErrorType.MissingParameters);
       }
       else {
@@ -130,13 +130,11 @@ export class MoleculeChecker {
 
         // Check if the file exists
         if (!(await MoleculeOrganizer.exists(molecule.files))) {
-          console.log("on passe par l'inexistence des fichiers");
           return Errors.throw(ErrorType.MissingFiles);
         }
 
         // Refresh the hash
         molecule.hash = await MoleculeOrganizer.hash(molecule.files);
-        console.log("hash", molecule.hash);
       }
     }
     // Must insert files into upload directory
@@ -159,6 +157,7 @@ export class MoleculeChecker {
           throw e;
         }
         if (e instanceof Error) {
+          console.log(files.itps);
           return Errors.throw(ErrorType.InvalidMoleculeFiles, { detail: e.message });
         }
         return Errors.throw(ErrorType.InvalidMoleculeFiles);
@@ -195,10 +194,7 @@ export class MoleculeChecker {
     const itps_files: (File | SimuFile)[] = this.req.files.itp;
     const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
     const top_files: (File | SimuFile)[] = this.req.files.top;
-
-    console.log("itp", itps_files);
-    console.log("pdb", pdb_files);
-    console.log("top", top_files);
+    
 
     // Requires one itp file at least
     if (!itps_files || !top_files || !pdb_files || !itps_files.length || !pdb_files.length || !top_files.length) {

@@ -1,0 +1,132 @@
+/home/achopin/Documents/martinize/martinize-db/utils/create_conect_pdb.sh: line 47: [: ==: unary operator expected
+                     :-) GROMACS - gmx editconf, 2020.5 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx editconf, version 2020.5
+Executable:   /softwares/gromacs/2020.5//bin//gmx
+Data prefix:  /softwares/gromacs/2020.5/
+Working dir:  /home/achopin/Documents/martinize/martinize-db/tmp/5618943724451369856
+Command line:
+  gmx editconf -f /home/achopin/Documents/martinize/martinize-db/tmp/5618943724451369856/DYPC-em.gro -o __box__.gro -box 15 15 18 -noc
+
+
+GROMACS reminds you: "Christianity may be OK between consenting adults in private but should not be taught to young children." (Francis Crick)
+
+                      :-) GROMACS - gmx grompp, 2020.5 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx grompp, version 2020.5
+Executable:   /softwares/gromacs/2020.5//bin//gmx
+Data prefix:  /softwares/gromacs/2020.5/
+Working dir:  /home/achopin/Documents/martinize/martinize-db/tmp/5618943724451369856
+Command line:
+  gmx grompp -f /home/achopin/Documents/martinize/martinize-db/utils/run.mdp -c __box__.gro -p /home/achopin/Documents/martinize/martinize-db/tmp/5618943724451369856/full.top -o __run__.tpr
+
+Ignoring obsolete mdp entry 'ns_type'
+Setting the LD random seed to -1479154697
+Generated 0 of the 780 non-bonded parameter combinations
+Excluding 1 bonded neighbours molecule type 'DYPC'
+Number of degrees of freedom in T-Coupling group rest is 27.00
+
+GROMACS reminds you: "Christianity may be OK between consenting adults in private but should not be taught to young children." (Francis Crick)
+
+/home/achopin/Documents/martinize/martinize-db/utils/create_conect_pdb.sh: line 59: [: ==: unary operator expected
+                     :-) GROMACS - gmx trjconv, 2020.5 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx trjconv, version 2020.5
+Executable:   /softwares/gromacs/2020.5//bin//gmx
+Data prefix:  /softwares/gromacs/2020.5/
+Working dir:  /home/achopin/Documents/martinize/martinize-db/tmp/5618943724451369856
+Command line:
+  gmx trjconv -s __run__.tpr -f __box__.gro -o output-conect.pdb -conect
+
+Will write pdb: Protein data bank file
+Reading file __run__.tpr, VERSION 2020.5 (single precision)
+Reading file __run__.tpr, VERSION 2020.5 (single precision)
+Group     0 (         System) has    10 elements
+Group     1 (          Other) has    10 elements
+Group     2 (           DYPC) has    10 elements
+Select a group: Reading frames from gro file 'DYPC sim', 10 atoms.
+Reading frame       0 time    0.000   
+Precision of __box__.gro is 0.001 (nm)
+ ->  frame      0 time    0.000      Last frame          0 time    0.000   
+
+
+GROMACS reminds you: "Christianity may be OK between consenting adults in private but should not be taught to young children." (Francis Crick)
+
