@@ -11,13 +11,8 @@ import TmpDirHelper from '../TmpDirHelper';
 import NodeStreamZip from 'node-stream-zip';
 import Errors, { ErrorType } from '../Errors';
 import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
+import { SimuFile } from '../routes/molecule/CreateMoleculeJson';
 
-
-export interface SimuFile {
-  originalname: string;
-  path: string;
-  size: number
-}
 
 
 export const MoleculeOrganizer = new class MoleculeOrganizer {

@@ -9,38 +9,7 @@ import { promises as FsPromise } from 'fs';
 import { SettingsJson, CategoryTree } from '../../types';
 import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
 import logger from '../../logger';
-
-
-import { SimuFile } from '../../MoleculeOrganizer';
-import { GoTerms } from '../../types';
-
-export interface SimuRequest{
-  full_user: {
-    id: string,
-    role: "admin"
-  };
-  body: {
-    name: string,
-    alias: string,
-    smiles: string,
-    version: string,
-    category: keyof typeof GoTerms,
-    command_line: string,
-    comments: string,
-    create_way: string,
-    force_field: string,
-    validation: string,
-    citation: string,
-    parent: string | null
-  };
-  files: {
-    itp: SimuFile[],
-    pdb: SimuFile[],
-    top: SimuFile[] | [],
-    map: SimuFile[] | []
-  };
-}
-
+import { SimuFile, SimuRequest } from './CreateMoleculeJson';
 
 
 type File = Express.Multer.File;
