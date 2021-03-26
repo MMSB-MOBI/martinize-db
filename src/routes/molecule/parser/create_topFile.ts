@@ -1,10 +1,11 @@
 const { ItpFile, TopFile } = require('itp-parser');
 const fs = require('fs');
+import { Dree } from 'dree';
 import * as path from 'path';
 const dree = require('dree');
-/*
 
-export const create_top = async function(itp_dir: string, outdir: string){
+
+export const create_top_file = async function(itp_dir: string, outdir: string){
 
     const top = TopFile.readFromString('');
     const itp = itp_dir;
@@ -41,24 +42,24 @@ export const create_top_in_dir = function(indir:string){
         exclude: /0\d\.top/
     };
 
-    const tree = dree.scan(indir, options, (element)=> {
+    const tree = dree.scan(indir, options, (element: Dree)=> {
         
         if(element.path.match('.itp$')){
-            create_top(element.path, element.path.split('/').slice(0, -1).join('/'));
+            create_top_file(element.path, element.path.split('/').slice(0, -1).join('/'));
         }
         
 
-    }, (element) => {
+    }, (element: Dree) => {
+        if(element.children) {
             element.children.forEach(child => {
                 if(child.name.match('top')){
-                    fs.rename(child.path, child.path.split('/').slice(0, -1).join('/')+'/'+child.path.split('/').slice(-2, -1).join('/')+'_01.top', function(err) {
+                    fs.rename(child.path, child.path.split('/').slice(0, -1).join('/')+'/'+child.path.split('/').slice(-2, -1).join('/')+'_01.top', function(err : Error) {
                         if ( err ) console.log('ERROR: ' + err);
                     });
-
                 }
             });
+        } 
             
     });
 }
 
-*/

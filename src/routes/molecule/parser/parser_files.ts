@@ -17,7 +17,7 @@ var molecule : InfosJson = {
     versions: [],
     name: '',
     alias: '',
-    category: 'GO:0001',
+    category: 'lipids',
     create_way: '',
     directory: '',
     top: [],
@@ -25,6 +25,7 @@ var molecule : InfosJson = {
     gro: {originalname: '', path: '', size:0}
 
 }
+
 
 
 
@@ -167,7 +168,7 @@ export const parser_files = function(path : string) : InfosJson[] {
                 versions: [],
                 name: name_molecule,
                 alias: name_molecule,
-                category: 'GO:0001',
+                category: 'lipids',
                 create_way: 'hand',
                 directory: element.path,
                 top: [],
@@ -191,7 +192,10 @@ export const parser_files = function(path : string) : InfosJson[] {
     // Launch the dree.scan function with the root directory
     const tree = dree.scan(path, options, fileCallback, dirCallback);
 
-    console.log(batch);
+    //console.log(batch);
 
     return(batch);
 }
+
+
+// molecule load /home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/Glycosphingolipids

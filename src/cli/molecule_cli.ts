@@ -4,6 +4,8 @@ import MoleculeOrganizer from "../MoleculeOrganizer";
 import { Molecule, StashedMolecule } from "../Entities/entities";
 import { parser_files } from "../routes/molecule/parser/parser_files";
 import { CreateMoleculeFromJson, InfosJson } from "../routes/molecule/CreateMoleculeJson";
+import logger from "../logger";
+import { create_top_in_dir } from "../routes/molecule/parser/create_topFile";
 
 const MOLECULE_CLI = new CliListener(
   CliHelper.formatHelp("molecule", {
@@ -11,6 +13,9 @@ const MOLECULE_CLI = new CliListener(
       list: 'List registred molecules',
       'get <id>': 'Get details about molecule <id>',
       'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
+      'load <path>': 'Load in memory all the molecules in the directory to insert them in the database',
+      'push': 'Insert the molecules in memory in the database',
+      'top <path>': 'Create top files for all the molecules in the directory',
     },
     onNoMatch: "Command is incorrect. Type \"molecule\" for help.",
   })
@@ -97,19 +102,30 @@ MOLECULE_CLI.command('wipe', async rest => {
 
 export let BATCH_MOLECULES: InfosJson[];
 
-MOLECULE_CLI.command('batch', async rest=> {
+MOLECULE_CLI.command('load', rest => {
   rest = rest.trim();
 
   if (!rest){
     return 'please specify a molecule files path';
   } else {
     BATCH_MOLECULES = parser_files(rest);
+    logger.info('load done');
   }
 });
 
-MOLECULE_CLI.command('push', async => {
-  CreateMoleculeFromJson(BATCH_MOLECULES);
-  console.log('done');
+MOLECULE_CLI.command('push', async() => {
+  if (BATCH_MOLECULES) {
+    await CreateMoleculeFromJson(BATCH_MOLECULES);
+    logger.info('push done');
+  } else {
+    logger.warning('Missing molecules in memory. Please insert them by using molecule load.')
+  }
+  
+});
+
+MOLECULE_CLI.command('top', rest => {
+  create_top_in_dir(rest);
+  logger.info('top created');
 })
 
 export default MOLECULE_CLI;
