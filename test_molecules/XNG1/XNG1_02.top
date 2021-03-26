@@ -1,0 +1,9 @@
+#include "martini.itp"
+#include "martini_v2.0_XNG1_02.itp"
+
+[system]
+This is an auto generated system
+
+[molecules]
+;moleculetype	count
+XNG1	1

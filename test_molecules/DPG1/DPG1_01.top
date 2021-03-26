@@ -1,0 +1,9 @@
+#include "martini.itp"
+#include "martini_v2.0_DPG1_01.itp"
+
+[system]
+This is an auto generated system
+
+[molecules]
+;moleculetype	count
+DPG1	1

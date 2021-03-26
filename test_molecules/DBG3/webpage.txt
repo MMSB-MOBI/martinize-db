@@ -1,0 +1,11 @@
+@h1 Lipids
+@h2 Glycosphingolipids
+@h3 C(d20:1/20:0) GM3 (DBG3)
+@image DBG3-img.png
+@itp martini_v2.0_DBG3_02.itp
+@l1 Topopogies
+martini_v2.0_DBG3_02.itp current, reoptimized see Gu et al. 2016
+martini_v2.0_DBG3_01.itp Lopez et al. 2013
+@l2 Mapping files
+@l3 Coordinate files
+DBG3-em.gro Single lipid coordinate file

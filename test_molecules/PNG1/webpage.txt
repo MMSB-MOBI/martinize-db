@@ -1,0 +1,11 @@
+@h1 Lipids
+@h2 Glycosphingolipids
+@h3 C(d18:1/24:1) GM1 (PNG1)
+@image PNG1-img.png
+@itp martini_v2.0_PNG1_02.itp
+@l1 Topopogies
+martini_v2.0_PNG1_02.itp current, reoptimized see Gu et al. 2016
+martini_v2.0_PNG1_01.itp Lopez et al. 2013
+@l2 Mapping files
+@l3 Coordinate files
+PNG1-em.gro Single lipid coordinate file

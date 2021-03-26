@@ -1,0 +1,164 @@
+;;;;;; Martini lipid topology for C(d18:1/18:0) GM3 (DPG3)
+; 
+; Description:
+;   A general model monosialodihexosylganglioside (GM3) lipid corresponding to atomistic e.g. C(d18:1/18:0)
+;   N-stearoyl-D-erythro tails.
+; Parameterization:
+;   GM3 version 2 is based on version 1 but reoptimized to reproduce the strengths of ganglioside aggregations at the atomistic
+;   level, see Gu et al. 2016.
+;   GM3 version 1 headgroup is based on Cesar Lopez's GM3 see Lopez et al. 2013 with bonded parameters modified by Manuel Melo 
+;   for increased stability and faithfulness to AA. Top two galactose groups where cut off and the branching bead in 
+;   GM1 (Nda) was changed to an SP1 type. 
+;   The lipid tail follows the standard Martini 2.0 lipid definitions and building block rules. The DP tail (x2 palmitoyl or 
+;   stearoyl) has a tail string -altail "TCC CCCC".
+; Reference(s):
+;   R.X. Gu, H.I. Ingolfsson, A.H. de Vries, S.J. Marrink, D.P. Tieleman. Ganglioside-lipid and ganglioside-protein interactions 
+;   revealed by coarse-grained and atomistic molecular dynamics simulations. JPC-B, 2016, Accepted. doi:10.1021/acs.jpcb.6b07142
+;   C.A. Lopez, Z. Sovova, F.J. van Eerden, A.H. de Vries, S.J. Marrink. Martini force field parameters for glycolipids. JCTC,
+;   9:1694-1708, 2013. doi:10.1021/ct3009655
+;   H.I. Ingolfsson, M.N. Melo, F.J. van Eerden, C. Arnarez, C.A. Lopez, T.A. Wassenaar, X. Periole, A.H. De Vries, D.P. Tieleman,
+;   S.J. Marrink. Lipid organization of the plasma membrane. JACS, 136:14554-14559, 2014. doi:10.1021/ja507832e
+;   S.J. Marrink, A.H. de Vries, A.E. Mark. Coarse grained model for semi-quantitative lipid simulations. JPC-B, 108:750-760,
+;   2004. doi:10.1021/jp036508g
+;   S.J. Marrink, H.J. Risselada, S. Yefimov, D.P. Tieleman, A.H. de Vries. The MARTINI force field: coarse grained model for
+;   biomolecular simulations. JPC-B, 111:7812-7824, 2007. doi:10.1021/jp071097f
+; Created: 2016.07.15
+; Warning(s)/Note(s):
+;   Note:  GM1 currently runs at a 20fs time step. It also seems to be stable at 40fs, with no ill effect on the bonded distributions,
+;          although GROMACS will complain that bonds with k over 10000 have oscillation periods under 10x the time step.
+;   Note2: Most bonds with force constant > 25000 are treated as constraints, but use harmonic bonds for minimization. 
+;          Add define=-DFLEXIBLE to select harmonic bonds for minimization purposes.
+;   Note3: Some of the bonds (flagged below) represent an average of an underlying multimodal distribution of the mapped AA,
+;          trajectory. These bonds should not be constrained since the average distance might correspond to a weakly populated position.
+;   Note4: Modified based on atomistic simulations of GM3-POPC binary mixture (GM3:POPC=1:5 in the upper leaflet). 
+;   Note5: Type of beads are changed to mimic the GM3 cluster size in atomistic simulation
+;   Note6: Some of the bond lengths, angle and dihedral equilibrium values are changed, this may also affect GM3 aggregation
+;
+; Structure of GM3
+;
+;     GM15-GM17
+;    /   \
+;  GM13-GM14-GM16
+;  |
+; GM6-GM4-GM3-GM1-AM1-AM2-C1B-C2B-C3B-C4B
+;  \  /    \  /    |
+;  GM5      GM2   T1A-C2A-C3A
+;
+; SugarE - SugarC - SugarD - tail
+;
+
+[ moleculetype ]
+; molname      nrexcl
+  DPG3         1
+
+[ atoms ]
+; id 	type 	resnr 	residu 	atom 	cgnr 	charge   mass
+ 1      SP1     1       DPG3     GM1     1      0        72.0000
+ 2       P1     1       DPG3     GM2     2      0        72.0000 ; Changed from SP1 to P1
+ 3      SP1     1       DPG3     GM3     3      0        72.0000
+ 4      SP1     1       DPG3     GM4     4      0        72.0000
+ 5       P1     1       DPG3     GM5     5      0        72.0000 ; Changed from SP1 to P1
+ 6      SP1     1       DPG3     GM6     6      0        72.0000 ; SNda in GM1 - as it's not a branching bead any more 
+ 7       Qa     1       DPG3     GM13   13     -1        72.0000
+ 8      SP1     1       DPG3     GM14   14      0        72.0000 ; Changed from P1 to SP1
+ 9      SP1     1       DPG3     GM15   15      0        72.0000 ; Changed from P1 to SP1
+10       P4     1       DPG3     GM16   16      0        72.0000
+11       P4     1       DPG3     GM17   17      0        72.0000 ; Changed from P5 to P4
+; Tail part
+12       P1     1       DPG3     AM1    18      0        72.0000
+13       P5     1       DPG3     AM2    19      0        72.0000
+14       C3     1       DPG3     T1A    20      0        72.0000
+15       C1     1       DPG3     C2A    21      0        72.0000
+16       C1     1       DPG3     C3A    22      0        72.0000
+17       C1     1       DPG3     C1B    23      0        72.0000
+18       C1     1       DPG3     C2B    24      0        72.0000
+19       C1     1       DPG3     C3B    25      0        72.0000
+20       C1     1       DPG3     C4B    26      0        72.0000
+
+[ bonds ]
+; i j 	funct 	length 	force.c.
+#ifdef FLEXIBLE
+  4   5   1  0.396  40000 
+  4   6   1  0.265  40000 
+  7   8   1  0.35   35000
+  7   9   1  0.381  35000
+  8   9   1  0.367  40000 
+  1   2   1  0.375  40000 ; Based on GM3-POPC mixture simulation
+  1   3   1  0.330  40000 ; Based on GM3-POPC mixture simulation
+#endif
+  2   3   1  0.327  12000 ; do not constrain (underlying mapped distribution is multimodal)
+  3   4   1  0.352  35000 ; do not constrain (underlying mapped distribution is bimodal)  
+  5   6   1  0.318  30000 ; do not constrain (underlying mapped distribution is bimodal)
+  6   7   1  0.366  25000 ; 
+  8  10   1  0.340  12500 ; do not constrain (underlying mapped distribution is bimodal) 
+  9  11   1  0.275   8500 
+; Tail part 
+  1 12   1  0.48    8000 ; Based on GM3-POPC mixture simulation
+ 12 13   1  0.37    8500 ; Based on GM3-POPC mixture simulation, same with DPSM
+ 12 14   1  0.47    8500 ; Based on GM3-POPC mixture simulation, same with DPSM
+ 14 15   1  0.47    1250 
+ 15 16   1  0.47    1250 
+ 13 17   1  0.37   20000 ; Based on Cesar GM1 and GCER
+ 17 18   1  0.47    1250  
+ 18 19   1  0.47    1250  
+ 19 20   1  0.47    1250 
+
+[ angles ]
+; i j k 	funct 	angle 	force.c.
+; angles between sugar D and sugar C
+  2   3   4   2    80.00  350.00  
+  3   4   5   2    60.00  550.00  
+; angles between sugar C and sugar E
+  4   6   7   2   103.00  295.00 
+  6   7   9   2    67.00  700.00  
+; angles between beads of sugar E
+  7   9  11   2   100.00  210.00  
+  9   8  10   2    58.00  400.00
+; Orient Head
+  3   1  12   2    142.00  50.00  
+  2   1  12   2    94.00   45.00  ; new angel Based on GM3-POPC mixture simulation
+; Tail part
+  1  12  13   2    65.00   20.00  ; new angle based on GM1-POPC mixture simulation
+  1  12  14   2   150.00   30.00  ; Based on Cesar GM1 and GCER
+ 12  13  17   2   129.00  200.00  ; Based on Cesar GM1 and GCER
+ 12  14  15   2   180.00   25.00  ; Based on Cesar GM1 and GCER
+ 14  15  16   2   180.00   25.00
+ 13  17  18   2   180.00   25.00
+ 17  18  19   2   180.00   25.00 
+ 18  19  20   2   180.00   25.00
+
+[ dihedrals ]
+  1   2   3   4   2  -177.0 100.0 
+  2   3   4   5   2  -140.0  16.0 
+  3   4   5   6   2  -159.0  55.0 
+  4   6   7   9   2  -124.0  55.0
+  5   4   6   7   2   159.0 125.0 
+  6   7   9   8   2    97.5 265.0
+  7   9   8  10   2   137.0  80.0 
+  8   7   9  11   2   159.0  50.0 
+; Orient head with respect to tail
+; The following dihedrals will improve head orientation a little, 
+; but make the simulation less stable at 20 fs time step
+; I am not using them in this version
+;  3   2   1  12   1   -16.0   50.0  1 ; New dihedral based on GM3-POPC mixture simulation
+;  2   1  12  13   1  -117.0    3.0  1 ; New dihedral based on GM3-POPC mixture simulation
+
+#ifndef FLEXIBLE
+[ constraints ]
+  4   5   1  0.396  40000
+  4   6   1  0.265  40000
+  7   8   1  0.35   35000
+  7   9   1  0.381  35000
+  8   9   1  0.367  40000
+  1   2   1  0.375  40000
+  1   3   1  0.330  40000
+#endif
+
+[ exclusions ]
+  2  4
+  3  5
+  6  9
+  9 10
+; added exclusions in version 2   
+  1  4
+  2 12

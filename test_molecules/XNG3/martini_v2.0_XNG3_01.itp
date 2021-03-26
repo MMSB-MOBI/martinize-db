@@ -1,0 +1,145 @@
+;;;;;; Martini lipid topology for C(d24:1/24:1) GM3 (XNG3)
+;
+; Description:
+;   A general model monosialodihexosylganglioside (GM3) lipid corresponding to atomistic e.g. C(d24:1/24:1) tails.
+; Parameterization:
+;   Head based on Cesar Lopez's GM1 see Lopez et al. 2013 with bonded parameters modified by Manuel Melo for
+;   increased stability and faithfulness to AA. Top two galactose groups where cut off and the branching bead in 
+;   GM1 (Nda) was changed to an SP1 type. The lipid tail follows the standard Martini 2.0 lipid definitions
+;   and building block rules. The XN tail (first a Lignoceroyl or Hexacosanoyl tail then a Nervonic acid tail) has a 
+;   tail string -altail "TCCCC CCCDCC".
+; Reference(s):
+;   C.A. Lopez, Z. Sovova, F.J. van Eerden, A.H. de Vries, S.J. Marrink. Martini force field parameters for glycolipids. JCTC,
+;   9:1694-1708, 2013. doi:10.1021/ct3009655
+;   H.I. Ingolfsson, M.N. Melo, F.J. van Eerden, C. Arnarez, C.A. Lopez, T.A. Wassenaar, X. Periole, A.H. De Vries, D.P. Tieleman,
+;   S.J. Marrink. Lipid organization of the plasma membrane. JACS, 136:14554-14559, 2014. doi:10.1021/ja507832e
+;   S.J. Marrink, A.H. de Vries, A.E. Mark. Coarse grained model for semi-quantitative lipid simulations. JPC-B, 108:750-760,
+;   2004. doi:10.1021/jp036508g
+;   S.J. Marrink, H.J. Risselada, S. Yefimov, D.P. Tieleman, A.H. de Vries. The MARTINI force field: coarse grained model for
+;   biomolecular simulations. JPC-B, 111:7812-7824, 2007. doi:10.1021/jp071097f
+; Created: 2015.04.20
+; Warning(s)/Note(s):
+;   Note, GM3 currently runs at a 20fs time step. It also seems to be stable at 40fs, with no ill effect on the 
+;   bonded distributions, although GROMACS will complain that bonds with k over 10000 have oscillation periods under 
+;   10x the time step.
+;   Note, most bonds with force constant > 25000 are treated as constraints, but use harmonic bonds for minimization. 
+;   Add define=-DFLEXIBLE to select harmonic bonds for minimization purposes.
+;   Note, seven of the bonds (flagged below) represent an average of an underlying multimodal distribution of the 
+;   mapped AA, trajectory. These bonds should not be constrained since the average distance might correspond to a 
+;   weakly populated position.
+;
+
+[ moleculetype ]
+; molname      nrexcl
+  XNG3         1
+
+[ atoms ]
+; id 	type 	resnr 	residu 	atom 	cgnr 	charge   mass
+ 1      SP1     1       XNG3     GM1     1      0        72.0000
+ 2      SP1     1       XNG3     GM2     2      0        72.0000
+ 3      SP1     1       XNG3     GM3     3      0        72.0000
+ 4      SP1     1       XNG3     GM4     4      0        72.0000
+ 5      SP1     1       XNG3     GM5     5      0        72.0000
+ 6      SP1     1       XNG3     GM6     6      0        72.0000 ; Changed from Nda to P1 - as it's not a branching bead any more
+ 7       Qa     1       XNG3     GM13   13     -1        72.0000
+ 8       P1     1       XNG3     GM14   14      0        72.0000
+ 9       P1     1       XNG3     GM15   15      0        72.0000
+10       P5     1       XNG3     GM16   16      0        72.0000 ; 2016.05.10-changed from P4 to P5-Bead type and label in Fig.5 Lopez et al. 2013 were switched for GM16 and GM17
+11       P4     1       XNG3     GM17   17      0        72.0000 ; 2016.05.10-changed from P5 to P4-Bead type and label in Fig.5 Lopez et al. 2013 were switched for GM16 and GM17
+; Tail part
+12       P1     1       XNG3     AM1    18      0        72.0000
+13       P5     1       XNG3     AM2    19      0        72.0000
+14       C3     1       XNG3     T1A    20      0        72.0000
+15       C1     1       XNG3     C2A    21      0        72.0000
+16       C1     1       XNG3     C3A    22      0        72.0000
+17       C1     1       XNG3     C4A    23      0        72.0000
+18       C1     1       XNG3     C5A    24      0        72.0000
+19       C1     1       XNG3     C1B    25      0        72.0000
+20       C1     1       XNG3     C2B    26      0        72.0000
+21       C1     1       XNG3     C3B    27      0        72.0000
+22       C3     1       XNG3     D4B    28      0        72.0000
+23       C1     1       XNG3     C5B    29      0        72.0000
+24       C1     1       XNG3     C6B    30      0        72.0000
+
+[ bonds ]
+; i j 	funct 	length 	force.c.
+#ifdef FLEXIBLE
+  4   5   1  0.389  40000
+  4   6   1  0.300  40000
+  7   8   1  0.35   35000
+  7   9   1  0.381  35000
+  8   9   1  0.364  40000
+#endif
+  1   2   1  0.36   17500 ; do not constrain (underlying mapped distribution is bimodal) 
+  1   3   1  0.31   20000 ; do not constrain (underlying mapped distribution is bimodal)
+  2   3   1  0.315   8500 ; do not constrain (underlying mapped distribution is multimodal)
+  3   4   1  0.368  15000 ; do not constrain (underlying mapped distribution is bimodal)  
+  5   6   1  0.307  25000 ; do not constrain (underlying mapped distribution is bimodal)
+  6   7   1  0.376  12500
+  8  10   1  0.34   11500 ; do not constrain (underlying mapped distribution is bimodal) 
+  9  11   1  0.275   8500 
+; Tail part 
+  1 12   1  0.57   20000 ; Head linked to AM1
+ 12 13   1  0.27   20000 ; Based on Cesar GM1 and GCER
+ 12 14   1  0.29   20000 ; Based on Cesar GM1 and GCER
+ 14 15   1  0.47   1250 
+ 15 16   1  0.47   1250
+ 16 17   1  0.47   1250
+ 17 18   1  0.47   1250
+ 13 19   1  0.37   20000 ; Based on Cesar GM1 and GCER
+ 19 20   1  0.47   1250
+ 20 21   1  0.47   1250
+ 21 22   1  0.47   1250
+ 22 23   1  0.47   1250
+ 23 24   1  0.47   1250
+
+[ angles ]
+; i j k 	funct 	angle 	force.c.
+  2   3   4   2    85.50  320.00
+  3   4   5   2    67.00  550.00
+  4   6   7   2    97.50  295.00
+  6   7   9   2    71.00  700.00
+  7   9  11   2    96.00  210.00
+  9   8  10   2    61.00  300.00
+; Orient Head
+  3   1  12   2    50.00  200.00  
+; Tail part
+  1  12  13   2    85.00   25.00  ; Based on Cesar GM1 and GCER
+  1  12  14   2   150.00   30.00  ; Based on Cesar GM1 and GCER
+ 12  13  19   2   129.00  200.00  ; Based on Cesar GM1 and GCER
+ 12  14  15   2   180.00   25.00  ; Based on Cesar GM1 and GCER
+ 14  15  16   2   180.00   25.00
+ 15  16  17   2   180.00   25.00
+ 16  17  18   2   180.00   25.00
+ 13  19  20   2   180.00   25.00
+ 19  20  21   2   180.00   25.00 
+ 20  21  22   2   180.00   25.00
+ 21  22  23   2   120.00   45.00
+ 22  23  24   2   180.00   25.00
+
+[ dihedrals ]
+  1   2   3   4   2  -160.0  30.0
+  2   3   4   5   2  -149.0  16.0
+  3   4   5   6   2  -150.0  55.0
+  4   6   7   9   2  -124.0  60.0
+  5   4   6   7   2   154.0 115.0
+  6   7   9   8   2   107.5 265.0
+  7   9   8  10   2   137.0  80.0
+  8   7   9  11   2   162.0  50.0
+  3   1  12  13   1   125.0  10.00 1 ; Orient head with respect to tail 
+
+#ifndef FLEXIBLE
+[ constraints ]
+  4   5   1  0.389  40000
+  4   6   1  0.300  40000
+  7   8   1  0.35   35000
+  7   9   1  0.381  35000
+  8   9   1  0.364  40000
+#endif
+
+[ exclusions ]
+  2  4
+  3  5
+  6  9
+  9 10
+

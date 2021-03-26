@@ -1,0 +1,74 @@
+;;;;;; Martini lipid topology for C(d16:1/16:0) GS (DPGS)
+;
+; Description:
+;   A general model glucosylceramide or galactosylceramide (GS) lipid corresponding to atomistic e.g. C(d16:1/16:0) tails
+; Parameterization:
+;   See Lopez et al. 2013 
+; Reference(s):
+;   C.A. Lopez, Z. Sovova, F.J. van Eerden, A.H. de Vries, S.J. Marrink. Martini force field parameters for glycolipids. JCTC,
+;   9:1694-1708, 2013. doi:10.1021/ct3009655
+;   S.J. Marrink, A.H. de Vries, A.E. Mark. Coarse grained model for semi-quantitative lipid simulations. JPC-B, 108:750-760,
+;   2004. doi:10.1021/jp036508g
+;   S.J. Marrink, H.J. Risselada, S. Yefimov, D.P. Tieleman, A.H. de Vries. The MARTINI force field: coarse grained model for
+;   biomolecular simulations. JPC-B, 111:7812-7824, 2007. doi:10.1021/jp071097f
+; Created: 2015.04.20
+; Author(s): Cesar Lopez <c.a.lopez-bautista@rug.nl> and Siewert Marrink <s.j.marrink@rug.nl>
+; Warning(s)/Note(s):
+;   Note, is stable with a 20 fs time step.
+;   Note, most bonds with force constant > 25000 are treated as constraints, but use harmonic bonds for minimization. 
+;   Add define=-DFLEXIBLE to select harmonic bonds for minimization purposes.
+;
+
+[ moleculetype ]
+DPGS               1
+
+[ atoms ]
+    1          P4    1    DPGS     C1     1         0        72.0000
+    2          P1    1    DPGS     C2     2         0        72.0000
+    3          P1    1    DPGS     C3     3         0        72.0000
+    4          P1    1    DPGS    AM1     4         0        72.0000
+    5          P5    1    DPGS    AM2     5         0        72.0000
+    6          C3    1    DPGS    D1A     6         0        72.0000 ; corrected (C3 instead of C1), oct 2013
+    7          C1    1    DPGS    C2A     7         0        72.0000
+    8          C1    1    DPGS    C3A     8         0        72.0000
+    9          C1    1    DPGS    C4A     9         0        72.0000
+   10          C1    1    DPGS    C1B    10         0        72.0000
+   11          C1    1    DPGS    C2B    11         0        72.0000
+   12          C1    1    DPGS    C3B    12         0        72.0000
+   13          C1    1    DPGS    C4B    13         0        72.0000
+
+[ bonds ]
+;    1    2   1  0.3    30000
+;    1    3   1  0.3    30000
+;    2    3   1  0.3    30000
+    3    4   1  0.57   20000
+    4    5   1  0.27   20000 ; AM1-AM2
+    4    6   1  0.29   20000 ; AM1-D1A ; corrected (0.29 instead of 0.37), oct 2013
+    6    7   1  0.470  1250
+    7    8   1  0.470  1250
+    8    9   1  0.470  1250
+    5   10   1  0.37   20000 ; AM2-C1B ; corrected (0.37 instead of 0.29), oct 2013
+   10   11   1  0.470  1250
+   11   12   1  0.470  1250
+   12   13   1  0.470  1250
+
+[ angles ]
+   1     3     4    2    50.00  200.00 ; ring flipping
+   3     4     5    2    85.00   25.00 ; link to lipid
+   3     4     6    2   150.00   30.00 ; link to lipid
+  10     5     4    2   129.00  200.00 ; linkage
+   4     6     7    2   180.00   25.00
+   6     7     8    2   180.00   25.00
+   7     8     9    2   180.00   25.00
+   5    10    11    2   180.00   25.00
+  10    11    12    2   180.00   25.00
+  11    12    13    2   180.00   25.00
+
+[ dihedrals ]
+ 1 3 4 5 1   125.0    10.00 1 ; ring orientation
+
+[ constraints ]
+    1    2   1  0.3    
+    1    3   1  0.3    
+    2    3   1  0.3    
+
