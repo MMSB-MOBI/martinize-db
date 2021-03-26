@@ -107,7 +107,7 @@ MOLECULE_CLI.command('batch', async rest=> {
   }
 });
 
-MOLECULE_CLI.command('pull', async => {
+MOLECULE_CLI.command('push', async => {
   CreateMoleculeFromJson(BATCH_MOLECULES);
   console.log('done');
 })
