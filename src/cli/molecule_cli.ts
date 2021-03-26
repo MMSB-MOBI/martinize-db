@@ -2,6 +2,8 @@ import CliHelper, { CliListener } from "interactive-cli-helper";
 import CouchHelper, { Database } from "../Entities/CouchHelper";
 import MoleculeOrganizer from "../MoleculeOrganizer";
 import { Molecule, StashedMolecule } from "../Entities/entities";
+import { parser_files } from "../routes/molecule/parser/parser_files";
+import { CreateMoleculeFromJson, InfosJson } from "../routes/molecule/CreateMoleculeJson";
 
 const MOLECULE_CLI = new CliListener(
   CliHelper.formatHelp("molecule", {
@@ -92,5 +94,22 @@ MOLECULE_CLI.command('wipe', async rest => {
   }
   return `Unable to find molecule.`
 });
+
+export let BATCH_MOLECULES: InfosJson[];
+
+MOLECULE_CLI.command('batch', async rest=> {
+  rest = rest.trim();
+
+  if (!rest){
+    return 'please specify a molecule files path';
+  } else {
+    BATCH_MOLECULES = parser_files(rest);
+  }
+});
+
+MOLECULE_CLI.command('pull', async => {
+  CreateMoleculeFromJson(BATCH_MOLECULES);
+  console.log('done');
+})
 
 export default MOLECULE_CLI;
