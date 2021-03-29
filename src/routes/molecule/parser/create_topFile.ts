@@ -2,6 +2,7 @@ const { ItpFile, TopFile } = require('itp-parser');
 const fs = require('fs');
 import { Dree } from 'dree';
 import * as path from 'path';
+import Errors, { ErrorType } from '../../../Errors';
 const dree = require('dree');
 
 
@@ -9,20 +10,22 @@ export const create_top_file = async function(itp_dir: string, outdir: string){
 
     const top = TopFile.readFromString('');
     const itp = itp_dir;
-
-    //top.setField(TopFile.HEADLINE_KEY, []);
     
     top.headlines.push(`#include "martini.itp"`);
     top.headlines.push(`#include "${path.basename(itp)}"`);
-
 
     top.setField('system', ['This is an auto generated system']);
     top.appendFieldLine('molecules', ';moleculetype\tcount');
 
     let itp_file = ItpFile.readFromString(fs.readFileSync(itp, 'utf-8'));
-    top.appendFieldLine('molecules', `${itp_file.name}\t1`);
 
-    //console.log(itp_file.name);
+    if (itp_file.name != '') {
+        top.appendFieldLine('molecules', `${itp_file.name}\t1`);
+    }
+    else {
+        return Errors.throw(ErrorType.IncorrectItpName);
+    }
+    
 
 
     const content = top.toString();

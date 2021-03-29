@@ -7,6 +7,12 @@ import { CreateMoleculeFromJson, InfosJson } from "../routes/molecule/CreateMole
 import logger from "../logger";
 import { create_top_in_dir } from "../routes/molecule/parser/create_topFile";
 
+import cliFileSuggestor from '@interactive-cli-helper/file-suggestor';
+import { ErrorType } from "../Errors";
+import { GoTerms } from "../types";
+import { CONNECTED_USER_CLI } from "./user_cli";
+const fs = require('fs');
+
 const MOLECULE_CLI = new CliListener(
   CliHelper.formatHelp("molecule", {
     commands: {
@@ -100,32 +106,101 @@ MOLECULE_CLI.command('wipe', async rest => {
   return `Unable to find molecule.`
 });
 
+
+
 export let BATCH_MOLECULES: InfosJson[];
 
 MOLECULE_CLI.command('load', rest => {
-  rest = rest.trim();
-
-  if (!rest){
-    return 'please specify a molecule files path';
-  } else {
-    BATCH_MOLECULES = parser_files(rest);
-    logger.info('load done');
+  if (!CONNECTED_USER_CLI) {
+    return 'Please connect before using this command by using user connect';
   }
+  else {
+    if (CONNECTED_USER_CLI.role != 'admin') {
+      return 'You must be admin to add molecules to the database'
+    }
+    else {
+      // TODO ajouter autres types de goterms
+      
+
+      if (!rest){
+        return 'please specify a molecule files path';
+      
+      } else {
+
+        let params = rest.split(' ');
+
+        if (params.length < 2) {
+          return 'please specify a type of molecules inserted (lipids, sugars)';
+        
+        } else {
+          let path = params[0].trim();
+          let type = params[1].trim();
+          let go : keyof typeof GoTerms;
+
+          if (!fs.existsSync(path)) {
+            return 'Path does not exist';
+          }
+          else {
+            if (type == 'lipids') {
+              go = 'lipids';
+            }
+            else {
+              return 'Invalid type of moecule';
+            }
+  
+            try {
+              BATCH_MOLECULES = parser_files(path, go);
+              logger.info('load done');
+            } catch (e) {
+              logger.warn(e.data);   
+            }
+          }
+        }
+      }
+    }
+  }
+}, {
+  onSuggest: cliFileSuggestor,
 });
+
+
 
 MOLECULE_CLI.command('push', async() => {
-  if (BATCH_MOLECULES) {
-    await CreateMoleculeFromJson(BATCH_MOLECULES);
-    logger.info('push done');
-  } else {
-    logger.warning('Missing molecules in memory. Please insert them by using molecule load.')
+  if (!CONNECTED_USER_CLI) {
+    return 'Please connect before using this command by using user connect';
   }
-  
+  else {
+    if (BATCH_MOLECULES) {
+      try {
+        await CreateMoleculeFromJson(BATCH_MOLECULES);
+        logger.info('push done');
+      } catch (e) {
+        logger.warn(e.data);
+      }
+    } else {
+      logger.warn('Missing molecules in memory. Please insert them by using molecule load.')
+    }
+  }
 });
 
+
+
 MOLECULE_CLI.command('top', rest => {
-  create_top_in_dir(rest);
-  logger.info('top created');
+  rest = rest.trim();
+
+  if (!fs.existsSync(rest)) {
+    return 'Path does not exist';
+  }
+  else {
+    try {
+      create_top_in_dir(rest);
+      logger.info('top files created');
+    } catch (e) {
+      logger.warn(e.data);
+    }
+  }
+}, {
+  onSuggest: cliFileSuggestor,
 })
 
 export default MOLECULE_CLI;
