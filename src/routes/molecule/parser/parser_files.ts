@@ -1,4 +1,6 @@
 import { Dree } from "dree";
+import { relative } from "path";
+import { Excel } from "../../../cli/molecule_cli";
 import Errors, { ErrorType } from "../../../Errors";
 import logger from "../../../logger";
 import { GoTerms } from "../../../types";
@@ -8,7 +10,7 @@ const dree = require('dree');
 const fs = require('fs');
 
 
-var molecule : InfosJson = {
+export var MOLECULE : InfosJson = {
     versions: [],
     name: '',
     alias: '',
@@ -18,7 +20,6 @@ var molecule : InfosJson = {
     top: [],
     map: [],
     gro: {originalname: '', path: '', size:0}
-
 }
 
 
@@ -35,7 +36,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
     // Options of the scan function : only read direct children files and directories of the root 
     // and apply fileCallback only itp end gro files
     const options = {
-        depth:1,
+        depth:2,
         extensions: ['itp', 'gro', 'pdb', 'top', 'map']
     };
     
@@ -69,7 +70,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
                 };
 
 
-                molecule.versions.splice(Number(tmp.number), 0, tmp);
+                MOLECULE.versions.splice(Number(tmp.number), 0, tmp);
 
                 
             }
@@ -86,7 +87,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
                 };
 
 
-                molecule.versions.splice(Number(tmp.number), 0, tmp);
+                MOLECULE.versions.splice(Number(tmp.number), 0, tmp);
 
             }
 
@@ -111,7 +112,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
                 size: sizeFile
             };
 
-            molecule.gro = gro;
+            MOLECULE.gro = gro;
             
         }
 
@@ -127,7 +128,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
                 path: element.path,
                 size: sizeFile
             }
-            molecule.map.push(map);
+            MOLECULE.map.push(map);
         }
         
         else {
@@ -145,7 +146,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
                     size: sizeFile
                 }
             };
-            molecule.top.splice(Number(top.version), 0, top);
+            MOLECULE.top.splice(Number(top.version), 0, top);
         }
         
     };
@@ -162,36 +163,60 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
         // Il the directory is not the current folder (prevent it from being scanned again), 
         // scan all the children directories
         let name_molecule = element.path.split('/')[element.path.split('/').length -1];
-        if (!element.relativePath.includes('.')){
-            molecule = {
-                versions: [],
-                name: name_molecule,
-                alias: name_molecule,
-                category: type,
-                create_way: 'hand',
-                directory: element.path,
-                top: [],
-                map: [],
-                gro: {originalname: '', path: '', size:0}
-    
-            }
-            const tree = dree.scan(element.path, options, fileCallback, dirCallback);
+        MOLECULE = {
+            versions: [],
+            name: name_molecule,
+            alias: name_molecule,
+            category: type,
+            create_way: 'hand',
+            directory: element.path,
+            top: [],
+            map: [],
+            gro: {originalname: '', path: '', size:0}
+        }
 
-            //TODO gestion des erreurs
-            if (!element.children) {
-                if (molecule.versions.length == 0 || molecule.top.length == 0 || molecule.gro.originalname === ''){
-                    return Errors.throw(ErrorType.MissingFiles);
+        if (!element.relativePath.includes('.')) {
+            if (element.children){
+                if(element.children[0].type == 'file') {
+                    //console.log(element);
+                    const tree = dree.scan(element.path, options, fileCallback);
+    
                 }
-                batch.push(molecule);
+                else {
+                    //console.log(element);
+    
+                    const tree = dree.scan(element.path, options, ()=>{}, dirCallback);//fileCallback, dirCallback);
+                }
+                
+                //const tree = dree.scan(element.path, options, fileCallback, dirCallback);
+                //console.log(MOLECULE.versions);
+    
+                //TODO gestion des erreurs
+                if (element.children[0].type == 'file') {
+                    if (MOLECULE.versions.length == 0 || MOLECULE.gro.originalname === ''){
+                        let err = Errors.make(ErrorType.MissingFiles);
+                        logger.warn(name_molecule + ' : ' + err.data.message);
+                        Excel.text += name_molecule+ ',X,,,\n';
+                    }
+                    else if (MOLECULE.top.length == 0) {
+                        return Errors.throw(ErrorType.MissingTopFiles);
+                    }
+                    else {
+                        batch.push(MOLECULE);
+                    }
+                }
             }
-        } 
+        }
+        
     };
     
 
     var batch : InfosJson[] = [];
 
     // Launch the dree.scan function with the root directory
-    const tree = dree.scan(path, options, fileCallback, dirCallback);
+    const tree = dree.scan(path, options, ()=>{}, dirCallback); //fileCallback, dirCallback);
 
     return(batch);
+
+    //molecule load /home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/ lipids
 }

@@ -9,6 +9,7 @@ import Errors, { ErrorType } from '../../Errors';
 import logger from '../../logger';
 import { resolve } from 'path';
 import { CONNECTED_USER_CLI } from '../../cli/user_cli';
+import { Excel } from '../../cli/molecule_cli';
 
 
 
@@ -87,6 +88,7 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
 
   await batch.reduce(async (memo, i) => {
     await memo;
+    logger.info('Inserting '+i.name);
     await CreateMoleculeFromJsonAux(i);
 
   }, Promise.resolve());
@@ -104,6 +106,7 @@ const tree = dree.scan('/home/achopin/Documents/database/martini-molecule-reposi
 */
 
 const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
+
   let parentMol: string | null = null;
 
     for (let i=0; i < infos.versions.length; i++) {
@@ -158,7 +161,7 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
           await checker.checkName(req.body.name, '');
         } catch (e) {
           if (e.code === ErrorType.NameAlreadyExists) {
-            logger.debug("There is already a molecule by the name "+infos.name+" in the database.");
+            logger.warn("There is already a molecule by the name "+infos.name+" in the database.");
             break;
           }
           else {
@@ -174,9 +177,16 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
           parentMol = molecule.id;
         }
         let response = await Database.molecule.save(molecule as Molecule);
+        Excel.text += infos.name+',,,,X\n';
       } catch (e) {
           if (e.code !== ErrorType.NameAlreadyExists) {
-            logger.debug("Error with the "+ver.number+" version of \""+infos.name+"\" : "+ e.data.message);
+            logger.warn("Error with the "+ver.number+" version of \""+infos.name+"\" : "+ e.data.message);
+            if (e.code == ErrorType.InvalidMoleculeFiles) {
+              Excel.text += infos.name+',,X,,\n';
+            }
+            if (req.body.force_field == '') {
+              Excel.text += infos.name+',,,X,\n';
+            }
             break;
           };
       }
@@ -184,3 +194,4 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
     };
     return new Promise((resolve, reject) => {resolve(true)});
 }
+

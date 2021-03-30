@@ -1,9 +1,0 @@
-#include "martini_v2.2.itp"
-#include "martini_v2.0_POPE_01.itp"
-
-[system]
-This is an auto generated system
-
-[molecules]
-;moleculetype	count
-POPE	1

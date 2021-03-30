@@ -14,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@interactive-cli-helper/file-suggestor": "^1.0.4",
     "@types/bcrypt": "^3.0.0",
     "@types/cookie-parser": "^1.4.2",
     "@types/cors": "^2.8.6",

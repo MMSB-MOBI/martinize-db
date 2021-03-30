@@ -1,9 +1,0 @@
-#include "martini_v2.2.itp"
-#include "martini_v2.0_DIPC_01.itp"
-
-[system]
-This is an auto generated system
-
-[molecules]
-;moleculetype	count
-DIPC	1

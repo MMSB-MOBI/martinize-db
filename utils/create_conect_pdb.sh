@@ -54,7 +54,7 @@ else
 fi
 
 # Create the computed topology .tpr
-gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" -maxwarn 1
+gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"
 
 if [ $4 == "--remove-water" ]
 then

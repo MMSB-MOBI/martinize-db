@@ -3,6 +3,7 @@ const fs = require('fs');
 import { Dree } from 'dree';
 import * as path from 'path';
 import Errors, { ErrorType } from '../../../Errors';
+import logger from '../../../logger';
 const dree = require('dree');
 
 
@@ -30,7 +31,23 @@ export const create_top_file = async function(itp_dir: string, outdir: string){
 
     const content = top.toString();
 
-    let version = path.basename(itp).split('_').slice(-1).join().split('.').slice(0, -1).join();
+    let version = '';
+
+    // Case with protonation
+    if (path.basename(itp).match("^martini_v\.+_[A-Z]?[A-Z0-9]+_\\d{2}_[zpm]\\d.itp$") != null) {
+        version = path.basename(itp).split('_').slice(-2, -1).join();
+
+    }
+    // Case without protonation
+    
+    else  if (path.basename(itp).match("^martini_v\.+_[A-Z]?[A-Z0-9]+_\\d{2}.itp$") != null) {
+        version = path.basename(itp).split('_').slice(-1).join().split('.').slice(0, -1).join();
+
+    }
+    else {
+        logger.warn('Invalid itp name');
+    }
+    
 
     fs.writeFileSync(`${outdir}/${itp_file.name}_${version}.top`, content);
 
