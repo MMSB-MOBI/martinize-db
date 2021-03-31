@@ -26,10 +26,10 @@ export var MOLECULE : InfosJson = {
 
 
 /**
- * Parse the molecules files names and return the informations in a dictionary
- * @param path - Diretory where the molecules files are found
- * @param dict_molecules - Dictionnary containing the data
- * @returns - Dictionary containing the molecules informations
+ * Parse the molecules files names and return the informations in a Json Object
+ * @param path - Directory where the molecules files are found
+ * @param type - Type of molecule inserted
+ * @returns - Object containing the molecules informations
  */
 export const parser_files = function(path : string, type : keyof typeof GoTerms) : InfosJson[] {
     
@@ -42,12 +42,11 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
     
     /**
      * Callback function of dree.scan when a file is given as argument
-     * @param element - File
-     * @param stat
+     * @param element - File (dree format)
      */
     const fileCallback = function (element : Dree) {
     
-        // Parsing and insertion of the itp file in the dictionary
+        // Parsing and insertion of the itp file in the Json
         if (element.name.match("itp$") != null) {
             let itp_info = element.name.split("_");
             let sizeFile = 0;
@@ -91,14 +90,14 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
 
             }
 
-            // error syntax
+            // Error syntax
             else {
-                return Errors.throw(ErrorType.IncorrectItpName, {test: "test"});
+                return Errors.throw(ErrorType.IncorrectItpName);
             }
         } 
         
 
-        // Insertion of the gro file in the dictionary
+        // Insertion of the gro file in the Json
         else if(element.name.match("gro$") != null || element.name.match("pdb$") != null) {
 
             let sizeFile = 0;
@@ -116,6 +115,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
             
         }
 
+        // Insertion of the map file if exists in the Json
         else if (element.name.match("map$") != null) {
 
             let sizeFile = 0;
@@ -131,6 +131,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
             MOLECULE.map.push(map);
         }
         
+        // Insertion of the top file in the Json
         else {
 
             let sizeFile = 0;
@@ -151,17 +152,15 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
         
     };
     
+
     /**
      * Callback function of dree.scan when a folder is given as argument
-     * @param element - Folder
-     * @param stat 
+     * @param element - Folder (dree format)
      */
     const dirCallback = function (element: Dree) {
             
 
-
-        // Il the directory is not the current folder (prevent it from being scanned again), 
-        // scan all the children directories
+        // Initialize a molecule with its name
         let name_molecule = element.path.split('/')[element.path.split('/').length -1];
         MOLECULE = {
             versions: [],
@@ -175,23 +174,24 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
             gro: {originalname: '', path: '', size:0}
         }
 
+        // If the directory is not the current folder (prevent it from being scanned again), 
+        // scan all the children directories
         if (!element.relativePath.includes('.')) {
             if (element.children){
+
+                // If the directory contains molecule files
                 if(element.children[0].type == 'file') {
-                    //console.log(element);
                     const tree = dree.scan(element.path, options, fileCallback);
     
                 }
+
+                // If the moelcule files are in a subdirectory
                 else {
-                    //console.log(element);
-    
-                    const tree = dree.scan(element.path, options, ()=>{}, dirCallback);//fileCallback, dirCallback);
+                    const tree = dree.scan(element.path, options, ()=>{}, dirCallback);
                 }
-                
-                //const tree = dree.scan(element.path, options, fileCallback, dirCallback);
-                //console.log(MOLECULE.versions);
     
                 //TODO gestion des erreurs
+                // check if no molecule file is missing after parsing the directory
                 if (element.children[0].type == 'file') {
                     if (MOLECULE.versions.length == 0 || MOLECULE.gro.originalname === ''){
                         let err = Errors.make(ErrorType.MissingFiles);
@@ -214,7 +214,7 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
     var batch : InfosJson[] = [];
 
     // Launch the dree.scan function with the root directory
-    const tree = dree.scan(path, options, ()=>{}, dirCallback); //fileCallback, dirCallback);
+    const tree = dree.scan(path, options, ()=>{}, dirCallback);
 
     return(batch);
 

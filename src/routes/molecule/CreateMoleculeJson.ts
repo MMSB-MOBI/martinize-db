@@ -80,9 +80,10 @@ export interface SimuRequest{
   };
 }
 
+
 /**
- * Create a molecule object from its data contained in a Json file and send it to the database
- * @param jsonFile 
+ * Read a bacth of molecule objects contained in a Json object and send their infos to the database to insert them sequentially
+ * @param batch - a list of molecules informations
  */
 export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
 
@@ -94,21 +95,17 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
   }, Promise.resolve());
 }
 
-/*
-const options = {
-  depth:10,
-  extensions: ['json'],
-};
-const tree = dree.scan('/home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/Glycosphingolipids', options, (element : any) => {
-  CreateMoleculeFromJson(element.path);
-});
 
-*/
-
+/**
+ * Auxiliary function reading the infos from one molecule of the batch and inserting them in the databse
+ * @param infos - The informations on the moelcule
+ * @returns 
+ */
 const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
 
   let parentMol: string | null = null;
 
+    // for each itp versions (versions of the molecule) we insert the infos in the database
     for (let i=0; i < infos.versions.length; i++) {
 
       let ver : VersionItp = infos.versions[i];
@@ -145,16 +142,17 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
         }
       }
 
-
+      // Error if the user connected is not an admin
       if (req.full_user.role != 'admin') {
         return Errors.throw(ErrorType.Unallowed);
       }
 
+      // If there are no top file correspnding to the itp
       if (!infos.top[i].infos.originalname.match(ver.number)){
         return Errors.throw(ErrorType.MissingTopFiles);
       }
 
-
+      // If the molecule version is the first one, we check if the molecule is already in the database
       if (ver.number == '01') {
         const checker = new MoleculeChecker(req);
         try {
@@ -170,6 +168,7 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
         }
       }
 
+      // Check and insert the molecule in the database and if it is the first version, keep its id to define the parent id of the other versions
       try {
         const checker = new MoleculeChecker(req);
         let molecule = await checker.check();
