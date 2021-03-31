@@ -1,9 +1,0 @@
-#include "martini.itp"
-#include "martini_v2.0_DBG3_02.itp"
-
-[system]
-This is an auto generated system
-
-[molecules]
-;moleculetype	count
-DBG3	1

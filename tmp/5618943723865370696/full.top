@@ -1,9 +1,0 @@
-#include "martini_v2.2.itp"
-#include "martini_v2.0_DPPA_01.itp"
-
-[system]
-This is an auto generated system
-
-[molecules]
-;moleculetype	count
-DPPA	1

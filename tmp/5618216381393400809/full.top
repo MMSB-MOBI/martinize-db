@@ -1,9 +1,0 @@
-#include "martini_v2.2P.itp"
-#include "martini_v2.0_APC_01.itp"
-
-[system]
-This is an auto generated system
-
-[molecules]
-;moleculetype	count
-APC	1

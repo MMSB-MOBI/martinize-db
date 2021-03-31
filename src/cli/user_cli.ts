@@ -6,7 +6,7 @@ import { generateSnowflake, withRegex } from "../helpers";
 import { UserRole } from "../types";
 import { CLI } from "./cli";
 
-const USER_CLI = new CliListener(
+let USER_CLI = new CliListener(
   CliHelper.formatHelp("user", {
     commands: {
       list: 'List registred users',
@@ -249,5 +249,31 @@ USER_CLI.command('wipe', async rest => {
   }
   return `Unable to find user.`
 });
+
+
+
+export let CONNECTED_USER_CLI: User;
+
+USER_CLI.command('connect', async () => {
+  let username = await CLI.question("Username: ");
+
+    const exists = await Database.user.fromUsername(username);
+    if (exists) {
+      let password = await CLI.question('Password: ');
+      if (await Database.user.verifyPassword(exists, password) == true) {
+        CONNECTED_USER_CLI = exists;
+      }
+      else {
+        return 'Incorrect password';
+      }
+    }
+    else {
+      return 'Incorrect username';
+    }
+    return 'Successfully connected';
+})
+
+
+
 
 export default USER_CLI;

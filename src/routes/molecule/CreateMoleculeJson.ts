@@ -3,12 +3,13 @@ const dree = require('dree');
 
 import { MoleculeChecker } from './MoleculeChecker';
 import { Molecule, BaseMolecule } from '../../Entities/entities';
-//import nano = require('nano');
 import { Database } from '../../Entities/CouchHelper';
 import { GoTerms } from '../../types';
 import Errors, { ErrorType } from '../../Errors';
 import logger from '../../logger';
-//import logger from './logger';
+import { resolve } from 'path';
+import { CONNECTED_USER_CLI } from '../../cli/user_cli';
+import { Excel } from '../../cli/molecule_cli';
 
 
 
@@ -55,7 +56,7 @@ export interface SimuFile {
 export interface SimuRequest{
   full_user: {
     id: string,
-    role: "admin"
+    role: string
   };
   body: {
     name: string,
@@ -79,17 +80,34 @@ export interface SimuRequest{
   };
 }
 
-
 /**
  * Create a molecule object from its data contained in a Json file and send it to the database
  * @param jsonFile 
  */
 export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
 
-  batch.forEach(async infos => {;
-    
-    //let infos : InfosJson = JSON.parse(fs.readFileSync(jsonFile));
-    let parentMol: string | null = null;
+  await batch.reduce(async (memo, i) => {
+    await memo;
+    logger.info('Inserting '+i.name);
+    await CreateMoleculeFromJsonAux(i);
+
+  }, Promise.resolve());
+}
+
+/*
+const options = {
+  depth:10,
+  extensions: ['json'],
+};
+const tree = dree.scan('/home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/Glycosphingolipids', options, (element : any) => {
+  CreateMoleculeFromJson(element.path);
+});
+
+*/
+
+const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
+
+  let parentMol: string | null = null;
 
     for (let i=0; i < infos.versions.length; i++) {
 
@@ -102,8 +120,8 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
 
       let req : SimuRequest = {
         full_user: {
-          id: '320054308425769119',
-          role: "admin"
+          id: CONNECTED_USER_CLI.id,
+          role: CONNECTED_USER_CLI.role
         },
         body: {
           name: infos.name,
@@ -128,13 +146,22 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
       }
 
 
+      if (req.full_user.role != 'admin') {
+        return Errors.throw(ErrorType.Unallowed);
+      }
+
+      if (!infos.top[i].infos.originalname.match(ver.number)){
+        return Errors.throw(ErrorType.MissingTopFiles);
+      }
+
+
       if (ver.number == '01') {
         const checker = new MoleculeChecker(req);
         try {
           await checker.checkName(req.body.name, '');
         } catch (e) {
           if (e.code === ErrorType.NameAlreadyExists) {
-            console.log("There is already a molecule by the name "+infos.name+" in the database.");
+            logger.warn("There is already a molecule by the name "+infos.name+" in the database.");
             break;
           }
           else {
@@ -150,25 +177,21 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
           parentMol = molecule.id;
         }
         let response = await Database.molecule.save(molecule as Molecule);
+        Excel.text += infos.name+',,,,X\n';
       } catch (e) {
           if (e.code !== ErrorType.NameAlreadyExists) {
-            console.log("Error with the "+ver.number+" version of \""+infos.name+"\" : "+ e.data.message);
+            logger.warn("Error with the "+ver.number+" version of \""+infos.name+"\" : "+ e.data.message);
+            if (e.code == ErrorType.InvalidMoleculeFiles) {
+              Excel.text += infos.name+',,X,,\n';
+            }
+            if (req.body.force_field == '') {
+              Excel.text += infos.name+',,,X,\n';
+            }
             break;
           };
       }
 
     };
-
-  });
+    return new Promise((resolve, reject) => {resolve(true)});
 }
 
-/*
-const options = {
-  depth:10,
-  extensions: ['json'],
-};
-const tree = dree.scan('/home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/Glycosphingolipids', options, (element : any) => {
-  CreateMoleculeFromJson(element.path);
-});
-
-*/
