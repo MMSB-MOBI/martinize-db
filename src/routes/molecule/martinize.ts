@@ -47,7 +47,7 @@ function numberOrError(num: any) {
 }
 
 async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: string, ...data: any[]) => void) {
-  const { ff, position, posref_fc, elastic, ef, el, eu, ea, ep, em, eb, use_go, sc_fix } = parameters;
+  const { ff, position, posref_fc, elastic, ef, el, eu, ea, ep, em, eb, use_go, sc_fix, nter, cter, neutral_termini, commandline, cystein_bridge } = parameters;
 
   const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
 
@@ -57,7 +57,6 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
    *  ignh?: boolean;
    *  collagen?: boolean;
    *  dihedral?: boolean;
-   *  neutral_termini?: boolean;
    *  cystein_bridge?: string;
    */
 
@@ -116,9 +115,24 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
   if (sc_fix === "true") {
     runner.side_chain_fix = true;
   }
+  if (cter !== '') {
+    runner.cter = cter
+  }
+  if (nter !== '') {
+    runner.nter = nter
+  }
+  if (neutral_termini === "true") {
+    runner.neutral_termini = true
+  }
+  if (cystein_bridge) {
+    runner.cystein_bridge = cystein_bridge
+  }
+  if (commandline !== undefined) {
+    runner.commandline = commandline
+  }
 
   try {
-    const { pdb, itps, top } = await Martinizer.run(runner, onStep);
+    const { pdb, itps, top, dir } = await Martinizer.run(runner, onStep);
 
     // Create elastic if needed
     let elastic_bonds: ElasticOrGoBounds[] | undefined = undefined;
@@ -132,6 +146,7 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
       itps, 
       top, 
       elastic_bonds,
+      dir,
     };
   } catch (e) {
     if (e instanceof ApiError) {
@@ -156,6 +171,67 @@ export function SocketIoMartinizer(app: Server) {
   const io = SocketIo(app);
 
   io.on('connection', socket => {
+    socket.on('previewMartinize', async (settings: any) => {
+      console.log(settings)
+      const runner = {
+        input: 'input',
+        ff : settings.ff,
+        position : settings.position,
+      } as Partial<MartinizeSettings>;
+      if (settings.posref_fc) {
+        runner.posref_fc = numberOrError(settings.posref_fc);
+      }
+      if (settings.elastic === "true") {
+        runner.elastic = true;
+      }
+      if (settings.ef) {
+        runner.ef = numberOrError(settings.ef);
+      }
+      if (settings.el) {
+        runner.el = numberOrError(settings.el);
+      }
+      if (settings.eu) {
+        runner.eu = numberOrError(settings.eu);
+      }
+      if (settings.ea) {
+        runner.ea = numberOrError(settings.ea);
+      }
+      if (settings.ep) {
+        runner.ep = numberOrError(settings.ep);
+      }
+      if (settings.em) {
+        runner.em = numberOrError(settings.em);
+      }
+      if (settings.eb && typeof settings.eb === 'string') {
+        const arg = shellescape([settings.eb]);
+        runner.eb = arg.split(',');
+      }
+      if (settings.use_go === "true") {
+        runner.use_go_virtual_sites = true;
+      }
+      if (settings.sc_fix === "true") {
+        runner.side_chain_fix = true;
+      }
+      if (settings.cter !== '') {
+        runner.cter = settings.cter
+      }
+      if (settings.nter !== '') {
+        runner.nter = settings.nter
+      }
+      if (settings.neutral_termini === "true") {
+        runner.neutral_termini = true
+      }
+      if (settings.cystein_bridge) {
+        runner.cystein_bridge = settings.cystein_bridge
+      }
+      if (settings.advanced === 'true'){
+        runner.advanced = true
+      }
+
+      let {command_line} = Martinizer.settingsToCommandline(runner)
+      
+      await socket.emit('martinizePreviewContent', command_line)
+    })
     socket.on('martinize', async (file: Buffer, run_id: string, settings: any) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
         return new Promise(async (resolve, reject) => {
@@ -192,11 +268,12 @@ export function SocketIoMartinizer(app: Server) {
       // Save to a temporary directory
       const tmp_dir = await TmpDirHelper.get();
       const INPUT = tmp_dir + '/input.pdb';
+      
 
       try {
         await FsPromise.writeFile(INPUT, file);
 
-        const { pdb, itps, top, elastic_bonds } = await martinizeRun(
+        const { pdb, itps, top, elastic_bonds, dir } = await martinizeRun(
           settings, 
           INPUT, 
           (step, ...data) => {
@@ -232,7 +309,26 @@ export function SocketIoMartinizer(app: Server) {
           itps,
         );
 
+        console.log(dir);
+        let stdout : string[] = [];
+        await FsPromise.readFile(dir + '/martinize.stderr', 'utf-8')
+          .then(function(result) {
+            let tmp = result.split('\n');
+            tmp.forEach(line => {
+              if(line.match('WARNING')) {
+                stdout.push(line);
+              }
+            });
+            console.log(stdout);
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
+        socket.emit('martinize stderr', stdout);
+
         socket.emit('martinize end', { id: run_id, elastic_bonds, radius });
+        
+
       } catch (e) {
         // Error catch, test the error :D
         if (e instanceof ApiError && e.code === ErrorType.MartinizeRunFailed) {

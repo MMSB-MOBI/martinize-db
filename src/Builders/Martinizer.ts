@@ -15,6 +15,7 @@ import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
 import ShellManager, { JobInputs } from './ShellManager';
+import { command } from 'commander';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -99,6 +100,11 @@ export interface MartinizeSettings {
   side_chain_fix?: boolean;
   /** Cystein bounds */
   cystein_bridge?: string;
+
+  cter?: string;
+  nter?: string;
+  commandline: string;
+  advanced?: boolean;
 }
 
 export const Martinizer = new class Martinizer {
@@ -116,23 +122,23 @@ export const Martinizer = new class Martinizer {
     return MARTINIZE_POSITIONS.includes(value);
   }
   
-  /**
-   * Create a martinize run.
-   * Returns created path to created PDB, TOP and ITP files.
-   */
-  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void) {
+  settingsToCommandline(settings: Partial<MartinizeSettings>) {
     const full: MartinizeSettings = Object.assign({}, {
       input: '',
       ff: 'martini22',
-      position: 'none'
+      position: 'none',
+      commandline: ''
     }, settings);
+
+    console.log("full: ", full)
     
+    /*
     if (!full.input.trim()) {
       throw new Error("Invalid input file");
     }
+    */
 
     logger.debug(`Starting a Martinize run for ${path.basename(full.input)}.`);
-
     const basename = full.input;
     const with_ext = basename + '.pdb';
 
@@ -141,57 +147,80 @@ export const Martinizer = new class Martinizer {
     let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
-    if (full.ignore) {
-      command_line += " " + full.ignore.join(',');
+    if (full.advanced){
+      //command_line += full.commandline;
+      command_line = full.commandline.substring(0, 4)+basename+' '+full.commandline.substring(4, full.commandline.length)
     }
-    if (full.ignh) {
-      command_line += " -ignh";
+    else {
+      if (full.ignore) {
+        command_line += " " + full.ignore.join(',');
+      }
+      if (full.ignh) {
+        command_line += " -ignh";
+      }
+      if (full.posref_fc) {
+        command_line += " -pf " + full.posref_fc.toString();
+      }
+      if (full.collagen) {
+        command_line += " -collagen ";
+      }
+      if (full.dihedral) {
+        command_line += " -ed ";
+      }
+      if (full.elastic) {
+        command_line += " -elastic ";
+      }
+      if (full.ef) {
+        command_line += " -ef " + full.ef.toString();
+      }
+      if (full.el) {
+        command_line += " -el " + full.el.toString();
+      }
+      if (full.eu) {
+        command_line += " -eu " + full.eu.toString();
+      }
+      if (full.ea) {
+        command_line += " -ea " + full.ea.toString();
+      }
+      if (full.ep) {
+        command_line += " -ep " + full.ep.toString();
+      }
+      if (full.em) {
+        command_line += " -em " + full.em.toString();
+      }
+      if (full.eb) {
+        command_line += " -eb " + full.eb.toString();
+      }
+      if (full.use_go_virtual_sites) {
+        command_line += " -govs-include ";
+      }
+      if (full.neutral_termini) {
+        command_line += " -nt ";
+      }
+      if (full.side_chain_fix) {
+        command_line += " -scfix ";
+      }
+      if (full.cystein_bridge) {
+        command_line += " -cys " + full.cystein_bridge;
+      }
+      if (full.cter) {
+        command_line += " -cter " + full.cter
+      }
+      if (full.nter) {
+        command_line += " -nter " + full.nter
+      }
     }
-    if (full.posref_fc) {
-      command_line += " -pf " + full.posref_fc.toString();
-    }
-    if (full.collagen) {
-      command_line += " -collagen ";
-    }
-    if (full.dihedral) {
-      command_line += " -ed ";
-    }
-    if (full.elastic) {
-      command_line += " -elastic ";
-    }
-    if (full.ef) {
-      command_line += " -ef " + full.ef.toString();
-    }
-    if (full.el) {
-      command_line += " -el " + full.el.toString();
-    }
-    if (full.eu) {
-      command_line += " -eu " + full.eu.toString();
-    }
-    if (full.ea) {
-      command_line += " -ea " + full.ea.toString();
-    }
-    if (full.ep) {
-      command_line += " -ep " + full.ep.toString();
-    }
-    if (full.em) {
-      command_line += " -em " + full.em.toString();
-    }
-    if (full.eb) {
-      command_line += " -eb " + full.eb.toString();
-    }
-    if (full.use_go_virtual_sites) {
-      command_line += " -govs-include ";
-    }
-    if (full.neutral_termini) {
-      command_line += " -nt ";
-    }
-    if (full.side_chain_fix) {
-      command_line += " -scfix ";
-    }
-    if (full.cystein_bridge) {
-      command_line += " -cys " + full.cystein_bridge;
-    }
+    
+    return {command_line:command_line, basename: basename, with_ext: with_ext, full: full}
+  }
+
+  /**
+   * Create a martinize run.
+   * Returns created path to created PDB, TOP and ITP files.
+   */
+  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void) {
+    
+    let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings)
 
     await FsPromise.rename(basename, with_ext);
 
@@ -355,6 +384,7 @@ export const Martinizer = new class Martinizer {
         pdb: pdb_with_conect,
         itps: itp_files,
         top: full_top,
+        dir: dir,
       };
     } finally {
       await FsPromise.rename(with_ext, basename);

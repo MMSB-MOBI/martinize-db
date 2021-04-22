@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #GROMACS_LOADER="source /usr/local/gromacs/bin/GMXRC"
-GROMACS_LOADER="module load gromacs/2020.5"
+GROMACS_LOADER="source /usr/local/gromacs/bin/GMXRC"
 
 # #########
 # # USAGE #
