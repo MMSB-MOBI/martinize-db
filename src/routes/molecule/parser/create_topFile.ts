@@ -7,6 +7,12 @@ import logger from '../../../logger';
 const dree = require('dree');
 
 
+/**
+ * Create a top file for an itp using the TopFIle interface
+ * @param itp_dir - path to the itp file
+ * @param outdir - path to the moelcule files where the top file will be saved
+ * @returns 
+ */
 export const create_top_file = async function(itp_dir: string, outdir: string){
 
     const top = TopFile.readFromString('');
@@ -54,6 +60,10 @@ export const create_top_file = async function(itp_dir: string, outdir: string){
 }
 
 
+/**
+ * Create a top file for all the itp for the molecules in a directory when it does not exist
+ * @param indir - Directory containing the molecules directories
+ */
 export const create_top_in_dir = function(indir:string){
 
     const options = {
@@ -68,7 +78,7 @@ export const create_top_in_dir = function(indir:string){
             create_top_file(element.path, element.path.split('/').slice(0, -1).join('/'));
         }
         
-
+        // TODO prendre en compte qu'il puisse y avoir plusieurs top deja existant
     }, (element: Dree) => {
         if(element.children) {
             element.children.forEach(child => {
