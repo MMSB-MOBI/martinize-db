@@ -92,4 +92,3 @@ export const create_top_in_dir = function(indir:string){
             
     });
 }
-

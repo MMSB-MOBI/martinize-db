@@ -218,5 +218,4 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
 
     return(batch);
 
-    //molecule load /home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/ lipids
 }

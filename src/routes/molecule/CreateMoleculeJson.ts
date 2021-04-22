@@ -193,4 +193,3 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
     };
     return new Promise((resolve, reject) => {resolve(true)});
 }
-
