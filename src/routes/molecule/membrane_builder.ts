@@ -92,6 +92,8 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       return n;
     }
 
+    //console.log(req.body)
+
     // Init
     const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };

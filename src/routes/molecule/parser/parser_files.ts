@@ -1,4 +1,5 @@
 import { Dree } from "dree";
+import ItpFile from "itp-parser";
 import { relative } from "path";
 import { Excel } from "../../../cli/molecule_cli";
 import Errors, { ErrorType } from "../../../Errors";
@@ -14,9 +15,11 @@ export var MOLECULE : InfosJson = {
     versions: [],
     name: '',
     alias: '',
-    category: 'lipids',
+    category: 0,
     create_way: '',
     directory: '',
+    comments: '',
+    citation: '',
     top: [],
     map: [],
     gro: {originalname: '', path: '', size:0}
@@ -31,7 +34,7 @@ export var MOLECULE : InfosJson = {
  * @param type - Type of molecule inserted
  * @returns - Object containing the molecules informations
  */
-export const parser_files = function(path : string, type : keyof typeof GoTerms) : InfosJson[] {
+export const parser_files = function(path : string) : InfosJson[] { //, type : keyof typeof GoTerms[]) : InfosJson[] {
     
     // Options of the scan function : only read direct children files and directories of the root 
     // and apply fileCallback only itp end gro files
@@ -53,6 +56,51 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
             if (element.size) {
                 sizeFile = Number(element.size.split(' ')[0])*100;
             }
+
+            //let molecule_itp: ItpFile;
+            let infos_itp = Object.create(null);
+            console.log("test");
+            //ItpFile.read(element.relativePath).then((file) => {
+                let file = fs.readFileSync(element.path, {encoding:'utf8', flag:'r'});
+                let file_splitten = file.split('\n')
+                file_splitten.shift();
+                //molecule_itp = file;
+                let comments = []; //molecule_itp!.getField('headlines');
+                for(let line of file_splitten) {
+                    if (line.startsWith(';')) {
+                        comments.push(line);
+                    } else {
+                        break;
+                    }
+                };
+                console.log('comments')
+
+                let champ = '';
+                for (let line2 of comments) {
+                    if (line2.startsWith('; ')) {
+                        champ = line2;
+                        infos_itp[line2] = '';
+                    } else if (line2.startsWith(';\t')) {
+                        infos_itp[champ] += line2;
+                    }
+                }
+                console.log(infos_itp);
+                infos_itp.keys.forEach((element: string) => {
+                    if (element === '; Name') {
+                        MOLECULE.name = infos_itp['; Name:'].split(';\t')[1];
+                    } else if (element === '; Categories:') {
+                        // TODO maybe check if it is a goname
+                        //@ts-ignore
+                        MOLECULE.category = infos_itp['; Categories:'].split(';\t')[1].split(',');
+                    } else if (element === '; Reference(s):') {
+                        MOLECULE.citation = infos_itp['; Reference(s):'].split(';\t')[1];
+                    } else if (element !== '') {
+                        MOLECULE.comments += element + '\n' + infos_itp[element];
+                    }
+                });
+                console.log(MOLECULE);
+            
+
             
 
             // Case with protonation
@@ -166,8 +214,10 @@ export const parser_files = function(path : string, type : keyof typeof GoTerms)
             versions: [],
             name: name_molecule,
             alias: name_molecule,
-            category: type,
+            category: 0,
             create_way: 'hand',
+            comments: '',
+            citation: '',
             directory: element.path,
             top: [],
             map: [],

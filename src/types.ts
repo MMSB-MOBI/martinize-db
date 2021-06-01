@@ -1,7 +1,10 @@
 
 export const GoTerms = {
   "GO:0001": "<Go Term Regular Name>",
-  "lipids": ""
+  "lipids": "",
+  "GO:0002":"",
+  "GO:0003":"",
+  "GO:0004":"",
 };
 
 export type UserRole = "admin" | "curator";

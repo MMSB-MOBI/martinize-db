@@ -139,7 +139,6 @@ MOLECULE_CLI.command('load', rest => {
       return 'You must be admin to add molecules to the database'
     }
     else {
-      // TODO ajouter autres types de goterms
       
 
       if (!rest){
@@ -149,27 +148,49 @@ MOLECULE_CLI.command('load', rest => {
 
         let params = rest.split(' ');
 
+        /*
         if (params.length < 2) {
           return 'please specify a type of molecules inserted (lipids, sugars) and a path';
         
         } else {
+          */
           let path = params[0].trim();
+          /*
           let type = params[1].trim();
-          let go : keyof typeof GoTerms;
-
+          let go : keyof typeof GoTerms[];
+          */
           if (!fs.existsSync(path)) {
             return 'Path does not exist';
           }
+          /*
           else {
             if (type == 'lipids') {
-              go = 'lipids';
+              //@ts-ignore
+              go = ['lipids'];
+            }
+            else if (type == 'sugars') {
+              //@ts-ignore
+              go = ['GO:0001'];
+            }
+            else if (type == 'aminos acids') {
+              //@ts-ignore
+              go = ['GO:0004'];
+            }
+            else if (type == "proteins") {
+              //@ts-ignore
+              go = ['GO:0002'];
+            }
+            else if (type == "polymers") {
+              //@ts-ignore
+              go = ["GO:0003"];
             }
             else {
-              return 'Invalid type of moecule';
+              return 'Invalid type of molecule';
             }
+        */
   
             try {
-              BATCH_MOLECULES = parser_files(path, go);
+              BATCH_MOLECULES = parser_files(path);
               logger.info('load done');
 
             } catch (e) {
@@ -178,8 +199,8 @@ MOLECULE_CLI.command('load', rest => {
           }
         }
       }
-    }
-  }
+    //}
+  //}
 }, {
   onSuggest: cliFileSuggestor,
 });

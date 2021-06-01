@@ -33,9 +33,11 @@ export interface InfosJson {
   /* Name of the molecule */
   name: string,
   alias: string,
-  category: keyof typeof GoTerms,
+  category: keyof typeof GoTerms[],
   create_way: string,
+  comments: string,
   directory: string,
+  citation: string,
   top: {version: string, infos: SimuFile}[],
   map: SimuFile[],
   gro: SimuFile
@@ -63,7 +65,7 @@ export interface SimuRequest{
     alias: string,
     smiles: string,
     version: string,
-    category: keyof typeof GoTerms,
+    category: keyof typeof GoTerms[],
     command_line: string,
     comments: string,
     create_way: string,
@@ -99,7 +101,7 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
 /**
  * Auxiliary function reading the infos from one molecule of the batch and inserting them in the databse
  * @param infos - The informations on the moelcule
- * @returns 
+ * @returns a Promise with resolve true :)
  */
 const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
 
@@ -114,6 +116,9 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
       if (ver.force_field == 'v2.0' || ver.force_field == 'v2.1' || ver.force_field == 'v2.2') {
         martiniVer = 'martini22';
       }
+      else if (ver.force_field == 'v3' || ver.force_field == 'v304') {
+        martiniVer = 'martini304';
+      }
 
       let req : SimuRequest = {
         full_user: {
@@ -127,7 +132,7 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
           version: ver.number,
           category: infos.category,
           command_line: '',
-          comments: '',
+          comments: infos.comments,
           create_way: infos.create_way,
           force_field: martiniVer,
           validation: '',

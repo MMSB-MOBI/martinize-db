@@ -129,8 +129,6 @@ export const Martinizer = new class Martinizer {
       position: 'none',
       commandline: ''
     }, settings);
-
-    console.log("full: ", full)
     
     /*
     if (!full.input.trim()) {
@@ -138,7 +136,6 @@ export const Martinizer = new class Martinizer {
     }
     */
 
-    logger.debug(`Starting a Martinize run for ${path.basename(full.input)}.`);
     const basename = full.input;
     const with_ext = basename + '.pdb';
 
@@ -218,16 +215,23 @@ export const Martinizer = new class Martinizer {
    * Create a martinize run.
    * Returns created path to created PDB, TOP and ITP files.
    */
-  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void) {
+  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
     
-    let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings)
+    let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings);
+
+    logger.debug(`Starting a Martinize run for ${basename}.`);
 
     await FsPromise.rename(basename, with_ext);
 
     try {
-      // Run the command line      
-      const dir = await TmpDirHelper.get();
-
+      // Run the command line   
+      let dir : string;   
+      if(!path) {
+        dir = await TmpDirHelper.get();
+      } else {
+        dir = path;
+      }
+      
       logger.debug("[MARTINIZER-RUN] Tmp directory for Martinize job: " + dir);
   
       const exists = await fileExists(dir);
@@ -251,8 +255,7 @@ export const Martinizer = new class Martinizer {
         await ShellManager.run(
           'martinize', 
           ShellManager.mode === "jm" ? jobOpt : command_line, 
-          dir, 
-          'martinize'
+          dir
         );
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
@@ -989,6 +992,7 @@ export const Martinizer = new class Martinizer {
       // Increment i by number of atoms
       i += all_atom_count;
     }
+
 
     return { bounds, details };
   } 
