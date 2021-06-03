@@ -187,9 +187,17 @@ export async function SocketIoMartinizer(app: Server) {
   let dir = await TmpDirHelper.get();
   //console.log(dir);
 
+  const jobOpt: JobInputs = { 
+    exportVar: {
+      basedir: dir,
+      martinizeArgs: "--version",
+    },
+    inputs: {},
+  };
+
   await ShellManager.run(
     'martinize', 
-    '--version', 
+    ShellManager.mode === "jm" ? jobOpt : "--version",  
     dir, 
     'martinize'
   );
