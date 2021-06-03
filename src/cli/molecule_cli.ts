@@ -146,61 +146,23 @@ MOLECULE_CLI.command('load', rest => {
       
       } else {
 
-        let params = rest.split(' ');
+      let params = rest.split(' ');
+      let path = params[0].trim();
 
-        /*
-        if (params.length < 2) {
-          return 'please specify a type of molecules inserted (lipids, sugars) and a path';
-        
-        } else {
-          */
-          let path = params[0].trim();
-          /*
-          let type = params[1].trim();
-          let go : keyof typeof GoTerms[];
-          */
-          if (!fs.existsSync(path)) {
-            return 'Path does not exist';
-          }
-          /*
-          else {
-            if (type == 'lipids') {
-              //@ts-ignore
-              go = ['lipids'];
-            }
-            else if (type == 'sugars') {
-              //@ts-ignore
-              go = ['GO:0001'];
-            }
-            else if (type == 'aminos acids') {
-              //@ts-ignore
-              go = ['GO:0004'];
-            }
-            else if (type == "proteins") {
-              //@ts-ignore
-              go = ['GO:0002'];
-            }
-            else if (type == "polymers") {
-              //@ts-ignore
-              go = ["GO:0003"];
-            }
-            else {
-              return 'Invalid type of molecule';
-            }
-        */
-  
-            try {
-              BATCH_MOLECULES = parser_files(path);
-              logger.info('load done');
+      if (!fs.existsSync(path)) {
+        return 'Path does not exist';
+      }
 
-            } catch (e) {
-              logger.warn(e.data.message);
-            }
-          }
+        try {
+          BATCH_MOLECULES = parser_files(path);
+          logger.info('load done');
+
+        } catch (e) {
+          logger.warn(e.data !== undefined ? e.data.message : e);
         }
       }
-    //}
-  //}
+    }
+  }
 }, {
   onSuggest: cliFileSuggestor,
 });
@@ -217,9 +179,9 @@ MOLECULE_CLI.command('push', async() => {
         await CreateMoleculeFromJson(BATCH_MOLECULES);
         logger.info('push done');
         //logger.debug(Excel.text);
-        fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
+        //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
       } catch (e) {
-        logger.warn(e.data.message);
+        logger.warn(e.data !== undefined ? e.data.message : e);
       }
     } else {
       logger.warn('Missing molecules in memory. Please insert them by using molecule load.')

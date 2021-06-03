@@ -22,7 +22,9 @@ import { Excel } from '../../cli/molecule_cli';
   number: string,
   itp: SimuFile,
   force_field: string,
-  protonation? : string
+  protonation? : string,
+  comments: string,
+  citation: string,
 };
 
 /**
@@ -35,9 +37,7 @@ export interface InfosJson {
   alias: string,
   category: keyof typeof GoTerms[],
   create_way: string,
-  comments: string,
   directory: string,
-  citation: string,
   top: {version: string, infos: SimuFile}[],
   map: SimuFile[],
   gro: SimuFile
@@ -132,11 +132,11 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
           version: ver.number,
           category: infos.category,
           command_line: '',
-          comments: infos.comments,
+          comments: ver.comments,
           create_way: infos.create_way,
           force_field: martiniVer,
           validation: '',
-          citation: '',
+          citation: ver.citation,
           parent: parentMol
         },
         files: {

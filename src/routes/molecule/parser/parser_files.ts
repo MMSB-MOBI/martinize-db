@@ -15,7 +15,8 @@ export var MOLECULE : InfosJson = {
     versions: [],
     name: '',
     alias: '',
-    category: 0,
+    //@ts-ignore
+    category: [],
     create_way: '',
     directory: '',
     comments: '',
@@ -57,15 +58,11 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                 sizeFile = Number(element.size.split(' ')[0])*100;
             }
 
-            //let molecule_itp: ItpFile;
             let infos_itp = Object.create(null);
-            console.log("test");
-            //ItpFile.read(element.relativePath).then((file) => {
                 let file = fs.readFileSync(element.path, {encoding:'utf8', flag:'r'});
                 let file_splitten = file.split('\n')
                 file_splitten.shift();
-                //molecule_itp = file;
-                let comments = []; //molecule_itp!.getField('headlines');
+                let comments = []; 
                 for(let line of file_splitten) {
                     if (line.startsWith(';')) {
                         comments.push(line);
@@ -73,33 +70,58 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                         break;
                     }
                 };
-                console.log('comments')
 
+                let comments_parsed = '';
+                let citation_version = '';
                 let champ = '';
                 for (let line2 of comments) {
-                    if (line2.startsWith('; ')) {
+                    if (line2.match(/^; \S+/)) {
                         champ = line2;
                         infos_itp[line2] = '';
-                    } else if (line2.startsWith(';\t')) {
+                    } else {
                         infos_itp[champ] += line2;
                     }
                 }
-                console.log(infos_itp);
-                infos_itp.keys.forEach((element: string) => {
-                    if (element === '; Name') {
-                        MOLECULE.name = infos_itp['; Name:'].split(';\t')[1];
-                    } else if (element === '; Categories:') {
-                        // TODO maybe check if it is a goname
-                        //@ts-ignore
-                        MOLECULE.category = infos_itp['; Categories:'].split(';\t')[1].split(',');
+                Object.keys(infos_itp).forEach((element: string) => {
+                    if (element === '; name:') {
+                        MOLECULE.name = infos_itp['; name:'].split(';\t')[1];
+                    } else if (element === '; Category:') {
+                        let category = infos_itp['; Category:'].split(';\t')[1].split(',');
+                        for(let cat of category){
+                            cat = cat.trim();
+                            if (cat.localeCompare('lipids', undefined, { sensitivity: 'base' }) === 0){
+                                //@ts-ignore
+                                MOLECULE.category.includes('MC:0005') ? undefined : MOLECULE.category.push('MC:0005');
+                            }
+                            else if (cat.localeCompare('sugars', undefined, { sensitivity: 'base' }) === 0){
+                                //@ts-ignore
+                                MOLECULE.category.includes('MC:0001') ? undefined : MOLECULE.category.push('MC:0001');
+                            }
+                            else if (cat.localeCompare('proteins', undefined, { sensitivity: 'base' }) === 0){
+                                //@ts-ignore
+                                MOLECULE.category.includes('MC:0002') ? undefined : MOLECULE.category.push('MC:0002');
+                            }  
+                            else if (cat.localeCompare('polymers', undefined, { sensitivity: 'base' }) === 0){
+                                //@ts-ignore
+                                MOLECULE.category.includes('MC:0003') ? undefined : MOLECULE.category.push('MC:0003');
+                            }
+                            else if (cat.localeCompare('amino acids', undefined, { sensitivity: 'base' }) === 0){
+                                //@ts-ignore
+                                MOLECULE.category.includes('MC:0004') ? undefined :  MOLECULE.category.push('MC:0004');
+                            }
+                            else {
+                                logger.warn(cat.localeCompare('lipids', 'en', { sensitivity: 'base' }));
+                                logger.warn("Category " + cat + " not recognized");
+                                throw new Error("Category " + cat + " not recognized");
+                            }
+                        }
+                        
                     } else if (element === '; Reference(s):') {
-                        MOLECULE.citation = infos_itp['; Reference(s):'].split(';\t')[1];
+                        citation_version = infos_itp['; Reference(s):'];
                     } else if (element !== '') {
-                        MOLECULE.comments += element + '\n' + infos_itp[element];
+                        comments_parsed += '\n' + element + '\n' + infos_itp[element];
                     }
                 });
-                console.log(MOLECULE);
-            
 
             
 
@@ -113,7 +135,9 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                         size: sizeFile
                     },
                     "force_field":itp_info[1], 
-                    "protonation":itp_info[4].split(".")[0]
+                    "protonation":itp_info[4].split(".")[0],
+                    "comments":comments_parsed,
+                    "citation":citation_version,
                 };
 
 
@@ -130,7 +154,9 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                         path: element.path,
                         size: sizeFile
                     }, 
-                    "force_field":itp_info[1]
+                    "force_field":itp_info[1],
+                    "comments":comments_parsed,
+                    "citation":citation_version,
                 };
 
 
@@ -212,9 +238,10 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
         let name_molecule = element.path.split('/')[element.path.split('/').length -1];
         MOLECULE = {
             versions: [],
-            name: name_molecule,
+            name: '',
             alias: name_molecule,
-            category: 0,
+            //@ts-ignore
+            category: [],
             create_way: 'hand',
             comments: '',
             citation: '',
