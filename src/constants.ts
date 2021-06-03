@@ -23,17 +23,6 @@ try {
 export { KEYS };
 
 /* - DEFAULT DIRECTORIES - */
-<<<<<<< Updated upstream
-export const MOLECULE_ROOT_DIR    = "/home/freaky/Documents/stage/martinize-db/molecules/";
-export const MARTINIZER_ROOT_DIR  = "/home/freaky/Documents/stage/martinize-db/molecules/martinizer/";
-export const UPLOAD_ROOT_DIR      = "/home/freaky/Documents/stage/martinize-db/uploads/";
-
-export const LIPIDS_ROOT_DIR      = "/home/freaky/Documents/stage/martinize-db/lipids/";
-export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
-export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
-export const FORCE_FIELD_DIR      = "/home/freaky/Documents/stage/martinize-db/force_fields/";
-export const DEFAULT_TMP_BASE_DIR = "/home/freaky/Documents/stage/martinize-db/tmp/";
-=======
 export const MOLECULE_ROOT_DIR    = "/data/dev/mad/molecules/";
 export const MARTINIZER_ROOT_DIR  = "/data/dev/mad/molecules/martinizer/";
 export const UPLOAD_ROOT_DIR      = "/data/dev/mad/uploads/";
@@ -43,7 +32,6 @@ export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR      = "/data/databases/mobi/force_fields/";
 export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
->>>>>>> Stashed changes
 
 /* - Couch database - */
 export const DB_PREFIX = "maddev-"
@@ -101,11 +89,7 @@ export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_m
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-<<<<<<< Updated upstream
-export const CONECT_MDP_PATH = "/home/freaky/Documents/stage/martinize-db/utils/run.mdp";
-=======
 export const CONECT_MDP_PATH = "/data/databases/mobi/force_fields/run.mdp";
->>>>>>> Stashed changes
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
@@ -121,13 +105,8 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-<<<<<<< Updated upstream
-  SERVER: "http://localhost:3001", //3003
-  COUCH: "http://admin:admin@localhost:5984",
-=======
   SERVER: "http://mad-dev.ibcp.fr", //3003
   COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
->>>>>>> Stashed changes
 };
 
 /* - Regular expressions used to check recieved parameters - */
