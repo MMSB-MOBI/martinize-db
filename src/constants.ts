@@ -38,7 +38,7 @@ export const DB_PREFIX = "maddev-"
 
 
 /* - Job manager - */
-export type JobMethod = 'jm' | 'child';
+export type JobMethod = 'jm' | 'child';
 export const DEFAULT_JOB_METHOD: JobMethod = 'child';
 
 /* - SEARCH WORKERS SETTINGS - */
@@ -54,7 +54,7 @@ export const DEFAULT_MAILER_NAME = "MArtini Database";
 /** E-mail address of the mail sender. */
 export const DEFAULT_MAILER_ADDRESS = "martinize.db@ibcp.fr";
 /** Debug purpose only; If `string`, all e-mails will be sent to the following address. */
-export const MAILER_ENFORCE_RECIPIENT: false | string = false;
+export const MAILER_ENFORCE_RECIPIENT: false | string = false;
 /** Default parameters for Mailer. See `nodemailer` package documentation. */
 export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
   host: 'smtp.ibcp.fr',
@@ -77,7 +77,7 @@ export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
-export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../../martinize2venv/bin/activate");
+export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
 /** Link to script used to create go virtual sites. */
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */

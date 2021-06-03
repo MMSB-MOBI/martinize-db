@@ -87,7 +87,7 @@ export default new class ShellManager {
     },
     'martinize': {
       'script' : MARTINIZE_PATH_JM,
-      'modules': ['martinize2/0.7.0'],
+      'modules': ['martinize2'],
       'jobProfile' : "mad-dev",
       'sysSettingsKey' : "mad-dev"
     }

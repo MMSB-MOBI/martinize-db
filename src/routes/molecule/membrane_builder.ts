@@ -241,6 +241,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       });
     } catch (e) {
       logger.error('[INSANE] Insane run failed.');
+      logger.error(e); 
 
       if (e instanceof InsaneError) {
         const dir = e.workdir;
