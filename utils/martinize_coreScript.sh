@@ -9,5 +9,4 @@ echo "$(pwd)"
 echo "$martinizeArgs $basedir"
 cd $basedir
 martinize2_path="martinize2"
-
-$martinize2_path $martinizeArgs 1>martinize2.stdout 2>martinize2.stderr
+$martinize2_path $martinizeArgs -maxwarn 100000000 1>martinize2.stdout 2>martinize2.stderr
