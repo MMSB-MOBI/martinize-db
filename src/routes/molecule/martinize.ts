@@ -199,9 +199,9 @@ export async function SocketIoMartinizer(app: Server) {
     'martinize', 
     ShellManager.mode === "jm" ? jobOpt : "--version",  
     dir, 
-    'martinize'
+    'martinize_version'
   );
-  let version = await FsPromise.readFile(dir+"/martinize.stdout", 'utf-8');
+  let version = await FsPromise.readFile(dir+"/martinize2.stdout", 'utf-8');
 
 
   io.on('connection', socket => {
