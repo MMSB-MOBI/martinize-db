@@ -354,7 +354,8 @@ export class MoleculeChecker {
 
   protected checkCategory(cat: string[], settings: SettingsJson) {
     // todo
-    cat.map(category => {
+    const correctedCat = typeof cat === "string" ? [cat] : cat;
+    correctedCat.map(category => {
       const findInCategoryTree = (val: string, node: CategoryTree) : boolean => {
         for (const go_id in node) {
           if (go_id === val) {

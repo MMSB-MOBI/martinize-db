@@ -64,6 +64,7 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                 file_splitten.shift();
                 let comments = []; 
                 for(let line of file_splitten) {
+                    line = line.trim(); 
                     if (line.startsWith(';')) {
                         comments.push(line);
                     } else {
@@ -83,6 +84,7 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                     }
                 }
                 Object.keys(infos_itp).forEach((element: string) => {
+                    element = element.trim(); 
                     if (element === '; name:') {
                         MOLECULE.name = infos_itp['; name:'].split(';\t')[1];
                     } else if (element === '; Category:') {
