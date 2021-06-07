@@ -16,7 +16,7 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
   };
 
   static readonly FORCE_FIELD_TO_MARTINI_VERSION: { [ff: string]: string } = {
-    martini304: '3_0',
+    martini3001: '3_0',
     elnedyn22p: '2_2',
     elnedyn22: '2_2',
     elnedyn: '2_2',
