@@ -23,18 +23,18 @@ try {
 export { KEYS };
 
 /* - DEFAULT DIRECTORIES - */
-export const MOLECULE_ROOT_DIR    = "/data/dev/mad/molecules/";
-export const MARTINIZER_ROOT_DIR  = "/data/dev/mad/molecules/martinizer/";
-export const UPLOAD_ROOT_DIR      = "/data/dev/mad/uploads/";
+export const MOLECULE_ROOT_DIR    = "/home/chilpert/databases/mad/molecules/";
+export const MARTINIZER_ROOT_DIR  = "/home/chilpert/databases/mad/molecules/martinizer/";
+export const UPLOAD_ROOT_DIR      = "/home/chilpert/databases/mad/uploads/";
 
-export const LIPIDS_ROOT_DIR      = "/data/databases/mobi/lipids/";
+export const LIPIDS_ROOT_DIR      = "/home/chilpert/databases/mad/lipids/";
 export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
-export const FORCE_FIELD_DIR      = "/data/databases/mobi/force_fields/";
-export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
+export const FORCE_FIELD_DIR      = "/home/chilpert/databases/mad/force_fields/";
+export const DEFAULT_TMP_BASE_DIR = "/home/chilpert/tmp/";
 
-/* - Couch database - */
-export const DB_PREFIX = "maddev-"
+/* - Couch database - */ 
+export const DB_PREFIX = "maddev-" //prefix for couch collections
 
 
 /* - Job manager - */
@@ -89,7 +89,7 @@ export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_m
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-export const CONECT_MDP_PATH = "/data/databases/mobi/force_fields/run.mdp";
+export const CONECT_MDP_PATH = path.resolve(__dirname, "../utils/run.mdp");
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
@@ -105,8 +105,8 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-  SERVER: "http://mad-dev.ibcp.fr", //3003
-  COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
+  SERVER: "http://localhost:3001", //3003
+  COUCH: "http://couch_agent:couch@localhost:5984",
 };
 
 /* - Regular expressions used to check recieved parameters - */

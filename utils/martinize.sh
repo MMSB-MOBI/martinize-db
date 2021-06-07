@@ -5,7 +5,7 @@
 # Place here commands to load the virtual env that contains martinize2
 # path
 
-source /home/freaky/Documents/stage/martinize2venv/bin/activate
+source /home/chilpert/python_venv/martinize2venv/bin/activate
 
 martinize2_path="martinize2"
 
