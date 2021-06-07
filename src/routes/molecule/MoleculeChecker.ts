@@ -80,7 +80,6 @@ export class MoleculeChecker {
         return Errors.throw(ErrorType.MoleculeNotFound);
       }
     }
-    
     const molecule = await this.constructBaseMoleculeFromRequest(actual_version);
 
     // Must set the following fields: files, created_at, hash
