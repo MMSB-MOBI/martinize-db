@@ -4,6 +4,7 @@
 # execution context the correct python interpreter/venv is already set-up
 # Place here commands to load the virtual env that contains ccmap
 # Insert HERE the path to Python binary (do NOT include path to get_map.py)
+source /home/chilpert/python_venv/martinize2venv/bin/activate
 
 if [ ! -z "$venv" ]
 then
