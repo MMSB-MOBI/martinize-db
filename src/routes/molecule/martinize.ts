@@ -199,7 +199,7 @@ export async function SocketIoMartinizer(app: Server) {
     'martinize', 
     ShellManager.mode === "jm" ? jobOpt : "--version",  
     dir, 
-    'martinize_version'
+    'martinize2'
   );
   let version = await FsPromise.readFile(dir+"/martinize2.stdout", 'utf-8');
 
