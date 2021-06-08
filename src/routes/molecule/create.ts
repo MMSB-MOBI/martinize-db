@@ -57,6 +57,8 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     let response: nano.DocumentInsertResponse;
     let molecule: BaseMolecule;
 
+    req.body.category = typeof req.body.category === 'string' ? [req.body.category] : req.body.category
+
     try {
       const checker = new MoleculeChecker(req);
 

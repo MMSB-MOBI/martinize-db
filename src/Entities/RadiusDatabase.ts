@@ -6,7 +6,6 @@ import { FORCE_FIELD_DIR } from "../constants";
 
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
   static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
-    martini304: ['martini_v3.0.4.itp', 'martini_v3.0_ions.itp', 'martini_v3.0_solvents.itp'],
     martini3001 : ['martini_v3.0.0.itp', 'martini_v3.0.0_ions_v1.itp', 'martini_v3.0.0_solvents_v1.itp'],
     elnedyn22p: 'martini_v2.2P.itp',
     elnedyn22: 'martini_v2.2.itp',
@@ -17,7 +16,7 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
   };
 
   static readonly FORCE_FIELD_TO_MARTINI_VERSION: { [ff: string]: string } = {
-    martini304: '3_0',
+    martini3001: '3_0',
     elnedyn22p: '2_2',
     elnedyn22: '2_2',
     elnedyn: '2_2',
