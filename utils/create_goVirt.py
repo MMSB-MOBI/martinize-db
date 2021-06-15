@@ -68,7 +68,6 @@ def read_data(struct_pdb, file_contacts, file_BB, file_OV, file_rCSU, header_lin
         ])
         nameAA.append(pdb_line[17:20])
     indBB = np.array(indBB)
-
     # read OV contact map
     
     # Before, it create two different files with bash grep, 
@@ -78,7 +77,6 @@ def read_data(struct_pdb, file_contacts, file_BB, file_OV, file_rCSU, header_lin
         dat = fid.readlines()
     dat = dat[header_lines:-1]
     print('Number of contacts read from your OV contact map file: ' + str(len(dat)))
-
     map_OVrCSU = []
     row = []
     for k in range(0, len(dat)):
@@ -89,7 +87,6 @@ def read_data(struct_pdb, file_contacts, file_BB, file_OV, file_rCSU, header_lin
             row.append(float(tmp[l]))
         map_OVrCSU.append(row)
         row = []
-
     # read rCSU contact map
     with open(file_rCSU,'r') as fid:
         dat = fid.readlines()
@@ -110,6 +107,7 @@ def read_data(struct_pdb, file_contacts, file_BB, file_OV, file_rCSU, header_lin
 def get_go(indBB, nameAA, map_OVrCSU, cutoff_short, cutoff_long, go_eps, seqDist, missRes):
     # calculate the distances based on the coordinates of the CG BB bead
     for k in range(0, len(map_OVrCSU)):
+        
         dist_vec = indBB[ int(map_OVrCSU[k][1])-missRes-1 ,1:4] - indBB[ int(map_OVrCSU[k][0])-missRes-1 ,1:4]
         map_OVrCSU[k][2] = np.linalg.norm(dist_vec) /10     # [Ang] to [nm]
 
@@ -154,7 +152,7 @@ def write_files(file_pref, sym_pairs, missAt, indBB, missRes, Natoms, nameAA, go
         if (c6c12 == 1):
             for k in range(0, len(sym_pairs)):
                 # to write the LJ potential itp:
-                s2print = " %s_%s  %s_%s    1  %.10f  %.10f  ;  %s  %s  %.3f \n" % (file_pref, str(int(sym_pairs[k][4] -missRes)), file_pref, str(int(sym_pairs[k][5] -missRes)), 
+                s2print = " %s_%s  %s_%s    1  %.10f  %.10f  ;  %s  %s  %.3f \n" % (file_pref, str(int(sym_pairs[k][4])), file_pref, str(int(sym_pairs[k][5])), 
                                                                           sym_pairs[k][2], sym_pairs[k][3], str(int(sym_pairs[k][0]) +missAt), 
                                                                           str(int(sym_pairs[k][1]) +missAt), sym_pairs[k][6]) 
                                                             # atom index and residue index adapted due to missing residues
@@ -162,7 +160,7 @@ def write_files(file_pref, sym_pairs, missAt, indBB, missRes, Natoms, nameAA, go
         else:
             for k in range(0, len(sym_pairs)):
                 # to write the LJ potential itp:
-                s2print = " %s_%s  %s_%s    1  %.10f  %.10f  ;  %s  %s  %.3f \n" % (file_pref, str(int(sym_pairs[k][4] -missRes)), file_pref, str(int(sym_pairs[k][5] -missRes)), 
+                s2print = " %s_%s  %s_%s    1  %.10f  %.10f  ;  %s  %s  %.3f \n" % (file_pref, str(int(sym_pairs[k][4])), file_pref, str(int(sym_pairs[k][5])), 
                                                                           sym_pairs[k][7], go_eps, str(int(sym_pairs[k][0]) +missAt), 
                                                                           str(int(sym_pairs[k][1]) +missAt), sym_pairs[k][6]) 
                                                             # atom index and residue index adapted due to missing residues
@@ -184,7 +182,7 @@ def write_files(file_pref, sym_pairs, missAt, indBB, missRes, Natoms, nameAA, go
         f.write('; OV + symmetric rCSU contacts \n')
         for k in range(0, len(sym_pairs)):
             s2print = " %s  %s  \t ;  %s  %s \n" % (str(int(sym_pairs[k][0]) +missAt), str(int(sym_pairs[k][1]) +missAt), 
-                                                    str(int(sym_pairs[k][4] -missRes)), str(int(sym_pairs[k][5] -missRes))) 
+                                                    str(int(sym_pairs[k][4])), str(int(sym_pairs[k][5]))) 
                                         # atom index and residue index adapted due to missing residues
             f.write(s2print)
 
@@ -195,12 +193,12 @@ def write_files(file_pref, sym_pairs, missAt, indBB, missRes, Natoms, nameAA, go
         for k in range(0, len(sym_pairs)):
             # to write the harmonic bonds itp:
             s2print = " %s  %s  1  %s  1250  ; %s_%s  %s_%s \n" % (str(int(sym_pairs[k][4] +Natoms)), str(int(sym_pairs[k][5] +Natoms)), str(round(sym_pairs[k][6],3)), 
-                                                                 file_pref, str(int(sym_pairs[k][4] -missRes)), file_pref, str(int(sym_pairs[k][5] -missRes)))
+                                                                 file_pref, str(int(sym_pairs[k][4])), file_pref, str(int(sym_pairs[k][5])))
                                                                # the bonds are added between the virtual particles
             f.write(s2print)
         for k in range(0, len(indBB)):
             if (np.sum(np.array(sym_pairs)[:,4]==k+1) + np.sum(np.array(sym_pairs)[:,5]==k+1)) == 0:
-                s2print = " %s  %s  1  1.  1     ; %s_%s  %s_%s --> added for vmd \n" % (str(int(k+1 +Natoms)), str(int(k +Natoms)), file_pref, str(k+1), file_pref, str(k))
+                s2print = " %s  %s  1  1.  1     ; %s_%s  %s_%s --> added for vmd \n" % (str(int(k+1 +Natoms)), str(int(k +Natoms)), file_pref, str(k+1+missRes), file_pref, str(k+missRes))
                 f.write(s2print)
 
 def main():

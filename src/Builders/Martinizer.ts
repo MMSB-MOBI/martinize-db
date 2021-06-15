@@ -255,7 +255,8 @@ export const Martinizer = new class Martinizer {
         await ShellManager.run(
           'martinize', 
           ShellManager.mode === "jm" ? jobOpt : command_line, 
-          dir
+          dir,
+          'martinize'
         );
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
@@ -283,13 +284,19 @@ export const Martinizer = new class Martinizer {
         });
       }
 
+      
+
+      
+
       logger.debug(`[MARTINIZER-RUN] Generated PDB is found, run should be fine.`);
       onStep?.(this.STEP_MARTINIZE_ENDED_FINE);
+
+      
+
 
       // If go mode, we should compute map + run a python script to refresh ITPs files.
       if (settings.use_go_virtual_sites) {
         let map_filename: string;
-        
         // GET THE MAP FILE FROM A CUSTOM WAY.
         // Use the original pdb file !!!
         // todo change (ccmap create way too much distances, so the shell script takes forever)
@@ -306,6 +313,16 @@ export const Martinizer = new class Martinizer {
           });
         }
 
+        const itp = await ItpFile.read(dir + "/molecule_0.itp")
+
+        const firstResidueNumber: number = parseInt(itp.atoms[0].split(" ").filter(splitElmt => splitElmt !== '')[2])
+        
+        const nbAtomsWithoutGO = itp.atoms.filter(atomLine => {
+          const splittedLine = atomLine.split(" ").filter(splitElmt => splitElmt !=="")
+          if(splittedLine[1].includes("molecule")) return false
+          else return true 
+        }).length
+        
         logger.debug("[MARTINIZER-RUN] Creating Go virtual bonds");
         onStep?.(this.STEP_MARTINIZE_GO_SITES);
 
@@ -323,7 +340,7 @@ export const Martinizer = new class Martinizer {
             inputs: {},
           };
           
-          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype ${moltype}`;
+          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype ${moltype} --Natoms ${nbAtomsWithoutGO} --missres ${firstResidueNumber - 1}`;
 
           await ShellManager.run(
             'go_virt', 
