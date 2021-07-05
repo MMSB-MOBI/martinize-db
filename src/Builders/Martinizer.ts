@@ -330,17 +330,17 @@ export const Martinizer = new class Martinizer {
         try {
           // Must create the go sites
           const moltype = "molecule_0"
+          const goArgs = `-s output.pdb -f ${map_filename} --moltype ${moltype} --Natoms ${nbAtomsWithoutGO} --missres ${firstResidueNumber - 1}`
+
           const jobOptGo: JobInputs = { 
             exportVar: {
               WORKDIR: dir,
-              INPUT_PDB: pdb_file,
-              MAP_FILE: map_filename,
-              MOLTYPE: moltype
+              GO_ARGS: goArgs
             },
             inputs: {},
           };
           
-          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH}" -s output.pdb -f ${map_filename} --moltype ${moltype} --Natoms ${nbAtomsWithoutGO} --missres ${firstResidueNumber - 1}`;
+          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH} ${goArgs}`;
 
           await ShellManager.run(
             'go_virt', 

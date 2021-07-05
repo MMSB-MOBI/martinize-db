@@ -7,11 +7,10 @@
 
 cd $WORKDIR
 pwd
-
+echo POUET
+echo $ARGS
 
 # path
 
-n_atoms=$(cut -f1 -d ' ' $INPUT_PDB | grep -c ATOM)
-
-echo run python $GO_VIRT_SCRIPT -s $INPUT_PDB -f $MAP_FILE --moltype $MOLTYPE --Natoms $n_atoms
-python $GO_VIRT_SCRIPT -s $INPUT_PDB -f $MAP_FILE --moltype $MOLTYPE --Natoms $n_atoms
+echo run python $GO_VIRT_SCRIPT $GO_ARGS
+python $GO_VIRT_SCRIPT $GO_ARGS

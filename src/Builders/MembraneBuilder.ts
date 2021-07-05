@@ -209,7 +209,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     // Start insane
     try {
-      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : command_line, workdir, 'insane');
+      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : command_line, workdir);
     } catch (e) {
       // Handle error and throw the right error
       console.error("ShellManager.run crash"); 
