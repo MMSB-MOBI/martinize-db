@@ -204,13 +204,8 @@ export default new class ShellManager {
 
   get job_manager() {
     if (this._jm) return this._jm;
-    return this._jm = new Promise((resolve, reject) => 
-      JobManager.start({ 
-        'port': JOB_MANAGER_SETTINGS.port,
-        'TCPip': JOB_MANAGER_SETTINGS.address
-      })
-        .on('ready', resolve)
-        .on('error', reject)
-    );
+
+    return JobManager.start({'port': JOB_MANAGER_SETTINGS.port,
+    'TCPip': JOB_MANAGER_SETTINGS.address})
   }
 }();
