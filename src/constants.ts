@@ -27,11 +27,11 @@ export const MOLECULE_ROOT_DIR    = "/data/dev/mad/molecules/";
 export const MARTINIZER_ROOT_DIR  = "/data/dev/mad/molecules/martinizer/";
 export const UPLOAD_ROOT_DIR      = "/data/dev/mad/uploads/";
 
-export const LIPIDS_ROOT_DIR      = "/data/databases/mobi/lipids/";
+export const LIPIDS_ROOT_DIR      = "/data/databases/mad/lipids/";
 export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
-export const FORCE_FIELD_DIR      = "/data/databases/mobi/force_fields/";
-export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
+export const FORCE_FIELD_DIR      = "/data/databases/mad/force_fields/";
+export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/";
 
 /* - Couch database - */
 export const DB_PREFIX = "maddev-"
@@ -68,12 +68,12 @@ export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
 /** Default parameters for Mailer. See `ms-jobmanager` package documentation. */
 export const JOB_MANAGER_SETTINGS = {
   address: '127.0.0.1',
-  port: 1234
+  port: 1235
 };
 
 /* - Martinizer constants - */
 /** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
-export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
+//export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
@@ -89,7 +89,7 @@ export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_m
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-export const CONECT_MDP_PATH = "/data/databases/mobi/force_fields/run.mdp";
+export const CONECT_MDP_PATH = "/data/databases/mad/force_fields/run.mdp";
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
@@ -105,7 +105,7 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-  SERVER: "http://mad-dev.ibcp.fr", //3003
+  SERVER: "http://localhost:3003", //3003
   COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
 };
 
