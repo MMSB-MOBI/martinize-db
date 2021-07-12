@@ -7,12 +7,12 @@ import { FORCE_FIELD_DIR } from "../constants";
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
   static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
     martini304: ['martini_v3.0.4.itp', 'martini_v3.0_ions.itp', 'martini_v3.0_solvents.itp'],
-    elnedyn22p: 'martini_v2.2P.itp',
-    elnedyn22: 'martini_v2.2.itp',
-    elnedyn: 'martini_v2.2.itp',
-    martini22: 'martini_v2.2.itp',
-    martini22p: 'martini_v2.2P.itp',
-    martini23: 'martini_v2.3P.itp',
+    elnedyn22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    elnedyn22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    elnedyn: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    martini22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    martini22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    martini23: ['martini_v2.3P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
   };
 
   static readonly FORCE_FIELD_TO_MARTINI_VERSION: { [ff: string]: string } = {
