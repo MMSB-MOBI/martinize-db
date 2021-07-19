@@ -73,7 +73,7 @@ export const JOB_MANAGER_SETTINGS = {
 
 /* - Martinizer constants - */
 /** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
-//export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
+export const DSSP_PATH = "/data/software/martinize2/0.7.1.dssp/bin/mkdssp";
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
