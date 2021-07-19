@@ -54,9 +54,9 @@ export default new class ShellManager {
   private engine = { 
     "engineSpecs" : 'slurm',
     "binariesSpec" : { 
-      "submitBin" : "/data/www_dev/mad/bin/slurm/bin/sbatch",
-      "cancelBin" : "/data/www_dev/mad/bin/slurm/bin/scancel",
-      "queueBin"  : "/data/www_dev/mad/bin/slurm/bin/squeue"
+      "submitBin" : "/usr/bin/sbatch",
+      "cancelBin" : "/usr/bin/scancel",
+      "queueBin"  : "/usr/bin/squeue"
     }
   }
 
@@ -64,32 +64,32 @@ export default new class ShellManager {
     'conect': {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile' : "ws2-dev-mad",
+      'sysSettingsKey' : "ws2-dev-mad"
     },
     'go_virt': {
       'script': CREATE_GO_PATH_JM,
       'modules': ['mad-utils'],
-      'jobProfile': "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile': "ws2-dev-mad",
+      'sysSettingsKey' : "ws2-dev-mad"
     },
     'ccmap': {
       'script': CREATE_MAP_PATH_JM,
       'modules': ['mad-utils'],
-      'jobProfile': "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile': "ws2-dev-mad",
+      'sysSettingsKey' : "ws2-dev-mad"
     },
     'insane': {
       'script' : INSANE_PATH_JM,
       'modules': ['insane'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile' : "ws2-dev-mad",
+      'sysSettingsKey' : "ws2-dev-mad"
     },
     'martinize': {
       'script' : MARTINIZE_PATH_JM,
-      'modules': ['martinize2/0.7.0'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'modules': ['martinize2'],
+      'jobProfile' : "ws2-dev-mad",
+      'sysSettingsKey' : "ws2-dev-mad"
     }
   };
 
@@ -175,7 +175,14 @@ export default new class ShellManager {
     });
 
     logger.silly("Getting Job manager connection...");
-    await this.job_manager;
+    try{
+      await this.job_manager
+    }
+    catch(e) {
+      logger.error("AWAIT JM FAIL")
+      logger.error(e.message)
+    }
+    
     logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
     
     return new Promise((resolve, reject) => {
@@ -203,9 +210,14 @@ export default new class ShellManager {
   }
 
   get job_manager() {
-    if (this._jm) return this._jm;
-
-    return JobManager.start({'port': JOB_MANAGER_SETTINGS.port,
+    logger.silly("get job manager function")
+    logger.silly(this._jm)
+    if (this._jm) {
+      logger.silly("already jm")
+      return this._jm;
+    }
+    logger.silly("new jm")
+    return this._jm = JobManager.start({'port': JOB_MANAGER_SETTINGS.port,
     'TCPip': JOB_MANAGER_SETTINGS.address})
   }
 }();
