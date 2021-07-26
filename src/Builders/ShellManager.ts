@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC, SLURM_PROFILES } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -64,32 +64,32 @@ export default new class ShellManager {
     'conect': {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
-      'jobProfile' : "ws2-dev-mad",
-      'sysSettingsKey' : "ws2-dev-mad"
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'go_virt': {
       'script': CREATE_GO_PATH_JM,
       'modules': ['mad-utils'],
-      'jobProfile': "ws2-dev-mad",
-      'sysSettingsKey' : "ws2-dev-mad"
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'ccmap': {
       'script': CREATE_MAP_PATH_JM,
       'modules': ['mad-utils'],
-      'jobProfile': "ws2-dev-mad",
-      'sysSettingsKey' : "ws2-dev-mad"
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'insane': {
       'script' : INSANE_PATH_JM,
       'modules': ['insane'],
-      'jobProfile' : "ws2-dev-mad",
-      'sysSettingsKey' : "ws2-dev-mad"
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'martinize': {
       'script' : MARTINIZE_PATH_JM,
       'modules': ['martinize2'],
-      'jobProfile' : "ws2-dev-mad",
-      'sysSettingsKey' : "ws2-dev-mad"
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     }
   };
 

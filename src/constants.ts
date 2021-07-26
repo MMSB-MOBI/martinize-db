@@ -31,7 +31,7 @@ export const LIPIDS_ROOT_DIR      = "/data/databases/mad/lipids/";
 export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR      = "/data/databases/mad/force_fields/";
-export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/";
+export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
 
 /* - Couch database - */
 export const DB_PREFIX = "maddev-"
@@ -105,10 +105,15 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-  SERVER: "http://localhost:3003", //3003
+  SERVER: "http://mad2-dev.ibcp.fr", //3003
   COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
 };
 
 /* - Regular expressions used to check recieved parameters - */
 export const USERNAME_REGEX = /^[a-z][a-z0-9_-]*[a-z0-9]$/i;
 export const EMAIL_REGEX = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
+
+export const SLURM_PROFILES = {
+  JOB_PROFILE : "ws2-short", 
+  SYS_SETTINGS : "ws2-dev-mad"
+}
