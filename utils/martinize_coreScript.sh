@@ -9,6 +9,4 @@ echo "$(pwd)"
 echo "$martinizeArgs $basedir"
 cd $basedir
 martinize2_path="martinize2"
-$martinize2_path $martinizeArgs -maxwarn 9999 1>martinize2.stdout 2>martinize2.stderr
-
-chmod a+r *
+$martinize2_path $martinizeArgs -maxwarn 9999

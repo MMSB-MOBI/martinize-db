@@ -31,7 +31,8 @@ export const LIPIDS_ROOT_DIR      = "/home/chilpert/databases/mad/lipids/";
 export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR      = "/home/chilpert/databases/mad/force_fields/";
-export const DEFAULT_TMP_BASE_DIR = "/home/chilpert/tmp/";
+export const DEFAULT_TMP_BASE_DIR = "/data1/cecile/web_services/MAD/tmp/";
+export const HISTORY_ROOT_DIR = "/data1/cecile/web_services/MAD/history"; 
 
 /* - Couch database - */ 
 export const DB_PREFIX = "maddev-" //prefix for couch collections
@@ -99,6 +100,7 @@ export const MARTINIZE_PATH_JM = path.resolve(__dirname, "../utils/martinize_cor
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
 export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
+export const MARTINIZE_VERSION_PATH = path.resolve(__dirname, "../utils/martinize_version.sh")
 /**
  * Default URLs.
  * - `SERVER` is the public URL of the server. Don't forget to set it in order to have working URLs in e-mails !

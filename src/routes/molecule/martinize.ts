@@ -10,10 +10,12 @@ import shellescape from 'shell-escape';
 import logger from '../../logger';
 import path from 'path';
 import { Database } from '../../Entities/CouchHelper';
+import { History } from '../../Entities/entities'; 
 import SocketIo from 'socket.io';
 import TmpDirHelper from '../../TmpDirHelper';
 import { Server } from 'http';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
+import HistoryOrganizer from "../../HistoryOrganizer";
 
 type MartinizeRunFailedPayload = { 
   error: string, 
@@ -129,6 +131,24 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
    return runner;
 }
 
+/*async function handleHistory(user_id:string, job_id: string){
+  logger.debug("handleHistory")
+  const exists = await Database.history.exists(user_id)
+  logger.debug(`${exists}`)
+  if(!exists){
+    logger.debug("Create new user history")
+    const doc: History = {
+      id: user_id, 
+      job_ids: [job_id]
+    }
+    await Database.history.save(doc)
+  }
+  else{
+
+  }
+  
+}*/
+
 async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: string, ...data: any[]) => void, path?: string) {
   //const { ff, position, posref_fc, elastic, ef, el, eu, ea, ep, em, eb, use_go, sc_fix, nter, cter, neutral_termini, commandline, cystein_bridge } = parameters;
 
@@ -146,7 +166,7 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
   const runner = createRunner(settings, parameters, pdb_path);
 
   try {
-    const { pdb, itps, top, dir } = await Martinizer.run(runner, onStep, path);
+    const { pdb, itps, top, warns, dir } = await Martinizer.run(runner, onStep, path);
 
     // Create elastic if needed
     let elastic_bonds: ElasticOrGoBounds[] | undefined = undefined;
@@ -160,6 +180,7 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
       itps, 
       top, 
       elastic_bonds,
+      warns,
       dir,
     };
   } catch (e) {
@@ -196,8 +217,8 @@ export async function SocketIoMartinizer(app: Server) {
   };
 
   await ShellManager.run(
-    'martinize', 
-    ShellManager.mode === "jm" ? jobOpt : "--version",  
+    'martinize_version', 
+    ShellManager.mode === "jm" ? jobOpt : "",  
     dir, 
     'martinize2'
   );
@@ -217,7 +238,7 @@ export async function SocketIoMartinizer(app: Server) {
 
     socket.emit('martinizeVersion', version);
 
-    socket.on('martinize', async (file: Buffer, run_id: string, settings: any) => {
+    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId:string) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
         return new Promise(async (resolve, reject) => {
           const timeout = setTimeout(reject, 1000 * 60 * 60);
@@ -254,11 +275,11 @@ export async function SocketIoMartinizer(app: Server) {
       const tmp_dir = await TmpDirHelper.get();
       const INPUT = tmp_dir + '/input.pdb';
       
-
+      logger.info(`MARTINIZE USER ${userId}`); 
       try {
         await FsPromise.writeFile(INPUT, file);
 
-        const { pdb, itps, top, elastic_bonds, dir } = await martinizeRun(
+        const { pdb, itps, top, elastic_bonds, warns, dir } = await martinizeRun(
           settings, 
           INPUT, 
           (step, ...data) => {
@@ -287,6 +308,11 @@ export async function SocketIoMartinizer(app: Server) {
           });
         }
 
+        await sendFile(warns, { 
+          name: path.basename(warns),
+          type: 'martinize-warnings' 
+        });
+
         socket.emit('martinize before end', { id: run_id });
 
         const radius = await Database.radius.getRadius(
@@ -310,6 +336,25 @@ export async function SocketIoMartinizer(app: Server) {
         socket.emit('martinize stderr', stdout);
 
         socket.emit('martinize end', { id: run_id, elastic_bonds, radius });
+
+        logger.info(`MARTINIZE END ${run_id}`)
+
+        logger.info(`DIRECTORY ${dir}`)
+        
+        //ADD TO HISTORY
+        logger.info("ADD TO HISTORY")
+        
+        const jobId = path.basename(dir); 
+
+        HistoryOrganizer.save(jobId, [top, pdb, ...itps])
+          .then(() => {
+            Database.history.addToHistory(userId, jobId).then(ok => console.log("saved to db")).catch(e => console.log(e))
+          })
+          .catch(err => console.log(err))
+        
+        
+
+
         
 
       } catch (e) {

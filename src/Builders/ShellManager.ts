@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC, MARTINIZE_VERSION_PATH} from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -8,7 +8,7 @@ import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
 
-const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
+const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', "martinize_version"] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 export interface JobInputs {
@@ -31,6 +31,7 @@ export default new class ShellManager {
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
     'martinize': MARTINIZE_PATH,
+    'martinize_version' : MARTINIZE_VERSION_PATH
   };
 
   /**
@@ -46,6 +47,7 @@ export default new class ShellManager {
     },
     'insane': {},
     'martinize': {},
+    "martinize_version": {}
   };
 
   /**
@@ -90,6 +92,12 @@ export default new class ShellManager {
       'modules': ['martinize2/0.7.0'],
       'jobProfile' : "mad-dev",
       'sysSettingsKey' : "mad-dev"
+    },
+    "martinize_version": {
+      'script' : MARTINIZE_PATH_JM,
+      'modules': ['martinize2/0.7.0'],
+      'jobProfile' : "mad-dev",
+      'sysSettingsKey' : "mad-dev"
     }
   };
 
@@ -129,7 +137,8 @@ export default new class ShellManager {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
-  
+        
+        //logger.error(`${err}`)
         if (err) {
           reject({ 
             error: err, 
@@ -160,6 +169,8 @@ export default new class ShellManager {
   protected async runWithJobManager(script_name: SupportedScript, jobData: JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = {...options, ...jobData};
+
+    if(save_std_name) jobOpt.exportVar["OUTPUT_PREFIX"] = save_std_name
 
     logger.debug("JM PROCESS");
     

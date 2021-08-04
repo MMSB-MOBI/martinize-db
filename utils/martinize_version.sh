@@ -9,8 +9,5 @@ source /home/chilpert/python_venv/martinize2venv/bin/activate
 
 martinize2_path="martinize2"
 
-#echo run : $martinize2_path $@ -maxwarn 100000
-
-$martinize2_path $@ -maxwarn 100000 2> martinize_redirect.stderr
-{ grep "WARNING" martinize_redirect.stderr > martinize_warnings.log || true; }
+$martinize2_path --version
 

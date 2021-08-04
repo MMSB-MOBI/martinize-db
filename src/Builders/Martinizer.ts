@@ -218,6 +218,7 @@ export const Martinizer = new class Martinizer {
   async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
     
     let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings);
+    const martinizeWarnOut = "martinize_warnings.log"
 
     logger.debug(`Starting a Martinize run for ${basename}.`);
 
@@ -243,11 +244,11 @@ export const Martinizer = new class Martinizer {
       try {
         // Step: Martinize Init
         onStep?.(this.STEP_MARTINIZE_INIT);
-
         let jobOpt: JobInputs = { 
           exportVar: {
             basedir: dir,
             martinizeArgs: command_line,
+            martinizeWarnOut : martinizeWarnOut
           },
           inputs: {},
         };
@@ -404,6 +405,7 @@ export const Martinizer = new class Martinizer {
         pdb: pdb_with_conect,
         itps: itp_files,
         top: full_top,
+        warns: dir + "/" + martinizeWarnOut, 
         dir: dir,
       };
     } finally {
