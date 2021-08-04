@@ -210,13 +210,9 @@ export default new class ShellManager {
   }
 
   get job_manager() {
-    logger.silly("get job manager function")
-    logger.silly(this._jm)
     if (this._jm) {
-      logger.silly("already jm")
       return this._jm;
     }
-    logger.silly("new jm")
     return this._jm = JobManager.start({'port': JOB_MANAGER_SETTINGS.port,
     'TCPip': JOB_MANAGER_SETTINGS.address})
   }
