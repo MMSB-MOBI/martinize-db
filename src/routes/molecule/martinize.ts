@@ -201,7 +201,7 @@ export async function SocketIoMartinizer(app: Server) {
     dir, 
     'martinize_version'
   );
-  let version = await FsPromise.readFile(dir+"/martinize2.stdout", 'utf-8');
+  let version = await FsPromise.readFile(dir+"/martinize_version.stdout", 'utf-8');
 
 
   io.on('connection', socket => {
