@@ -14,7 +14,6 @@ cd $WORKDIR
 # script_name.sh path_to_get_map.py pdb_filename distance_file
 
 grep 'CA' "$INPUT_PDB" > _backbones.pdb
-
 pwd
-echo run : python $GET_MAP_SCRIPT -f _backbones.pdb -o $DISTANCES
-python $GET_MAP_SCRIPT -f _backbones.pdb -o $DISTANCES
+echo run : python -m pcmap single _backbones.pdb --distance=10 --atomic
+python -m pcmap single _backbones.pdb --distance=10 --atomic > $DISTANCES
