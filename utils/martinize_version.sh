@@ -5,6 +5,9 @@
 # Place here commands to load the virtual env that contains martinize2
 # path
 
-cd $basedir
+source /home/chilpert/python_venv/martinize2venv/bin/activate
+
 martinize2_path="martinize2"
-$martinize2_path $martinizeArgs -maxwarn 9999
+
+$martinize2_path --version
+

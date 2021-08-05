@@ -12,4 +12,8 @@ fi
 
 martinize2_path="martinize2"
 
-$martinize2_path $@ -maxwarn 100000
+#echo run : $martinize2_path $@ -maxwarn 100000
+
+$martinize2_path $@ -maxwarn 100000 2> martinize_redirect.stderr
+{ grep "WARNING" martinize_redirect.stderr > martinize_warnings.log || true; }
+

@@ -62,7 +62,6 @@ then
   printf '!"W"\nq\n' > $tmp_stdin
   # Create index with a category without W
   gmx make_ndx -f "$gro_box" -o "$index_ndx" < $tmp_stdin > 3.makendx.out 2> 3.makendx.err
-
   # File to give on stdin to trjconv
   printf '!W\n' > $tmp_stdin
   # Create the PDB with conect entries without water 
@@ -75,6 +74,7 @@ fi
 printf '0\n' > $tmp_stdin
 # Create the PDB with conect entries with water 
 gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin 1> 5.trjconv.out 2> 5.trjconv.err
+
 
 echo "File $output_conect has been written."
 

@@ -13,6 +13,6 @@ fi
 # path
 python_path="python"
 
-n_atoms=$(cut -f1 -d ' ' output.pdb | grep -c ATOM)
+echo run $python_path $@ 
 
-$python_path $@ --Natoms $n_atoms
+$python_path $@

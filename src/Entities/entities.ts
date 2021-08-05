@@ -106,3 +106,8 @@ export interface Lipid extends BaseCouchDocument {
   itp: string;
 }
 
+export interface History extends BaseCouchDocument {
+  id : string; //user id
+  job_ids : string[]; 
+}
+

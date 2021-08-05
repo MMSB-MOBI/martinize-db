@@ -8,7 +8,7 @@ import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
 
-const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
+const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', "martinize_version"] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 export interface JobInputs {
@@ -31,6 +31,7 @@ export default new class ShellManager {
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
     'martinize': MARTINIZE_PATH,
+    'martinize_version' : MARTINIZE_VERSION_PATH
   };
 
   /**
@@ -49,7 +50,7 @@ export default new class ShellManager {
     },
     'martinize': {
       venv: MARTINIZE_VENV
-    },
+    }
   };
 
   /**
@@ -133,7 +134,8 @@ export default new class ShellManager {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
-  
+        
+        //logger.error(`${err}`)
         if (err) {
           reject({ 
             error: err, 
@@ -164,6 +166,8 @@ export default new class ShellManager {
   protected async runWithJobManager(script_name: SupportedScript, jobData: JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = {...options, ...jobData};
+
+    if(save_std_name) jobOpt.exportVar["OUTPUT_PREFIX"] = save_std_name
 
     logger.debug("JM PROCESS");
     
