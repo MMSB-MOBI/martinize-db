@@ -299,7 +299,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     // Ok, all should be ready. Start gromacs!
     logger.debug(`[INSANE] Creating the CONECT-ed PDB with GROMACS.`);
     try {
-      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system.gro", prepared_top, workdir);
+      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system.gro", prepared_top, workdir, lipids);
     } catch (e) {
       throw new InsaneError('gromacs_crash', workdir, e.stack);
     }
