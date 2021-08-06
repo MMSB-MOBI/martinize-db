@@ -12,17 +12,21 @@ export type TmpDirMode = 'os' | 'directory';
 export const TmpDirHelper = new class TmpDirHelper {
   protected cache: [string, number][] = [];
 
-  public mode: TmpDirMode = 'os';
+  public mode: TmpDirMode = "directory";
 
   constructor() {
-    // register the callback every 30 minutes
+    
+  }
+
+  async program_clean(){
+    logger.debug("Program cache cleaning")
     setInterval(() => {
 
       // Remove every item aged more than now - 45 minutes
-      this.clean(
-        Date.now() - (1000 * 60 * 45)
-      );
-    }, 1000 * 60 * 30);
+        this.clean(
+          Date.now() - (1000 * 60 * 45)
+        );
+      }, 1000 * 60 * 30);
   }
 
   /**

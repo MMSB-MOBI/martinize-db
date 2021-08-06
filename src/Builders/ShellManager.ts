@@ -1,8 +1,9 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_GO_PATH, MARTINIZE_PATH, JobMethod, DEFAULT_JOB_METHOD } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC, SLURM_PROFILES } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
-const jobManager = require('ms-jobmanager');
+// @ts-ignore
+import * as JobManager from 'ms-jobmanager';
 import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
@@ -10,7 +11,7 @@ import { Stream } from 'stream';
 const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
-export interface jobInputs {
+export interface JobInputs {
     exportVar?:  { [key: string]: string },
     inputs: { [key: string]: any }
 };
@@ -32,10 +33,17 @@ export default new class ShellManager {
     'martinize': MARTINIZE_PATH,
   };
 
+  /**
+   * Assign the following variables into child processes env.
+   */
   protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
     'conect': {},
-    'go_virt': {},
-    'ccmap': {},
+    'go_virt': {
+      venv: GO_VIRT_VENV_SRC
+    },
+    'ccmap': {
+      venv: GO_VIRT_VENV_SRC
+    },
     'insane': {},
     'martinize': {},
   };
@@ -43,36 +51,52 @@ export default new class ShellManager {
   /**
    * Script name to jobOpt ? Specify here parameters to fill in job opt ?
    */
+  private engine = { 
+    "engineSpecs" : 'slurm',
+    "binariesSpec" : { 
+      "submitBin" : "/usr/bin/sbatch",
+      "cancelBin" : "/usr/bin/scancel",
+      "queueBin"  : "/usr/bin/squeue"
+    }
+  }
+
   protected readonly NAME_TO_ARGS: { [scriptName in SupportedScript]: any } = {
     'conect': {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
-      'jobProfile' : "mad-dev",
-      'engineOverride' : { 
-          "engineSpecs" : 'slurm',
-          "binariesSpec" : { 
-            "submitBin" : "/data/www_dev/mad/bin/slurm/bin/sbatch",
-            "cancelBin" : "/data/www_dev/mad/bin/slurm/bin/scancel",
-            "queueBin"  : "/data/www_dev/mad/bin/slurm/bin/squeue"
-          }
-      }
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
-    'go_virt': {},
-    'ccmap': {},
-    'insane': {},
-    'martinize': {},
+    'go_virt': {
+      'script': CREATE_GO_PATH_JM,
+      'modules': ['mad-utils'],
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
+    },
+    'ccmap': {
+      'script': CREATE_MAP_PATH_JM,
+      'modules': ['mad-utils'],
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
+    },
+    'insane': {
+      'script' : INSANE_PATH_JM,
+      'modules': ['insane'],
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
+    },
+    'martinize': {
+      'script' : MARTINIZE_PATH_JM,
+      'modules': ['martinize2'],
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
+    }
   };
 
-  get job_manager() {
-    if (this._jm) return this._jm;
-    return this._jm = new Promise(resolve => jobManager.start({ 
-      'port': JOB_MANAGER_SETTINGS.port,
-      'TCPip': JOB_MANAGER_SETTINGS.address
-    }).on('ready', resolve));
-  }
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
+<<<<<<< HEAD
 <<<<<<< HEAD
   async run(script_name: SupportedScript, args: string|jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     logger.debug(`HERE !!!${this.mode}`);
@@ -89,21 +113,33 @@ export default new class ShellManager {
     timeout?: number, 
     mode: JobMethod = this.mode
   ) {
+=======
+  async run(script_name: SupportedScript, args: string | JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode) {
+>>>>>>> new_master
     if (mode === 'jm') {
-      return this.runWithJobManager(script_name, args, working_directory, save_std_name, timeout);
+      return this.runWithJobManager(script_name, args as JobInputs, working_directory, save_std_name, timeout);
     }
+<<<<<<< HEAD
     return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);
 >>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
+=======
+    return this.runWithChildProcess(script_name, args as string, working_directory, save_std_name, timeout);
+>>>>>>> new_master
   }
 
   protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const path = this.NAME_TO_PATH[script_name];
+<<<<<<< HEAD
 <<<<<<< HEAD
     logger.debug("CHILD PROCESS");
 =======
     const variables = this.VARIABLES_TO_NAME[script_name];
 
 >>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
+=======
+    const variables = this.VARIABLES_TO_NAME[script_name];
+
+>>>>>>> new_master
     if (!path) {
       throw new Error("Script is not supported.");
     }
@@ -116,7 +152,7 @@ export default new class ShellManager {
         stdout = fs.createWriteStream(working_directory + '/' + save_std_name + '.stdout');
         stderr = fs.createWriteStream(working_directory + '/' + save_std_name + '.stderr');
       }
-
+      logger.silly(`run command line : "${path}" ${args}`); 
       const child = exec(`"${path}" ${args}`, { 
         cwd: working_directory, 
         maxBuffer: 1e9, 
@@ -154,7 +190,7 @@ export default new class ShellManager {
    * 
    * If job create -new files- in its directory, they *must* be copied to {working_directory} after the job.
    */
-  protected async runWithJobManager(script_name: SupportedScript, jobData: jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
+  protected async runWithJobManager(script_name: SupportedScript, jobData: JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = {...options, ...jobData};
 
@@ -166,27 +202,55 @@ export default new class ShellManager {
 
     const dumpFile = (srcStream:any, targetPath:any) => new Promise((resolve, reject) => {
       const targetStream = fs.createWriteStream(targetPath);
-      targetStream.on("finish", resolve);
+      targetStream.on('finish', resolve);
+      targetStream.on('error', reject);
       srcStream.pipe(targetStream);
     });
 
-    logger.debug("Getting Job manager connection...");
-    await this.job_manager;
-    logger.info(`About to run this: ${inspect(jobOpt)}`);
+    logger.silly("Getting Job manager connection...");
+    try{
+      await this.job_manager
+    }
+    catch(e) {
+      logger.error("AWAIT JM FAIL")
+      logger.error(e.message)
+    }
     
-    return new Promise( (resolve, reject) => {
-        let jobCreatePdbWithConect = jobManager.push(jobOpt);
-        jobCreatePdbWithConect.on("completed",(stdout:Stream, stderr:Stream) => {
-          logger.info(`jobCreatePdbWithConect completed`);
-          if (save_std_name) {
-           ( async () => {
-              await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout' );
-              await dumpFile(stderr, working_directory + '/' + save_std_name + '.stderr' );             
-            } )().then(resolve);
-            return;
-          }
-          resolve();
+    logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
+    
+    return new Promise((resolve, reject) => {
+      const jobCreatePdbWithConect = JobManager.push(jobOpt);
+
+      jobCreatePdbWithConect.on('completed', (stdout:Stream, stderr:Stream) => {
+        logger.debug(`jobCreatePdbWithConect completed`);
+
+        if (save_std_name) {
+          (async () => {
+            await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout' );
+            await dumpFile(stderr, working_directory + '/' + save_std_name + '.stderr' );             
+          })()
+            .then(resolve)
+            .catch(reject);
+          
+          return;
+        }
+
+        resolve();
       });
-  }) as Promise<void>;
-}
+
+      jobCreatePdbWithConect.on('error', reject);
+    }) as Promise<void>;
+  }
+
+  get job_manager() {
+    logger.silly("get job manager function")
+    logger.silly(this._jm)
+    if (this._jm) {
+      logger.silly("already jm")
+      return this._jm;
+    }
+    logger.silly("new jm")
+    return this._jm = JobManager.start({'port': JOB_MANAGER_SETTINGS.port,
+    'TCPip': JOB_MANAGER_SETTINGS.address})
+  }
 }();

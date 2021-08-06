@@ -5,8 +5,6 @@
 # Place here commands to load the virtual env that contains martinize2
 # path
 
-source /home/freaky/Documents/stage/martinize2venv/bin/activate
-
+cd $basedir
 martinize2_path="martinize2"
-
-$martinize2_path $@ -maxwarn 100000
+$martinize2_path $martinizeArgs -maxwarn 9999

@@ -5,18 +5,15 @@
 # Place here commands to load the virtual env that contains ccmap
 # Insert HERE the path to Python binary (do NOT include path to get_map.py)
 
-if [ ! -z "$venv" ]
-then
-  source $venv
-fi
 
-python_with_ccmap="python"
+cd $WORKDIR
 
 # ------------- #
 ##### USAGE #####
 # ------------- #
 # script_name.sh path_to_get_map.py pdb_filename distance_file
 
-grep 'CA' "$2" > _backbones.pdb
-
-$python_with_ccmap $1 -f _backbones.pdb -o $3
+grep 'CA' "$INPUT_PDB" > _backbones.pdb
+pwd
+echo run : python -m pcmap single _backbones.pdb --distance=10 --atomic
+python -m pcmap single _backbones.pdb --distance=10 --atomic > $DISTANCES

@@ -15,7 +15,7 @@ export interface BaseMolecule extends BaseCouchDocument {
   /** Mol smiles formula (optional) */
   smiles: string;
   /** Category, should be a GO Term */
-  category: keyof typeof GoTerms;
+  category: keyof typeof GoTerms[];
   /** Molecule version (free text) */
   version: string;
   /** Free comment text. */
@@ -60,6 +60,10 @@ export interface User extends BaseCouchDocument {
   email: string;
   /** Display name */
   name: string;
+  /**full name provided by user */
+  fullname: string;
+  /**affiliation provided by user */
+  affiliation: string; 
   /** Stringified ISO Date of the user creation */
   created_at: string;
   /** bcrypt-hashed password of the user */
@@ -70,6 +74,7 @@ export interface User extends BaseCouchDocument {
   approved: boolean;
   /** Lost token ID */
   lost_token?: string;
+
 }
 
 export interface Token extends BaseCouchDocument {

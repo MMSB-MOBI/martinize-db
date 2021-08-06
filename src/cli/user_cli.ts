@@ -6,7 +6,7 @@ import { generateSnowflake, withRegex } from "../helpers";
 import { UserRole } from "../types";
 import { CLI } from "./cli";
 
-const USER_CLI = new CliListener(
+let USER_CLI = new CliListener(
   CliHelper.formatHelp("user", {
     commands: {
       list: 'List registred users',
@@ -94,6 +94,8 @@ USER_CLI.command('create', async () => {
   let email = "";
   let role = "admin";
   let password = "";
+  let fullname = ""; 
+  let affiliation = ""; 
 
   console.log("To exit user creation, type \".exit\"");
 
@@ -141,6 +143,28 @@ USER_CLI.command('create', async () => {
     break;
   }
 
+  //Full name
+  while (true) {
+    fullname = await CLI.question("New user full name: ");
+
+    if (fullname === ".exit") {
+      return "User creation exited.";
+    }
+
+    break;
+  }
+
+  //Affiliation 
+  while (true) {
+    affiliation = await CLI.question("New user affiliation: ");
+
+    if (affiliation === ".exit") {
+      return "User creation exited.";
+    }
+
+    break;
+  }
+
   // Role
   while (true) {
     role = await CLI.question("New user role. Available roles: \"curator\" or \"admin\": ");
@@ -175,6 +199,8 @@ USER_CLI.command('create', async () => {
       id: generateSnowflake(),
       name,
       email,
+      fullname, 
+      affiliation,
       role: role as UserRole,
       created_at: new Date().toISOString(),
       password: "",
@@ -249,5 +275,31 @@ USER_CLI.command('wipe', async rest => {
   }
   return `Unable to find user.`
 });
+
+
+
+export let CONNECTED_USER_CLI: User;
+
+USER_CLI.command('connect', async () => {
+  let username = await CLI.question("Username: ");
+
+    const exists = await Database.user.fromUsername(username);
+    if (exists) {
+      let password = await CLI.question('Password: ');
+      if (await Database.user.verifyPassword(exists, password) == true) {
+        CONNECTED_USER_CLI = exists;
+      }
+      else {
+        return 'Incorrect password';
+      }
+    }
+    else {
+      return 'Incorrect username';
+    }
+    return 'Successfully connected';
+})
+
+
+
 
 export default USER_CLI;

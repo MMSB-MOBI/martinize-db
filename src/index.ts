@@ -1,3 +1,11 @@
+import dotenv from 'dotenv'; 
+const conf = dotenv.config({path: __dirname + "/../.env"})
+if(conf.error){
+  console.log("Error while loading conf. Verify or create .env file")
+  console.log("Stack trace:", 'stack' in conf.error ? conf.error  : conf.error)
+  process.exit(2)
+}
+
 import express from 'express';
 import commander from 'commander';
 import { VERSION, URLS, DEFAULT_TMP_BASE_DIR } from './constants';
@@ -19,6 +27,7 @@ import TEST_CLI from './cli/test.cli';
 import { SocketIoMartinizer } from './routes/molecule/martinize';
 import http from 'http';
 import ShellManager from './Builders/ShellManager';
+import fs from 'fs'; 
 
 commander
   .version(VERSION)
@@ -31,6 +40,7 @@ commander
   .option('--wipe-init')
   .option('--init-db')
   .option('--quit-after-init')
+  .option('--keep-cache', "Don't delete tmp cache directory after 45 min")
   .option('-l, --log-level <logLevel>', 'Log level [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--file-log-level <logLevel>', 'Log level (written to file) [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--log-file <logFile>', 'File log level')
@@ -66,6 +76,10 @@ if (commander.osTmp) {
 }
 else {
   TmpDirHelper.mode = 'directory';
+}
+
+if (! commander.keepCache){
+  TmpDirHelper.program_clean(); 
 }
 
 logger.silly(`Using ${ShellManager.mode === 'jm' ? 'job manager' : 'child processes'} as shell executor.`);

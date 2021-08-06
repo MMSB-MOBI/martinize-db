@@ -12,28 +12,26 @@
     "elnedyn22p",
     "martini22",
     "martini22p",
-    "martini304"
+    "martini3001"
   ],
   "category_tree": {
-    "GO:0001": {
+    "MC:0001": {
       "name": "Sugars",
-      "children": {
-        "GO:0002": {
-          "name": "Proteins",
-          "children": {}
-        },
-        "GO:0003": {
-          "name": "Polymers",
-          "children": {
-            "GO:0004": {
-              "name": "Amino acids",
-              "children": {}
-            }
-          }
-        }
-      }
+      "children": {}
     },
-    "lipids": {
+    "MC:0002": {
+      "name": "Proteins",
+      "children": {}
+    },
+    "MC:0003": {
+      "name": "Polymers",
+      "children": {}
+    },
+    "MC:0004": {
+      "name": "Amino acids",
+      "children": {}
+    },
+    "MC:0005": {
       "name": "Lipids",
       "children": {}
     }

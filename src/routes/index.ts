@@ -8,6 +8,7 @@ import Errors, { ErrorType } from '../Errors';
 import MoleculeRouter from './molecule';
 import SettingsRouter from './settings';
 import ModerationRouter from './moderation';
+import DownloadForceFieldRoute from './force_fields/download';
 
 const ApiRouter = Router();
 ApiRouter.use(cors());
@@ -22,6 +23,7 @@ ApiRouter.use('/user', UserRouter);
 ApiRouter.use('/molecule', MoleculeRouter);
 ApiRouter.use('/settings', SettingsRouter);
 ApiRouter.use('/moderation', ModerationRouter);
+ApiRouter.use('/force_fields', DownloadForceFieldRoute);
 
 // Catch all API invalid routes
 ApiRouter.use(() => {

@@ -9,6 +9,14 @@ import { DISABLE_MODERATION_PROCESS } from '../../constants';
 import { MoleculeChecker } from './MoleculeChecker';
 import logger from '../../logger';
 
+
+
+//import * as test from "../../test";
+
+
+let util = require('util');
+
+
 const CreateMoleculeRouter = Router();
 
 // Middleware that wipe uploaded files after request
@@ -39,7 +47,7 @@ CreateMoleculeRouter.post('/', Uploader.fields([
   { name: 'pdb', maxCount: 1 },
   { name: 'map', maxCount: 99 },
 ]), (req, res) => {
-  (async () => {
+  (async () => {  //console.log("HERE>>");console.log(req.files);
     const logged_user = req.full_user!;
     
     const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;
@@ -48,6 +56,8 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     // Insert the molecule
     let response: nano.DocumentInsertResponse;
     let molecule: BaseMolecule;
+
+    req.body.category = typeof req.body.category === 'string' ? [req.body.category] : req.body.category
 
     try {
       const checker = new MoleculeChecker(req);

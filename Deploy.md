@@ -163,7 +163,7 @@ deactivate
 python3 -m venv martinize2venv 
 source martinize2venv/bin/activate
 pip install --upgrade pip
-pip install ccmap pyproteins pyproteinsExt
+pip install ccmap pyproteins pyproteinsExt scipy
 pip install git+https://github.com/marrink-lab/vermouth-martinize.git#vermouth
 
 # Copy the martini304 force field files into site packages (server should be cloned!)

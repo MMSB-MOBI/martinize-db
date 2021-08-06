@@ -9,11 +9,13 @@ import { promises as FsPromise } from 'fs';
 import { SettingsJson, CategoryTree } from '../../types';
 import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
 import logger from '../../logger';
+import { SimuFile, SimuRequest } from './CreateMoleculeJson';
+
 
 type File = Express.Multer.File;
 
 export class MoleculeChecker {
-  constructor(protected req: Request) {}
+  constructor(protected req: Request | SimuRequest) {}
 
   /**
    * Check a molecule about to be published to {Molecule} database
@@ -60,6 +62,7 @@ export class MoleculeChecker {
   protected async checker(stashed: boolean, edition: boolean) {
     let actual_version: BaseMolecule | undefined = undefined;
 
+    
     if (edition) {
       const id = this.req.body.id;
       if (!id) {
@@ -77,7 +80,7 @@ export class MoleculeChecker {
         return Errors.throw(ErrorType.MoleculeNotFound);
       }
     }
-
+    
     const molecule = await this.constructBaseMoleculeFromRequest(actual_version);
 
     // Must set the following fields: files, created_at, hash
@@ -85,6 +88,7 @@ export class MoleculeChecker {
     // Test if files are attached to the request
     if (!this.areFilesPresent()) {
       if (!edition) {
+        
         return Errors.throw(ErrorType.MissingParameters);
       }
       else {
@@ -155,9 +159,10 @@ export class MoleculeChecker {
     }
 
     // Find the ITP files
-    const itps_files: File[] = this.req.files.itp;
-    const pdb_files: File[] = this.req.files.pdb;
-    const top_files: File[] = this.req.files.top;
+    const itps_files: (File | SimuFile)[] = this.req.files.itp;
+    const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
+    const top_files: (File | SimuFile)[] = this.req.files.top;
+    
 
     // Requires one itp file at least
     if (!itps_files || !top_files || !pdb_files || !itps_files.length || !pdb_files.length || !top_files.length) {
@@ -172,7 +177,7 @@ export class MoleculeChecker {
     }
 
     // Find the ITP files
-    const itps_files: File[] = this.req.files.itp;
+    const itps_files: (File | SimuFile)[] = this.req.files.itp;
 
 
     // Check the weight of each ITP file
@@ -181,17 +186,17 @@ export class MoleculeChecker {
     }
 
     // Get the PDB files
-    const pdb_files: File[] = this.req.files.pdb;
+    const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
     const is_pdb = !!this.req.files.pdb;
 
     if (pdb_files.length !== 1) {
       return Errors.throw(ErrorType.TooManyFiles);
     }
 
-    const map_files: File[] = this.req.files.map || [];
+    const map_files: (File | SimuFile)[] = this.req.files.map || [];
 
     // Find if top files are present
-    let top_file: File = this.req.files.top[0];
+    let top_file: File | SimuFile = this.req.files.top[0];
 
     return {
       molecule: pdb_files[0],
@@ -225,6 +230,7 @@ export class MoleculeChecker {
     }
 
     const body = this.req.body;
+
 
     // If the molecule doesn't have any ID, set it
     if (!mol.id) {
@@ -311,7 +317,8 @@ export class MoleculeChecker {
     molecule.parent = parent.id;
   }
 
-  protected async checkName(name: string, tree_id: string) {
+  // changed from protected to public
+  public async checkName(name: string, tree_id: string) {
     if (!name.match(NAME_REGEX)) {
       return Errors.throw(ErrorType.InvalidName);
     }
@@ -320,7 +327,7 @@ export class MoleculeChecker {
 
     for (const mol of mols) {
       if (mol.tree_id !== tree_id) {
-        return Errors.throw(ErrorType.NameAlreadyExists);
+        return Errors.throw(ErrorType.NameAlreadyExists, {'id':mol.id});
       }
     }
   }
@@ -345,24 +352,27 @@ export class MoleculeChecker {
     }
   }
 
-  protected checkCategory(cat: string, settings: SettingsJson) {
+  protected checkCategory(cat: string[], settings: SettingsJson) {
     // todo
-    const findInCategoryTree = (val: string, node: CategoryTree) : boolean => {
-      for (const go_id in node) {
-        if (go_id === val) {
-          return true;
+    const correctedCat = typeof cat === "string" ? [cat] : cat;
+    correctedCat.map(category => {
+      const findInCategoryTree = (val: string, node: CategoryTree) : boolean => {
+        for (const go_id in node) {
+          if (go_id === val) {
+            return true;
+          }
+          if (node[go_id].children && findInCategoryTree(val, node[go_id].children)) {
+            return true;
+          }
         }
-        if (node[go_id].children && findInCategoryTree(val, node[go_id].children)) {
-          return true;
-        }
-      }
 
-      return false;
-    };
-    
-    if (!findInCategoryTree(cat, settings.category_tree)) {
-      return Errors.throw(ErrorType.InvalidCategory);
-    }
+        return false;
+      };
+      
+      if (!findInCategoryTree(category, settings.category_tree)) {
+        return Errors.throw(ErrorType.InvalidCategory);
+      }
+    })
   }
 
   protected checkCreateWay(v: string, settings: SettingsJson) {

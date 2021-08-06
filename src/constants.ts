@@ -23,18 +23,22 @@ try {
 export { KEYS };
 
 /* - DEFAULT DIRECTORIES - */
-export const MOLECULE_ROOT_DIR = path.resolve(__dirname, "../molecules/") + "/";
-export const MARTINIZER_ROOT_DIR = path.resolve(__dirname, "../molecules/martinizer/") + "/";
-export const UPLOAD_ROOT_DIR = path.resolve(__dirname, "../uploads/") + "/";
-export const LIPIDS_ROOT_DIR =path.resolve(__dirname, "../lipids/") + "/";
-export const SETTINGS_FILE = path.resolve(__dirname, "../settings.json");
-export const TEMPLATE_DIR = path.resolve(__dirname, "../templates/") + "/";
-export const FORCE_FIELD_DIR = path.resolve(__dirname, "../force_fields") + "/";
-export const DEFAULT_TMP_BASE_DIR = "/data/dev/mad/tmp/";
+export const MOLECULE_ROOT_DIR    = process.env.MOLECULE_ROOT_DIR ?? path.resolve(__dirname, "../molecules/")
+export const MARTINIZER_ROOT_DIR  = process.env.MARTINIZER_ROOT_DIR ?? path.resolve(__dirname, "../molecules/martinizer/")
+export const UPLOAD_ROOT_DIR      = process.env.UPLOAD_ROOT_DIR ?? path.resolve(__dirname, "../uploads/")
+
+export const LIPIDS_ROOT_DIR      = process.env.LIPIDS_ROOT_DIR ?? path.resolve(__dirname, "../lipids/")
+export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
+export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
+export const FORCE_FIELD_DIR      = process.env.FORCE_FIELD_DIR ?? path.resolve(__dirname, "../force_fields/")
+export const DEFAULT_TMP_BASE_DIR = process.env.DEFAULT_TMP_BASE_DIR ?? path.resolve(__dirname, "../tmp/")
+
+/* - Couch database - */
+export const DB_PREFIX = process.env.DB_PREFIX ?? ""
 
 
 /* - Job manager - */
-export type JobMethod = 'jm' | 'child';
+export type JobMethod = 'jm' | 'child';
 export const DEFAULT_JOB_METHOD: JobMethod = 'child';
 
 /* - SEARCH WORKERS SETTINGS - */
@@ -50,7 +54,7 @@ export const DEFAULT_MAILER_NAME = "MArtini Database";
 /** E-mail address of the mail sender. */
 export const DEFAULT_MAILER_ADDRESS = "martinize.db@ibcp.fr";
 /** Debug purpose only; If `string`, all e-mails will be sent to the following address. */
-export const MAILER_ENFORCE_RECIPIENT: false | string = "tulouca@gmail.com";
+export const MAILER_ENFORCE_RECIPIENT: false | string = false;
 /** Default parameters for Mailer. See `nodemailer` package documentation. */
 export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
   host: 'smtp.ibcp.fr',
@@ -63,50 +67,53 @@ export const MAILER_TRANSPORT_SETTINGS: SMTPTransport.Options = {
 };
 /** Default parameters for Mailer. See `ms-jobmanager` package documentation. */
 export const JOB_MANAGER_SETTINGS = {
-  address: '127.0.0.1',
-  port: 2345
+  address: process.env.JM_ADRESS ?? "localhost",
+  port: parseInt(process.env.JM_PORT || "") ?? "1234"
 };
 
 /* - Martinizer constants - */
 /** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
-export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
+export const DSSP_PATH = process.env.DSSP_PATH;
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
+export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
+export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
 /** Link to script used to create go virtual sites. */
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */
 export const CREATE_MAP_PATH = path.resolve(__dirname, "../utils/get_map.sh");
+export const CREATE_MAP_PATH_JM = path.resolve(__dirname, "../utils/get_map_coreScript.sh");
 /** Associated python script to ccmap */
 export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
 /** Link to script that can run GROMACS */
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-export const CONECT_MDP_PATH = path.resolve(__dirname, "../utils/run.mdp");
+export const CONECT_MDP_PATH = "/data/databases/mad/force_fields/run.mdp";
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
 export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
-
+export const MARTINIZE_PATH_JM = path.resolve(__dirname, "../utils/martinize_coreScript.sh");
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
-
+export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
 /**
  * Default URLs.
  * - `SERVER` is the public URL of the server. Don't forget to set it in order to have working URLs in e-mails !
  * - `COUCH` is default CouchDB URL. Usually, this URL is not used, the `--couchdb-url` parameter of server is used instead.
  */
 export const URLS = {
-<<<<<<< HEAD
-  SERVER: "mad-dev.ibcp.fr:", //3003
-  COUCH: "http://mad_agent:mad_agent@arwen-cdb.ibcp.fr:5984",
-=======
-  SERVER: "http://mad-dev.ibcp.fr",
-  COUCH: "http://localhost:5984",
->>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
+  SERVER: process.env.SERVER_URL ?? "http://localhost:3003", //3003
+  COUCH: process.env.COUCH_URL ?? "http://localhost:5984",
 };
 
 /* - Regular expressions used to check recieved parameters - */
 export const USERNAME_REGEX = /^[a-z][a-z0-9_-]*[a-z0-9]$/i;
 export const EMAIL_REGEX = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
+
+export const SLURM_PROFILES = {
+  JOB_PROFILE : process.env.JOB_PROFILE ?? "", 
+  SYS_SETTINGS : process.env.JOB_SYS_SETTINGS ?? ""
+}

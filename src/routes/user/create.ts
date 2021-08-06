@@ -6,6 +6,7 @@ import { UserRole } from '../../types';
 import { User, Token } from '../../Entities/entities';
 import { USERNAME_REGEX, EMAIL_REGEX } from '../../constants';
 import logger from '../../logger';
+import util from 'util'; 
 
 const CreateUserRouter = Router();
 
@@ -14,13 +15,13 @@ CreateUserRouter.post('/', (req, res) => {
     Errors.throw(ErrorType.MissingParameters);
   } 
 
-  let { username, password, email, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string }; 
+  let { username, password, email, fullname, affiliation, role: choosen_role } = req.body as { username?: string, password?: string, email?: string, role?: string, fullname?: string, affiliation?:string }; 
   
   (async () => {
     let role: UserRole = "curator"; 
     let admin_logged = false;
 
-    if (!username || !password || !email) {
+    if (!username || !password || !email || !fullname || !affiliation) {
       return Errors.throw(ErrorType.MissingParameters);
     }
 
@@ -56,6 +57,8 @@ CreateUserRouter.post('/', (req, res) => {
       id: generateSnowflake(),
       email,
       name: username,
+      fullname,
+      affiliation,
       role,
       created_at: new Date().toISOString(),
       password: "",
