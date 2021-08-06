@@ -22,7 +22,9 @@ import { Excel } from '../../cli/molecule_cli';
   number: string,
   itp: SimuFile,
   force_field: string,
-  protonation? : string
+  protonation? : string,
+  comments: string,
+  citation: string,
 };
 
 /**
@@ -33,7 +35,7 @@ export interface InfosJson {
   /* Name of the molecule */
   name: string,
   alias: string,
-  category: keyof typeof GoTerms,
+  category: keyof typeof GoTerms[],
   create_way: string,
   directory: string,
   top: {version: string, infos: SimuFile}[],
@@ -63,7 +65,7 @@ export interface SimuRequest{
     alias: string,
     smiles: string,
     version: string,
-    category: keyof typeof GoTerms,
+    category: keyof typeof GoTerms[],
     command_line: string,
     comments: string,
     create_way: string,
@@ -80,9 +82,10 @@ export interface SimuRequest{
   };
 }
 
+
 /**
- * Create a molecule object from its data contained in a Json file and send it to the database
- * @param jsonFile 
+ * Read a bacth of molecule objects contained in a Json object and send their infos to the database to insert them sequentially
+ * @param batch - a list of molecules informations
  */
 export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
 
@@ -94,21 +97,17 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
   }, Promise.resolve());
 }
 
-/*
-const options = {
-  depth:10,
-  extensions: ['json'],
-};
-const tree = dree.scan('/home/achopin/Documents/database/martini-molecule-repository/martini2_lipids_test/Glycosphingolipids', options, (element : any) => {
-  CreateMoleculeFromJson(element.path);
-});
 
-*/
-
+/**
+ * Auxiliary function reading the infos from one molecule of the batch and inserting them in the databse
+ * @param infos - The informations on the moelcule
+ * @returns a Promise with resolve true :)
+ */
 const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
 
   let parentMol: string | null = null;
 
+    // for each itp versions (versions of the molecule) we insert the infos in the database
     for (let i=0; i < infos.versions.length; i++) {
 
       let ver : VersionItp = infos.versions[i];
@@ -116,6 +115,9 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
       let martiniVer = '';
       if (ver.force_field == 'v2.0' || ver.force_field == 'v2.1' || ver.force_field == 'v2.2') {
         martiniVer = 'martini22';
+      }
+      else if (ver.force_field == 'v3' || ver.force_field == 'v304') {
+        martiniVer = 'martini304';
       }
 
       let req : SimuRequest = {
@@ -130,11 +132,11 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
           version: ver.number,
           category: infos.category,
           command_line: '',
-          comments: '',
+          comments: ver.comments,
           create_way: infos.create_way,
           force_field: martiniVer,
           validation: '',
-          citation: '',
+          citation: ver.citation,
           parent: parentMol
         },
         files: {
@@ -145,16 +147,17 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
         }
       }
 
-
+      // Error if the user connected is not an admin
       if (req.full_user.role != 'admin') {
         return Errors.throw(ErrorType.Unallowed);
       }
 
+      // If there are no top file correspnding to the itp
       if (!infos.top[i].infos.originalname.match(ver.number)){
         return Errors.throw(ErrorType.MissingTopFiles);
       }
 
-
+      // If the molecule version is the first one, we check if the molecule is already in the database
       if (ver.number == '01') {
         const checker = new MoleculeChecker(req);
         try {
@@ -170,6 +173,7 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
         }
       }
 
+      // Check and insert the molecule in the database and if it is the first version, keep its id to define the parent id of the other versions
       try {
         const checker = new MoleculeChecker(req);
         let molecule = await checker.check();
@@ -194,4 +198,3 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
     };
     return new Promise((resolve, reject) => {resolve(true)});
 }
-

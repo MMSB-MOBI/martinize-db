@@ -7,7 +7,7 @@
 
 if [ ! -z "$venv" ]
 then
-  source $venv/bin/activate
+  source $venv
 fi
 
 python_with_ccmap="python"

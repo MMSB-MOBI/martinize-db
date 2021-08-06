@@ -4,31 +4,31 @@
 
 [moleculetype]
 ; molname 	nrexcl
-   NA 		1
+   NA+ 		1
 
 [atoms]
 ;id 	type 	resnr 	residu 	atom 	cgnr 	charge
- 1 	TQ5 	1 	ION 	NA 	1 	1.0 
+ 1 	TQ5 	1 	ION 	NA+ 	1 	1.0 
 
 ;;;;;; CHLORIDE ION
 
 [moleculetype]
 ; molname 	nrexcl
-   CL 		1
+   CL- 		1
 
 [atoms]
 ;id 	type 	resnr 	residu 	atom 	cgnr 	charge
- 1 	TQ5 	1 	ION 	CL 	1 	-1.0
+ 1 	TQ5 	1 	ION 	CL- 	1 	-1.0
 
 
 ;;;;;; CALCIUM ION
 
 [moleculetype]
 ; molname       nrexcl
-   CA           1
+   CA+           1
 
 [atoms]
 ;id     type    resnr   residu  atom    cgnr    charge
- 1      SD      1       ION      CA     1       2.0 
+ 1      SD      1       ION      CA+     1       2.0 
 
 

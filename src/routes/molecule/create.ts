@@ -57,9 +57,10 @@ CreateMoleculeRouter.post('/', Uploader.fields([
     let response: nano.DocumentInsertResponse;
     let molecule: BaseMolecule;
 
-    //console.log(req.full_user);
-    //console.log(req.body);
-    //console.log(req.files);
+    //@ts-ignore
+    if(typeof req.body.category === 'string') {
+      req.body.category = [req.body.category];
+    }
 
     try {
       const checker = new MoleculeChecker(req);

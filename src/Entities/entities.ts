@@ -15,7 +15,7 @@ export interface BaseMolecule extends BaseCouchDocument {
   /** Mol smiles formula (optional) */
   smiles: string;
   /** Category, should be a GO Term */
-  category: keyof typeof GoTerms;
+  category: keyof typeof GoTerms[];
   /** Molecule version (free text) */
   version: string;
   /** Free comment text. */

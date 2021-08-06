@@ -23,15 +23,15 @@ try {
 export { KEYS };
 
 /* - DEFAULT DIRECTORIES - */
-export const MOLECULE_ROOT_DIR    = "/home/chilpert/databases/mad/molecules/";
-export const MARTINIZER_ROOT_DIR  = "/home/chilpert/databases/mad/molecules/martinizer/";
-export const UPLOAD_ROOT_DIR      = "/home/chilpert/databases/mad/uploads/";
+export const MOLECULE_ROOT_DIR    = "/home/freaky/Documents/stage/martinize-db/molecules/";
+export const MARTINIZER_ROOT_DIR  = "/home/freaky/Documents/stage/martinize-db/molecules/martinizer/";
+export const UPLOAD_ROOT_DIR      = "/home/freaky/Documents/stage/martinize-db/uploads/";
 
-export const LIPIDS_ROOT_DIR      = "/home/chilpert/databases/mad/lipids/";
+export const LIPIDS_ROOT_DIR      = "/home/freaky/Documents/stage/martinize-db/lipids/";
 export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
-export const FORCE_FIELD_DIR      = "/home/chilpert/databases/mad/force_fields/";
-export const DEFAULT_TMP_BASE_DIR = "/home/chilpert/tmp/";
+export const FORCE_FIELD_DIR      = "/home/freaky/Documents/stage/martinize-db/force_fields/";
+export const DEFAULT_TMP_BASE_DIR = "/home/freaky/Documents/stage/martinize-db/tmp/";
 
 /* - Couch database - */ 
 export const DB_PREFIX = "maddev-" //prefix for couch collections
@@ -77,7 +77,7 @@ export const DSSP_PATH = "/Users/alki/opt/anaconda3/bin/mkdssp";
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
-export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
+export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../../martinize2venv/bin/activate");
 /** Link to script used to create go virtual sites. */
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */
@@ -89,7 +89,7 @@ export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_m
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-export const CONECT_MDP_PATH = path.resolve(__dirname, "../utils/run.mdp");
+export const CONECT_MDP_PATH = "/home/freaky/Documents/stage/martinize-db/utils/run.mdp";
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
@@ -106,7 +106,7 @@ export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScrip
  */
 export const URLS = {
   SERVER: "http://localhost:3001", //3003
-  COUCH: "http://couch_agent:couch@localhost:5984",
+  COUCH: "http://admin:admin@localhost:5984",
 };
 
 /* - Regular expressions used to check recieved parameters - */

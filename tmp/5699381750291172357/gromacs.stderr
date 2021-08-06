@@ -1,0 +1,229 @@
+                      :-) GROMACS - gmx grompp, 2021.2 (-:
+
+                            GROMACS is written by:
+     Andrey Alekseenko              Emile Apol              Rossen Apostolov     
+         Paul Bauer           Herman J.C. Berendsen           Par Bjelkmar       
+       Christian Blau           Viacheslav Bolnykh             Kevin Boyd        
+     Aldert van Buuren           Rudi van Drunen             Anton Feenstra      
+    Gilles Gouaillardet             Alan Gray               Gerrit Groenhof      
+       Anca Hamuraru            Vincent Hindriksen          M. Eric Irrgang      
+      Aleksei Iupinov           Christoph Junghans             Joe Jordan        
+    Dimitrios Karkoulis            Peter Kasson                Jiri Kraus        
+      Carsten Kutzner              Per Larsson              Justin A. Lemkul     
+       Viveca Lindahl            Magnus Lundborg             Erik Marklund       
+        Pascal Merz             Pieter Meulenhoff            Teemu Murtola       
+        Szilard Pall               Sander Pronk              Roland Schulz       
+       Michael Shirts            Alexey Shvetsov             Alfons Sijbers      
+       Peter Tieleman              Jon Vincent              Teemu Virolainen     
+     Christian Wennberg            Maarten Wolf              Artem Zhmurov       
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx grompp, version 2021.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357
+Command line:
+  gmx grompp -f /home/freaky/Documents/stage/martinize-db/utils/run.mdp -c /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357/system.gro -p /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357/__prepared.top -o __run__.tpr
+
+Ignoring obsolete mdp entry 'ns_type'
+Number of degrees of freedom in T-Coupling group rest is 11357.00
+
+GROMACS reminds you: "Remember, being healthy is basically dying as slowly as possible." (Ricky Gervais)
+
+                     :-) GROMACS - gmx make_ndx, 2021.2 (-:
+
+                            GROMACS is written by:
+     Andrey Alekseenko              Emile Apol              Rossen Apostolov     
+         Paul Bauer           Herman J.C. Berendsen           Par Bjelkmar       
+       Christian Blau           Viacheslav Bolnykh             Kevin Boyd        
+     Aldert van Buuren           Rudi van Drunen             Anton Feenstra      
+    Gilles Gouaillardet             Alan Gray               Gerrit Groenhof      
+       Anca Hamuraru            Vincent Hindriksen          M. Eric Irrgang      
+      Aleksei Iupinov           Christoph Junghans             Joe Jordan        
+    Dimitrios Karkoulis            Peter Kasson                Jiri Kraus        
+      Carsten Kutzner              Per Larsson              Justin A. Lemkul     
+       Viveca Lindahl            Magnus Lundborg             Erik Marklund       
+        Pascal Merz             Pieter Meulenhoff            Teemu Murtola       
+        Szilard Pall               Sander Pronk              Roland Schulz       
+       Michael Shirts            Alexey Shvetsov             Alfons Sijbers      
+       Peter Tieleman              Jon Vincent              Teemu Virolainen     
+     Christian Wennberg            Maarten Wolf              Artem Zhmurov       
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx make_ndx, version 2021.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357
+Command line:
+  gmx make_ndx -f /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357/system.gro -o __index__.ndx
+
+
+Reading structure file
+
+GROMACS reminds you: "Remember, being healthy is basically dying as slowly as possible." (Ricky Gervais)
+
+                     :-) GROMACS - gmx trjconv, 2021.2 (-:
+
+                            GROMACS is written by:
+     Andrey Alekseenko              Emile Apol              Rossen Apostolov     
+         Paul Bauer           Herman J.C. Berendsen           Par Bjelkmar       
+       Christian Blau           Viacheslav Bolnykh             Kevin Boyd        
+     Aldert van Buuren           Rudi van Drunen             Anton Feenstra      
+    Gilles Gouaillardet             Alan Gray               Gerrit Groenhof      
+       Anca Hamuraru            Vincent Hindriksen          M. Eric Irrgang      
+      Aleksei Iupinov           Christoph Junghans             Joe Jordan        
+    Dimitrios Karkoulis            Peter Kasson                Jiri Kraus        
+      Carsten Kutzner              Per Larsson              Justin A. Lemkul     
+       Viveca Lindahl            Magnus Lundborg             Erik Marklund       
+        Pascal Merz             Pieter Meulenhoff            Teemu Murtola       
+        Szilard Pall               Sander Pronk              Roland Schulz       
+       Michael Shirts            Alexey Shvetsov             Alfons Sijbers      
+       Peter Tieleman              Jon Vincent              Teemu Virolainen     
+     Christian Wennberg            Maarten Wolf              Artem Zhmurov       
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx trjconv, version 2021.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357
+Command line:
+  gmx trjconv -n __index__.ndx -s __run__.tpr -f /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357/system.gro -o output-conect-no-w.pdb -conect
+
+Will write pdb: Protein data bank file
+Reading file __run__.tpr, VERSION 2021.2 (single precision)
+Reading file __run__.tpr, VERSION 2021.2 (single precision)
+Group     0 (         System) has  3798 elements
+Group     1 (        Protein) has   166 elements
+Group     2 (      Protein-H) has   166 elements
+Group     3 (        C-alpha) has     0 elements
+Group     4 (       Backbone) has     0 elements
+Group     5 (      MainChain) has     0 elements
+Group     6 (   MainChain+Cb) has     0 elements
+Group     7 (    MainChain+H) has     0 elements
+Group     8 (      SideChain) has   166 elements
+Group     9 (    SideChain-H) has   166 elements
+Group    10 (    Prot-Masses) has   166 elements
+Group    11 (    non-Protein) has  3632 elements
+Group    12 (          Other) has  3590 elements
+Group    13 (           DIPC) has  1644 elements
+Group    14 (              W) has  1946 elements
+Group    15 (            NA+) has    21 elements
+Group    16 (            CL-) has    21 elements
+Group    17 (            Ion) has    42 elements
+Group    18 (           DIPC) has  1644 elements
+Group    19 (              W) has  1946 elements
+Group    20 (            NA+) has    21 elements
+Group    21 (            CL-) has    21 elements
+Select a group: Select a group: 
+-------------------------------------------------------
+Program:     gmx trjconv, version 2021.2
+Source file: src/gromacs/topology/index.cpp (line 902)
+
+Fatal error:
+Cannot read from input
+
+For more information and tips for troubleshooting, please check the GROMACS
+website at http://www.gromacs.org/Documentation/Errors
+-------------------------------------------------------
+                     :-) GROMACS - gmx trjconv, 2021.2 (-:
+
+                            GROMACS is written by:
+     Andrey Alekseenko              Emile Apol              Rossen Apostolov     
+         Paul Bauer           Herman J.C. Berendsen           Par Bjelkmar       
+       Christian Blau           Viacheslav Bolnykh             Kevin Boyd        
+     Aldert van Buuren           Rudi van Drunen             Anton Feenstra      
+    Gilles Gouaillardet             Alan Gray               Gerrit Groenhof      
+       Anca Hamuraru            Vincent Hindriksen          M. Eric Irrgang      
+      Aleksei Iupinov           Christoph Junghans             Joe Jordan        
+    Dimitrios Karkoulis            Peter Kasson                Jiri Kraus        
+      Carsten Kutzner              Per Larsson              Justin A. Lemkul     
+       Viveca Lindahl            Magnus Lundborg             Erik Marklund       
+        Pascal Merz             Pieter Meulenhoff            Teemu Murtola       
+        Szilard Pall               Sander Pronk              Roland Schulz       
+       Michael Shirts            Alexey Shvetsov             Alfons Sijbers      
+       Peter Tieleman              Jon Vincent              Teemu Virolainen     
+     Christian Wennberg            Maarten Wolf              Artem Zhmurov       
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx trjconv, version 2021.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357
+Command line:
+  gmx trjconv -s __run__.tpr -f /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357/system.gro -o output-conect.pdb -conect
+
+Will write pdb: Protein data bank file
+Reading file __run__.tpr, VERSION 2021.2 (single precision)
+Reading file __run__.tpr, VERSION 2021.2 (single precision)
+Group     0 (         System) has  3798 elements
+Group     1 (        Protein) has   166 elements
+Group     2 (      Protein-H) has   166 elements
+Group     3 (        C-alpha) has     0 elements
+Group     4 (       Backbone) has     0 elements
+Group     5 (      MainChain) has     0 elements
+Group     6 (   MainChain+Cb) has     0 elements
+Group     7 (    MainChain+H) has     0 elements
+Group     8 (      SideChain) has   166 elements
+Group     9 (    SideChain-H) has   166 elements
+Group    10 (    Prot-Masses) has   166 elements
+Group    11 (    non-Protein) has  3632 elements
+Group    12 (          Other) has  3632 elements
+Group    13 (           DIPC) has  1644 elements
+Group    14 (              W) has  1946 elements
+Group    15 (            ION) has    42 elements
+Select a group: Reading frames from gro file 'Protein in INSANE! Membrane UpperLeaflet>DIPC=1.0 LowerLeaflet>DIPC=1.0', 3798 atoms.
+Reading frame       0 time    0.000   
+Precision of /home/freaky/Documents/stage/martinize-db/tmp/5699381750291172357/system.gro is 0.001 (nm)
+ ->  frame      0 time    0.000      Last frame          0 time    0.000   
+
+
+GROMACS reminds you: "Remember, being healthy is basically dying as slowly as possible." (Ricky Gervais)
+

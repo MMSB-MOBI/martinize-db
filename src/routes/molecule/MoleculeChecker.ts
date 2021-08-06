@@ -80,7 +80,6 @@ export class MoleculeChecker {
         return Errors.throw(ErrorType.MoleculeNotFound);
       }
     }
-    
     const molecule = await this.constructBaseMoleculeFromRequest(actual_version);
 
     // Must set the following fields: files, created_at, hash
@@ -352,24 +351,26 @@ export class MoleculeChecker {
     }
   }
 
-  protected checkCategory(cat: string, settings: SettingsJson) {
+  protected checkCategory(cat: string[], settings: SettingsJson) {
     // todo
-    const findInCategoryTree = (val: string, node: CategoryTree) : boolean => {
-      for (const go_id in node) {
-        if (go_id === val) {
-          return true;
+    cat.map(category => {
+      const findInCategoryTree = (val: string, node: CategoryTree) : boolean => {
+        for (const go_id in node) {
+          if (go_id === val) {
+            return true;
+          }
+          if (node[go_id].children && findInCategoryTree(val, node[go_id].children)) {
+            return true;
+          }
         }
-        if (node[go_id].children && findInCategoryTree(val, node[go_id].children)) {
-          return true;
-        }
-      }
 
-      return false;
-    };
-    
-    if (!findInCategoryTree(cat, settings.category_tree)) {
-      return Errors.throw(ErrorType.InvalidCategory);
-    }
+        return false;
+      };
+      
+      if (!findInCategoryTree(category, settings.category_tree)) {
+        return Errors.throw(ErrorType.InvalidCategory);
+      }
+    })
   }
 
   protected checkCreateWay(v: string, settings: SettingsJson) {

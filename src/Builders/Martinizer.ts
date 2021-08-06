@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { ExecException } from 'child_process';
 import FormData from 'form-data';
-import fs, { promises as FsPromise } from 'fs';
+import fs, { exists, promises as FsPromise } from 'fs';
 import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
@@ -15,6 +15,7 @@ import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
 import ShellManager, { JobInputs } from './ShellManager';
+import { command } from 'commander';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -99,6 +100,11 @@ export interface MartinizeSettings {
   side_chain_fix?: boolean;
   /** Cystein bounds */
   cystein_bridge?: string;
+
+  cter?: string;
+  nter?: string;
+  commandline: string;
+  advanced?: boolean;
 }
 
 export const Martinizer = new class Martinizer {
@@ -116,22 +122,19 @@ export const Martinizer = new class Martinizer {
     return MARTINIZE_POSITIONS.includes(value);
   }
   
-  /**
-   * Create a martinize run.
-   * Returns created path to created PDB, TOP and ITP files.
-   */
-  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void) {
+  settingsToCommandline(settings: Partial<MartinizeSettings>) {
     const full: MartinizeSettings = Object.assign({}, {
       input: '',
       ff: 'martini22',
-      position: 'none'
+      position: 'none',
+      commandline: ''
     }, settings);
     
+    /*
     if (!full.input.trim()) {
       throw new Error("Invalid input file");
     }
-
-    logger.debug(`Starting a Martinize run for ${path.basename(full.input)}.`);
+    */
 
     const basename = full.input;
     const with_ext = basename + '.pdb';
@@ -141,64 +144,94 @@ export const Martinizer = new class Martinizer {
     let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " ";
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
-    if (full.ignore) {
-      command_line += " " + full.ignore.join(',');
+    if (full.advanced){
+      //command_line += full.commandline;
+      command_line = full.commandline.substring(0, 4)+basename+' '+full.commandline.substring(4, full.commandline.length)
     }
-    if (full.ignh) {
-      command_line += " -ignh";
+    else {
+      if (full.ignore) {
+        command_line += " " + full.ignore.join(',');
+      }
+      if (full.ignh) {
+        command_line += " -ignh";
+      }
+      if (full.posref_fc) {
+        command_line += " -pf " + full.posref_fc.toString();
+      }
+      if (full.collagen) {
+        command_line += " -collagen ";
+      }
+      if (full.dihedral) {
+        command_line += " -ed ";
+      }
+      if (full.elastic) {
+        command_line += " -elastic ";
+      }
+      if (full.ef) {
+        command_line += " -ef " + full.ef.toString();
+      }
+      if (full.el) {
+        command_line += " -el " + full.el.toString();
+      }
+      if (full.eu) {
+        command_line += " -eu " + full.eu.toString();
+      }
+      if (full.ea) {
+        command_line += " -ea " + full.ea.toString();
+      }
+      if (full.ep) {
+        command_line += " -ep " + full.ep.toString();
+      }
+      if (full.em) {
+        command_line += " -em " + full.em.toString();
+      }
+      if (full.eb) {
+        command_line += " -eb " + full.eb.toString();
+      }
+      if (full.use_go_virtual_sites) {
+        command_line += " -govs-include ";
+      }
+      if (full.neutral_termini) {
+        command_line += " -nt ";
+      }
+      if (full.side_chain_fix) {
+        command_line += " -scfix ";
+      }
+      if (full.cystein_bridge) {
+        command_line += " -cys " + full.cystein_bridge;
+      }
+      if (full.cter) {
+        command_line += " -cter " + full.cter
+      }
+      if (full.nter) {
+        command_line += " -nter " + full.nter
+      }
     }
-    if (full.posref_fc) {
-      command_line += " -pf " + full.posref_fc.toString();
-    }
-    if (full.collagen) {
-      command_line += " -collagen ";
-    }
-    if (full.dihedral) {
-      command_line += " -ed ";
-    }
-    if (full.elastic) {
-      command_line += " -elastic ";
-    }
-    if (full.ef) {
-      command_line += " -ef " + full.ef.toString();
-    }
-    if (full.el) {
-      command_line += " -el " + full.el.toString();
-    }
-    if (full.eu) {
-      command_line += " -eu " + full.eu.toString();
-    }
-    if (full.ea) {
-      command_line += " -ea " + full.ea.toString();
-    }
-    if (full.ep) {
-      command_line += " -ep " + full.ep.toString();
-    }
-    if (full.em) {
-      command_line += " -em " + full.em.toString();
-    }
-    if (full.eb) {
-      command_line += " -eb " + full.eb.toString();
-    }
-    if (full.use_go_virtual_sites) {
-      command_line += " -govs-include ";
-    }
-    if (full.neutral_termini) {
-      command_line += " -nt ";
-    }
-    if (full.side_chain_fix) {
-      command_line += " -scfix ";
-    }
-    if (full.cystein_bridge) {
-      command_line += " -cys " + full.cystein_bridge;
-    }
+    
+    return {command_line:command_line, basename: basename, with_ext: with_ext, full: full}
+  }
+
+  /**
+   * Create a martinize run.
+   * Returns created path to created PDB, TOP and ITP files.
+   */
+  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
+    
+    let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings);
+
+    logger.debug(`Starting a Martinize run for ${basename}.`);
 
     await FsPromise.rename(basename, with_ext);
 
     try {
-      // Run the command line      
-      const dir = await TmpDirHelper.get();
-
+      // Run the command line   
+      let dir : string;   
+      if(!path) {
+        dir = await TmpDirHelper.get();
+      } else {
+        dir = path;
+      }
+      
       logger.debug("[MARTINIZER-RUN] Tmp directory for Martinize job: " + dir);
   
       const exists = await fileExists(dir);
@@ -222,8 +255,7 @@ export const Martinizer = new class Martinizer {
         await ShellManager.run(
           'martinize', 
           ShellManager.mode === "jm" ? jobOpt : command_line, 
-          dir, 
-          'martinize'
+          dir
         );
       } catch (e) {
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
@@ -355,6 +387,7 @@ export const Martinizer = new class Martinizer {
         pdb: pdb_with_conect,
         itps: itp_files,
         top: full_top,
+        dir: dir,
       };
     } finally {
       await FsPromise.rename(with_ext, basename);
@@ -369,7 +402,7 @@ export const Martinizer = new class Martinizer {
    * 
    * Returns new TOP filename and all the used ITPs to generate top.
    */
-  async createTopFile(current_directory: string, original_top_path: string, itps_path: string[], force_field: string) {
+  async createTopFile(current_directory: string, original_top_path: string | undefined, itps_path: string[] |undefined, force_field: string) {
     let itps_ff = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
 
     if (!itps_ff) {
@@ -378,7 +411,13 @@ export const Martinizer = new class Martinizer {
 
     itps_ff = typeof itps_ff === 'string' ? [itps_ff] : itps_ff;
 
-    const itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    let itps = undefined;
+    if (itps_path !== undefined) {
+      itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    }
+    else {
+      itps = [...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    }
     const base_ff_itps = [] as string[];
 
     // Create everysym link
@@ -389,13 +428,20 @@ export const Martinizer = new class Martinizer {
 
       await FsPromise.symlink(itp_path, dest);
     }
+    
 
-    const real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
+    let real_itps = undefined;
+    if (itps_path !== undefined) {
+      real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
+    }
+    else {
+      real_itps = [...base_ff_itps];
+    }
     const top = current_directory + "/full.top";
     
     const includes: string[] = [];
 
-    // Define the includes
+      // Define the includes
     for (const itp of real_itps) {
       // Exclude the GO ITPs, they're already included in martini_304.itp
       if (itp.endsWith('VirtGoSites.itp') || itp.endsWith('go4view_harm.itp')) {
@@ -406,34 +452,44 @@ export const Martinizer = new class Martinizer {
     }
 
     const top_write_stream = fs.createWriteStream(top);
-    const top_read_stream = readline.createInterface({
-      input: fs.createReadStream(original_top_path),
-      crlfDelay: Infinity,
-    });
+    if (original_top_path !== "") {
+      const top_read_stream = readline.createInterface({
+        //@ts-ignore
+        input: fs.createReadStream(original_top_path),
+        crlfDelay: Infinity,
+      });
+    
+    
 
-    let includes_included = false;
+      let includes_included = false;
 
-    // Remove every #include line
-    for await (const line of top_read_stream) {
-      if (line.startsWith('#include')) {
-        if (!includes_included) {
-          // Include the hand-crafted includes
-          top_write_stream.write(includes.join('\n') + '\n');
-          includes_included = true;
+      // Remove every #include line
+      for await (const line of top_read_stream) {
+        if (line.startsWith('#include')) {
+          if (!includes_included) {
+            // Include the hand-crafted includes
+            top_write_stream.write(includes.join('\n') + '\n');
+            includes_included = true;
+          }
+
+          continue;
         }
+        top_write_stream.write(line + '\n');
 
-        continue;
       }
-      top_write_stream.write(line + '\n');
-
+    }
+    else {
+      top_write_stream.write(includes.join('\n') + '\n');
     }
 
     top_write_stream.close();
+
 
     return {
       top,
       itps,
     };
+
   }
 
   /**
@@ -959,6 +1015,7 @@ export const Martinizer = new class Martinizer {
       // Increment i by number of atoms
       i += all_atom_count;
     }
+
 
     return { bounds, details };
   } 

@@ -94,15 +94,17 @@ MembraneBuilderRouter.post('/', Uploader.fields([
 
     // Init
     const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const molecule_id = req.body.from_id as string | undefined;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }; //
+    const molecule_id = req.body.from_id as string | undefined; // m
     const { 
       pbc, 
       box, 
       lipids: lipids_str, 
       upper_leaflet: upper_leaflet_str 
-    } = req.body;
+    } = req.body; // l
     let force_field: string = req.body.force_field;
+
+    //console.log(files, molecule_id, force_field) // null prototype, undefined, undefined
 
     const opts: Partial<InsaneSettings> = {};
 
@@ -112,7 +114,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       molecule_pdb: "",
       molecule_top: "",
       molecule_itps: [] as string[],
-    };
+    }; // m
 
     if (molecule_id) {
       // from molecule id
@@ -121,66 +123,72 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       molecule_entries.molecule_pdb = pdb;
       molecule_entries.molecule_top = top;
       force_field = ff;
-    }
+    } // m
     else {
       if (!settings.force_fields.includes(force_field)) {
         return Errors.throw(ErrorType.InvalidForceField);
       }
-      // except them from files
-      if (!files || !files.itp || !files.top || !files.pdb) {
-        return Errors.throw(ErrorType.MissingFiles);
-      }
-      if (!files.itp.length || !files.top.length || !files.pdb.length) {
-        return Errors.throw(ErrorType.MissingFiles);
-      }
-
-      // todo test file size !
-      const tmp_dir = await TmpDirHelper.get();
-
-      // Creating a symlink for pdb/top
-      await FsPromise.symlink(files.top[0].path, tmp_dir + "/full.top");
-      molecule_entries.molecule_top = tmp_dir + "/full.top";
-      await FsPromise.symlink(files.pdb[0].path, tmp_dir + "/output.pdb");
-      molecule_entries.molecule_pdb = tmp_dir + "/output.pdb";
-      
-      // Symlink for itps
-      for (const itp of files.itp) {
-        let name = itp.originalname;
-        if (!name.endsWith('.itp')) {
-          name += ".itp";
+      if (req.body.molecule_added === "true") {
+        // except them from files
+        if (!files || !files.itp || !files.top || !files.pdb) {
+          return Errors.throw(ErrorType.MissingFiles);
         }
-        await FsPromise.symlink(itp.path, tmp_dir + "/" + name);
-        molecule_entries.molecule_itps.push(tmp_dir + "/" + name);
+        if (!files.itp.length || !files.top.length || !files.pdb.length) {
+          return Errors.throw(ErrorType.MissingFiles);
+        }
+        
+        // todo test file size !
+        const tmp_dir = await TmpDirHelper.get();
+
+        // Creating a symlink for pdb/top
+        await FsPromise.symlink(files.top[0].path, tmp_dir + "/full.top");
+        molecule_entries.molecule_top = tmp_dir + "/full.top";
+        await FsPromise.symlink(files.pdb[0].path, tmp_dir + "/output.pdb");
+        molecule_entries.molecule_pdb = tmp_dir + "/output.pdb";
+        
+        // Symlink for itps
+        for (const itp of files.itp) {
+          let name = itp.originalname;
+          if (!name.endsWith('.itp')) {
+            name += ".itp";
+          }
+          await FsPromise.symlink(itp.path, tmp_dir + "/" + name);
+          molecule_entries.molecule_itps.push(tmp_dir + "/" + name);
+        }
+
+        // ready !
       }
-
-      // ready !
-    }
-
-    if (!lipids_str || !force_field) {
-      return Errors.throw(ErrorType.MissingParameters);
-    }
-
-    // Parse lipid str
-    const lipids = (lipids_str as string).split(',').map(e => { 
-      const res = e.split(':'); 
       
-      if (res.length > 1) {
-        return [res[0], parseInt(res[1], 10)] as [string, number];
-      }
-      return [res[0], 1] as [string, number];
-    });
+    }
 
-    // If upper leaflet, parse it
     let upper_leaflet: LipidMap = [];
-    if (upper_leaflet_str) {
-      upper_leaflet = (upper_leaflet_str as string).split(',').map(e => { 
+    let lipids = undefined;
+    if (req.body.lipids_added === "true") {
+      if (!lipids_str || !force_field) {
+        return Errors.throw(ErrorType.MissingParameters);
+      } // l  
+
+      // Parse lipid str
+      lipids = (lipids_str as string).split(',').map(e => { 
         const res = e.split(':'); 
         
         if (res.length > 1) {
           return [res[0], parseInt(res[1], 10)] as [string, number];
         }
         return [res[0], 1] as [string, number];
-      });
+      }); // l
+
+      // If upper leaflet, parse it
+      if (upper_leaflet_str) {
+        upper_leaflet = (upper_leaflet_str as string).split(',').map(e => { 
+          const res = e.split(':'); 
+          
+          if (res.length > 1) {
+            return [res[0], parseInt(res[1], 10)] as [string, number];
+          }
+          return [res[0], 1] as [string, number];
+        });
+      } // l
     }
 
     // Parse settings
@@ -214,13 +222,23 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       }
     }
 
-    // Handle booleans
-    if (isBoolTrue(req.body.center)) {
-      opts.center = true;
+    if (req.body.molecule_added === "true") {
+      if (isBoolTrue(req.body.center)) {
+        opts.center = true;
+      }
     }
-    if (isBoolTrue(req.body.orient)) {
-      opts.orient = true;
+    if (req.body.lipids_added === "true" && req.body.molecule_added === "true") {
+      if (isBoolTrue(req.body.orient)) {
+        opts.orient = true;
+      }
     }
+
+    opts.salt_concentration = req.body.salt_concentration;
+    if(req.body.charge !== "0"){
+      opts.charge = req.body.charge;
+    }
+    opts.solvent_type = req.body.solvent_type;
+    
 
     try {
       const { pdbs: { water, no_water }, top, itps } = await MembraneBuilder.run({

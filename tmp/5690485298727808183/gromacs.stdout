@@ -1,0 +1,51 @@
+Analysing residue names:
+There are:    76    Protein residues
+There are:  2135      Other residues
+Analysing Protein...
+Analysing residues not classified as Protein/DNA/RNA/Water and splitting into groups...
+This run will generate roughly 0 Mb of data
+Going to read 0 old index file(s)
+Analysing residue names:
+There are:    76    Protein residues
+There are:  2135      Other residues
+Analysing Protein...
+Analysing residues not classified as Protein/DNA/RNA/Water and splitting into groups...
+
+  0 System              :  3808 atoms
+  1 Protein             :   166 atoms
+  2 Protein-H           :   166 atoms
+  3 C-alpha             :     0 atoms
+  4 Backbone            :     0 atoms
+  5 MainChain           :     0 atoms
+  6 MainChain+Cb        :     0 atoms
+  7 MainChain+H         :     0 atoms
+  8 SideChain           :   166 atoms
+  9 SideChain-H         :   166 atoms
+ 10 Prot-Masses         :   166 atoms
+ 11 non-Protein         :  3642 atoms
+ 12 Other               :  3642 atoms
+ 13 DIPC                :  1644 atoms
+ 14 W                   :  1998 atoms
+
+ nr : group      '!': not  'name' nr name   'splitch' nr    Enter: list groups
+ 'a': atom       '&': and  'del' nr         'splitres' nr   'l': list residues
+ 't': atom type  '|': or   'keep' nr        'splitat' nr    'h': help
+ 'r': residue              'res' nr         'chain' char
+ "name": group             'case': case sensitive           'q': save and quit
+ 'ri': residue index
+
+> 
+Copied index group 14 'W'
+Complemented group: 1810 atoms
+
+ 15 !W                  :  1810 atoms
+
+> 
+Note that major changes are planned in future for trjconv, to improve usability and utility.
+Select group for output
+Selected 15: '!W'
+File output-conect-no-w.pdb has been written.
+Note that major changes are planned in future for trjconv, to improve usability and utility.
+Select group for output
+Selected 0: 'System'
+File output-conect.pdb has been written.

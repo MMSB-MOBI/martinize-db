@@ -1,0 +1,209 @@
+                      :-) GROMACS - gmx grompp, 2020.2 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx grompp, version 2020.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183
+Command line:
+  gmx grompp -f /home/freaky/Documents/stage/martinize-db/utils/run.mdp -c /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/system.gro -p /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/__prepared.top -o __run__.tpr
+
+Ignoring obsolete mdp entry 'ns_type'
+Setting the LD random seed to -661396545
+Generated 844 of the 356590 non-bonded parameter combinations
+Excluding 1 bonded neighbours molecule type 'molecule_0'
+Excluding 1 bonded neighbours molecule type 'DIPC'
+Excluding 1 bonded neighbours molecule type 'DIPC'
+Excluding 1 bonded neighbours molecule type 'W'
+Number of degrees of freedom in T-Coupling group rest is 11387.00
+
+GROMACS reminds you: "'Nay. We are but men.' Rock!" (Tenacious D)
+
+                     :-) GROMACS - gmx make_ndx, 2020.2 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx make_ndx, version 2020.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183
+Command line:
+  gmx make_ndx -f /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/system.gro -o __index__.ndx
+
+
+Reading structure file
+
+GROMACS reminds you: "Two chemists walk into a bar. The first one says, 'I'll have some H2O.'. The second one says, 'I'll have some H2O, too'. He dies." (Anonymous)
+
+                     :-) GROMACS - gmx trjconv, 2020.2 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx trjconv, version 2020.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183
+Command line:
+  gmx trjconv -n __index__.ndx -s __run__.tpr -f /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/system.gro -o output-conect-no-w.pdb -conect
+
+Will write pdb: Protein data bank file
+Reading file __run__.tpr, VERSION 2020.2 (single precision)
+Reading file __run__.tpr, VERSION 2020.2 (single precision)
+Group     0 (         System) has  3808 elements
+Group     1 (        Protein) has   166 elements
+Group     2 (      Protein-H) has   166 elements
+Group     3 (        C-alpha) has     0 elements
+Group     4 (       Backbone) has     0 elements
+Group     5 (      MainChain) has     0 elements
+Group     6 (   MainChain+Cb) has     0 elements
+Group     7 (    MainChain+H) has     0 elements
+Group     8 (      SideChain) has   166 elements
+Group     9 (    SideChain-H) has   166 elements
+Group    10 (    Prot-Masses) has   166 elements
+Group    11 (    non-Protein) has  3642 elements
+Group    12 (          Other) has  3642 elements
+Group    13 (           DIPC) has  1644 elements
+Group    14 (              W) has  1998 elements
+Group    15 (             !W) has  1810 elements
+Select a group: Reading frames from gro file 'Protein in INSANE! Membrane UpperLeaflet>DIPC=1.0 LowerLeaflet>DIPC=1.0', 3808 atoms.
+Reading frame       0 time    0.000   
+Precision of /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/system.gro is 0.001 (nm)
+ ->  frame      0 time    0.000      Last frame          0 time    0.000   
+
+
+GROMACS reminds you: "Pretend That You're Hercule Poirot" (TeX)
+
+                     :-) GROMACS - gmx trjconv, 2020.2 (-:
+
+                            GROMACS is written by:
+     Emile Apol      Rossen Apostolov      Paul Bauer     Herman J.C. Berendsen
+    Par Bjelkmar      Christian Blau   Viacheslav Bolnykh     Kevin Boyd    
+ Aldert van Buuren   Rudi van Drunen     Anton Feenstra       Alan Gray     
+  Gerrit Groenhof     Anca Hamuraru    Vincent Hindriksen  M. Eric Irrgang  
+  Aleksei Iupinov   Christoph Junghans     Joe Jordan     Dimitrios Karkoulis
+    Peter Kasson        Jiri Kraus      Carsten Kutzner      Per Larsson    
+  Justin A. Lemkul    Viveca Lindahl    Magnus Lundborg     Erik Marklund   
+    Pascal Merz     Pieter Meulenhoff    Teemu Murtola       Szilard Pall   
+    Sander Pronk      Roland Schulz      Michael Shirts    Alexey Shvetsov  
+   Alfons Sijbers     Peter Tieleman      Jon Vincent      Teemu Virolainen 
+ Christian Wennberg    Maarten Wolf      Artem Zhmurov   
+                           and the project leaders:
+        Mark Abraham, Berk Hess, Erik Lindahl, and David van der Spoel
+
+Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+Copyright (c) 2001-2019, The GROMACS development team at
+Uppsala University, Stockholm University and
+the Royal Institute of Technology, Sweden.
+check out http://www.gromacs.org for more information.
+
+GROMACS is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License
+as published by the Free Software Foundation; either version 2.1
+of the License, or (at your option) any later version.
+
+GROMACS:      gmx trjconv, version 2020.2
+Executable:   /usr/local/gromacs/bin/gmx
+Data prefix:  /usr/local/gromacs
+Working dir:  /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183
+Command line:
+  gmx trjconv -s __run__.tpr -f /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/system.gro -o output-conect.pdb -conect
+
+Will write pdb: Protein data bank file
+Reading file __run__.tpr, VERSION 2020.2 (single precision)
+Reading file __run__.tpr, VERSION 2020.2 (single precision)
+Group     0 (         System) has  3808 elements
+Group     1 (        Protein) has   166 elements
+Group     2 (      Protein-H) has   166 elements
+Group     3 (        C-alpha) has     0 elements
+Group     4 (       Backbone) has     0 elements
+Group     5 (      MainChain) has     0 elements
+Group     6 (   MainChain+Cb) has     0 elements
+Group     7 (    MainChain+H) has     0 elements
+Group     8 (      SideChain) has   166 elements
+Group     9 (    SideChain-H) has   166 elements
+Group    10 (    Prot-Masses) has   166 elements
+Group    11 (    non-Protein) has  3642 elements
+Group    12 (          Other) has  3642 elements
+Group    13 (           DIPC) has  1644 elements
+Group    14 (              W) has  1998 elements
+Select a group: Reading frames from gro file 'Protein in INSANE! Membrane UpperLeaflet>DIPC=1.0 LowerLeaflet>DIPC=1.0', 3808 atoms.
+Reading frame       0 time    0.000   
+Precision of /home/freaky/Documents/stage/martinize-db/tmp/5690485298727808183/system.gro is 0.001 (nm)
+ ->  frame      0 time    0.000      Last frame          0 time    0.000   
+
+
+GROMACS reminds you: "I'm a Jerk" (F. Black)
+

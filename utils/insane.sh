@@ -6,6 +6,9 @@
 
 
 # insane path
+
+source /home/freaky/Documents/stage/insanevenv/bin/activate
+
 insane_path="insane"
 
 $insane_path $@

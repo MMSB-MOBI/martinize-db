@@ -139,7 +139,6 @@ MOLECULE_CLI.command('load', rest => {
       return 'You must be admin to add molecules to the database'
     }
     else {
-      // TODO ajouter autres types de goterms
       
 
       if (!rest){
@@ -147,35 +146,19 @@ MOLECULE_CLI.command('load', rest => {
       
       } else {
 
-        let params = rest.split(' ');
+      let params = rest.split(' ');
+      let path = params[0].trim();
 
-        if (params.length < 2) {
-          return 'please specify a type of molecules inserted (lipids, sugars) and a path';
-        
-        } else {
-          let path = params[0].trim();
-          let type = params[1].trim();
-          let go : keyof typeof GoTerms;
+      if (!fs.existsSync(path)) {
+        return 'Path does not exist';
+      }
 
-          if (!fs.existsSync(path)) {
-            return 'Path does not exist';
-          }
-          else {
-            if (type == 'lipids') {
-              go = 'lipids';
-            }
-            else {
-              return 'Invalid type of moecule';
-            }
-  
-            try {
-              BATCH_MOLECULES = parser_files(path, go);
-              logger.info('load done');
+        try {
+          BATCH_MOLECULES = parser_files(path);
+          logger.info('load done');
 
-            } catch (e) {
-              logger.warn(e.data.message);
-            }
-          }
+        } catch (e) {
+          logger.warn(e.data !== undefined ? e.data.message : e);
         }
       }
     }
@@ -196,9 +179,9 @@ MOLECULE_CLI.command('push', async() => {
         await CreateMoleculeFromJson(BATCH_MOLECULES);
         logger.info('push done');
         //logger.debug(Excel.text);
-        fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
+        //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
       } catch (e) {
-        logger.warn(e.data.message);
+        logger.warn(e.data !== undefined ? e.data.message : e);
       }
     } else {
       logger.warn('Missing molecules in memory. Please insert them by using molecule load.')
