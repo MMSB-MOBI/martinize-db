@@ -77,7 +77,6 @@ export const DSSP_PATH = process.env.DSSP_PATH; //if undefined => don't use dssp
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
-export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
 /** Link to script used to create go virtual sites. */
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */
@@ -99,6 +98,11 @@ export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(_
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
 export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
+
+//Venv for local computation
+export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
+export const INSANE_VENV = process.env.INSANE_VENV ?? path.resolve(__dirname, "../insanevenv/bin/activate")
+
 /**
  * Default URLs.
  * - `SERVER` is the public URL of the server. Don't forget to set it in order to have working URLs in e-mails !
