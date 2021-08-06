@@ -132,7 +132,15 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     );
   }
 
-  async exists(file_id: string) {
+  async existsMany(...file_ids: string[]){
+    for(let file_id of file_ids){
+      const a = await this.exists(file_id);
+      if (!a) return a;
+    }
+    return true;
+  }
+
+  async exists(file_id: string) { // exists(...file_ids: string[])
     return FsPromise.access(this.getFilenameFor(file_id), fs.constants.F_OK).then(() => true).catch(() => false);
   }
 
