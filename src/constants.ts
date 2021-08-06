@@ -73,7 +73,7 @@ export const JOB_MANAGER_SETTINGS = {
 
 /* - Martinizer constants - */
 /** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
-export const DSSP_PATH = process.env.DSSP_PATH;
+export const DSSP_PATH = process.env.DSSP_PATH; //if undefined => don't use dssp
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
@@ -89,12 +89,12 @@ export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_m
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
-export const CONECT_MDP_PATH = "/data/databases/mad/force_fields/run.mdp";
+export const CONECT_MDP_PATH = process.env.CONECT_MDP_PATH ?? path.resolve(__dirname, "../force_fields/run.mdp");
 /** Link to Python 3 binary */
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
 export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
-export const MARTINIZE_PATH_JM = path.resolve(__dirname, "../utils/martinize_coreScript.sh");
+export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(__dirname, "../utils/martinize_coreScript.sh"); //need to provide a script with chmod hack for old infra
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
