@@ -96,50 +96,17 @@ export default new class ShellManager {
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-<<<<<<< HEAD
-<<<<<<< HEAD
-  async run(script_name: SupportedScript, args: string|jobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
-    logger.debug(`HERE !!!${this.mode}`);
-    if (this.mode === 'jm')
-      return this.runWithJobManager(script_name, <jobInputs>args, working_directory, save_std_name, timeout);
-    
-    return this.runWithChildProcess(script_name, <string>args, working_directory, save_std_name, timeout);
-=======
-  async run(
-    script_name: SupportedScript, 
-    args: string, 
-    working_directory: string,
-    save_std_name?: string | false, 
-    timeout?: number, 
-    mode: JobMethod = this.mode
-  ) {
-=======
   async run(script_name: SupportedScript, args: string | JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode) {
->>>>>>> new_master
     if (mode === 'jm') {
       return this.runWithJobManager(script_name, args as JobInputs, working_directory, save_std_name, timeout);
     }
-<<<<<<< HEAD
-    return this.runWithChildProcess(script_name, args, working_directory, save_std_name, timeout);
->>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
-=======
     return this.runWithChildProcess(script_name, args as string, working_directory, save_std_name, timeout);
->>>>>>> new_master
   }
 
   protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const path = this.NAME_TO_PATH[script_name];
-<<<<<<< HEAD
-<<<<<<< HEAD
-    logger.debug("CHILD PROCESS");
-=======
     const variables = this.VARIABLES_TO_NAME[script_name];
 
->>>>>>> 60e098d88e043424627ad5b4423f4a0855d59705
-=======
-    const variables = this.VARIABLES_TO_NAME[script_name];
-
->>>>>>> new_master
     if (!path) {
       throw new Error("Script is not supported.");
     }
