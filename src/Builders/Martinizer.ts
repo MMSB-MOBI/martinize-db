@@ -141,7 +141,8 @@ export const Martinizer = new class Martinizer {
 
     // Check dssp ps
     // TODO: DSSP gives bad results... this should not append
-    let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " -dssp " + DSSP_PATH;
+    let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position
+    if(DSSP_PATH) command_line += "-dssp " + DSSP_PATH
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
     if (full.advanced){
