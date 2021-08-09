@@ -679,7 +679,7 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false) {
+  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false, lipids? : any) {
     let tmp_original_filename: string | null = null;
     logger.debug("PDB WITH CONNECT")
     if (pdb_or_gro_filename.endsWith('output-conect.pdb')) {
@@ -687,9 +687,14 @@ export const Martinizer = new class Martinizer {
       tmp_original_filename = pdb_or_gro_filename.slice(0, pdb_or_gro_filename.length - 4) + '.original.pdb';
       await FsPromise.rename(pdb_or_gro_filename, tmp_original_filename);
     }
+    let groups_to_del = 17;
+    if (lipids) {
+      groups_to_del += lipids.length*2;
+    }
+    
 
     const pdb_out = base_directory + "/output-conect.pdb";
-    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""} "${groups_to_del}"`;
 
     const command: JobInputs = { 
       exportVar: {
@@ -737,8 +742,8 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string) {
-    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true);
+  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string, lipids?: any) {
+    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true, lipids);
 
     const pdb_no_w = base_directory + "/output-conect-no-w.pdb";
     const exists = await FsPromise.access(pdb_no_w, fs.constants.F_OK).then(() => true).catch(() => false);
