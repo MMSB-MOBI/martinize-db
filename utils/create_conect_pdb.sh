@@ -33,6 +33,7 @@ $GROMACS_LOADER
 pdb="$1"
 top="$2"
 mdp="$3"
+nGroup="$5"
 gro_box="__box__.gro"
 tpr_run="__run__.tpr"
 index_ndx="__index__.ndx"
@@ -59,7 +60,7 @@ gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"
 if [ $4 == "--remove-water" ]
 then
   # File to give on stdin to make_ndx
-  printf '!"W"\nq\n' > $tmp_stdin
+  printf "del $nGroup\ndel $nGroup\ndel $nGroup\n!\"W\"&!\"Na+\"&!\"Cl-\"\nq\n" > $tmp_stdin
   # Create index with a category without W
   gmx make_ndx -f "$gro_box" -o "$index_ndx" < $tmp_stdin
 
