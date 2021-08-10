@@ -20,6 +20,44 @@ function to_stderr() {
   >&2 echo $@
 }
 
+function index_creation(){
+  echo "Index creation"
+  gmx make_ndx -f "$gro_box" -o "$index_ndx" 1> makendx_dup.stdout 2> makendx_dup.stderr
+  to_check=("W" "PW" "NA+" "CL-") #to pass through args
+  to_del_cmd=""
+  present_groups=""
+  nbDel=0
+  for g in ${to_check[@]};do
+    nb=$(grep -w $g -c makendx_dup.stdout)
+    if [[ $nb -gt 0 ]]; then
+      present_groups+=$g" "
+      if [[ $nb -gt 1 ]]; then
+        toDel=$(grep -w $g -m 1 makendx_dup.stdout | sed 's/^ *//' | cut -f 1 -d " ")
+        to_del_cmd+="del $(($toDel-$nbDel))\n"
+        nbDel=$(($nbDel+1))
+      fi
+    fi
+  done
+  present_groups=$(echo "${present_groups%?}")
+  if [[ $to_del_cmd ]]; then
+    echo Groups duplicated
+    printf "$to_del_cmd" > $index_cmd
+  fi
+  select_cmd=""
+  sol_group_name=""
+  for g in $present_groups; do
+    select_cmd+='"'$g'"|'
+    sol_group_name+=$g"_"
+  done
+  select_cmd=$(echo "${select_cmd%?}")
+  sol_group_name=$(echo "${sol_group_name%?}")
+  echo $select_cmd
+  echo $sol_group_name
+  printf "$select_cmd\n!\"$sol_group_name\"\nq\n" >> $index_cmd
+  echo [make_ndx] run gmx make_ndx -f "$gro_box" -o "$index_ndx"
+  gmx make_ndx -f "$gro_box" -o "$index_ndx" < $index_cmd > make_ndx.stdout 2>make_ndx.stderr
+}
+
 if [ $# -lt 3 ]
 then
   to_stderr "You need at least pdb/gro, top and mdp file specified in arguments."
@@ -40,6 +78,7 @@ index_ndx="__index__.ndx"
 tmp_stdin="tmp"
 output_conect="output-conect.pdb"
 output_conect_no_water="output-conect-no-w.pdb"
+index_cmd="index_cmd.txt"
 
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
@@ -60,15 +99,10 @@ gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"
 if [ $4 == "--remove-water" ]
 then
   # File to give on stdin to make_ndx
-  printf "del $nGroup\ndel $nGroup\ndel $nGroup\n!\"W\"&!\"Na+\"&!\"Cl-\"\nq\n" > $tmp_stdin
-  # Create index with a category without W
-  gmx make_ndx -f "$gro_box" -o "$index_ndx" < $tmp_stdin
-
-  # File to give on stdin to trjconv
-  printf '!W\n' > $tmp_stdin
+  index_creation
+  printf "!$sol_group_name" > $tmp_stdin
   # Create the PDB with conect entries without water 
-  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin
-
+  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >trjconv.stdout 2>trjconv.stderr
   echo "File $output_conect_no_water has been written."
 fi
 
