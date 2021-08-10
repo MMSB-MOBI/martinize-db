@@ -14,6 +14,14 @@
     "martini22p",
     "martini3001"
   ],
+  "force_fields_info":{
+    "elnedyn":{"polarizable": false},
+    "elnedyn22":{"polarizable": false},
+    "elnedyn22p":{"polarizable": true},
+    "martini22":{"polarizable": false},
+    "martini22p":{"polarizable": true},
+    "martini3001":{"polarizable": false}
+  },
   "category_tree": {
     "MC:0001": {
       "name": "Sugars",

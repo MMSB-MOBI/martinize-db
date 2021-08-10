@@ -22,7 +22,7 @@ function to_stderr() {
 
 function index_creation(){
   echo "Index creation"
-  gmx make_ndx -f "$gro_box" -o "$index_ndx" 1> makendx_dup.stdout 2> makendx_dup.stderr
+  echo "q\n" | gmx make_ndx -f "$gro_box" -o "$index_ndx" 1> makendx_dup.stdout 2> makendx_dup.stderr
   to_check=("W" "PW" "NA+" "CL-") #to pass through args
   to_del_cmd=""
   present_groups=""
@@ -32,7 +32,7 @@ function index_creation(){
     if [[ $nb -gt 0 ]]; then
       present_groups+=$g" "
       if [[ $nb -gt 1 ]]; then
-        toDel=$(grep -w $g -m 1 makendx_dup.stdout | sed 's/^ *//' | cut -f 1 -d " ")
+        toDel=$(grep -w $g -m 1 makendx_dup.stdout | sed 's/^ *//' | cut -f 1 -d " ") #NEED TO START WITH THE FIRST, IT'S NOT DONE
         to_del_cmd+="del $(($toDel-$nbDel))\n"
         nbDel=$(($nbDel+1))
       fi
@@ -90,11 +90,11 @@ then
   gro_box="$pdb"
 else
   # Create the box
-  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc
+  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc 1> 1.editconf.stdout 2> 1.editconf.stderr
 fi
 
 # Create the computed topology .tpr
-gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"
+gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" 1> 2.grompp.stdout 2> grompp.stderr
 
 if [ $4 == "--remove-water" ]
 then
@@ -102,14 +102,14 @@ then
   index_creation
   printf "!$sol_group_name" > $tmp_stdin
   # Create the PDB with conect entries without water 
-  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >trjconv.stdout 2>trjconv.stderr
+  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >3.trjconv.stdout 2>3.trjconv.stderr
   echo "File $output_conect_no_water has been written."
 fi
 
 # File to give on stdin to trjconv
 printf '0\n' > $tmp_stdin
 # Create the PDB with conect entries with water 
-gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin
+gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin >4.trjconv.stdout 2> 4.trjconv.stderr
 
 echo "File $output_conect has been written."
 
