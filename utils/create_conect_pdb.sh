@@ -71,7 +71,6 @@ $GROMACS_LOADER
 pdb="$1"
 top="$2"
 mdp="$3"
-nGroup="$5"
 gro_box="__box__.gro"
 tpr_run="__run__.tpr"
 index_ndx="__index__.ndx"
@@ -79,6 +78,8 @@ tmp_stdin="tmp"
 output_conect="output-conect.pdb"
 output_conect_no_water="output-conect-no-w.pdb"
 index_cmd="index_cmd.txt"
+output_no_water="output-no-w.pdb"
+output="output.pdb"
 
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
@@ -102,15 +103,33 @@ then
   index_creation
   printf "!$sol_group_name" > $tmp_stdin
   # Create the PDB with conect entries without water 
-  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >3.trjconv.stdout 2>3.trjconv.stderr
-  echo "File $output_conect_no_water has been written."
+  # First create pdb without W (no connect)
+  gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_no_water" < $tmp_stdin >3.trjconv.stdout 2>3.trjconv.stderr
+  echo "File $output_no_water has been written."
+  nb_atoms=$(grep -c -w ATOM $output_no_water)
+  if [[ $nb_atoms -gt 9999 ]]; then
+    echo "[pdb without water] Too much atoms to create connection. We use unconnected pdb"
+    mv $output_no_water $output_conect_no_water
+  else
+    gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >4.trjconv-connect.stdout 2>4.trjconv-connect.stderr
+    echo "File $output_conect_no_water has been written."
+  fi
 fi
 
 # File to give on stdin to trjconv
+
 printf '0\n' > $tmp_stdin
 # Create the PDB with conect entries with water 
-gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin >4.trjconv.stdout 2> 4.trjconv.stderr
+gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output" < $tmp_stdin >5.trjconv.stdout 2> 5.trjconv.stderr
+echo "File $output has been written."
+nb_atoms=$(grep -c -w ATOM $gro_box)
+if [[ $nb_atoms -gt 9999 ]]; then
+  echo "[pdb with water] Too much atoms to create connection. We use unconnected pdb"
+  mv $output $output_conect
+else
+  gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" < $tmp_stdin >6.trjconv-conect.stdout 2> 6.trjconv-conect.stderr
+  echo "File $output_conect has been written."
+fi
 
-echo "File $output_conect has been written."
 
 
