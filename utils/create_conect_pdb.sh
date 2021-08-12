@@ -107,9 +107,9 @@ then
   gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_no_water" < $tmp_stdin >3.trjconv.stdout 2>3.trjconv.stderr
   echo "File $output_no_water has been written."
   nb_atoms=$(grep -c -w ATOM $output_no_water)
-  if [[ $nb_atoms -gt 9999 ]]; then
+  if [[ $nb_atoms -gt 99999 ]]; then
     echo "[pdb without water] Too much atoms to create connection. We use unconnected pdb"
-    mv $output_no_water $output_conect_no_water
+    ln -s $output_no_water $output_conect_no_water
   else
     gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >4.trjconv-connect.stdout 2>4.trjconv-connect.stderr
     echo "File $output_conect_no_water has been written."
@@ -122,12 +122,12 @@ printf '0\n' > $tmp_stdin
 # Create the PDB with conect entries with water 
 gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output" < $tmp_stdin >5.trjconv.stdout 2> 5.trjconv.stderr
 echo "File $output has been written."
-nb_atoms=$(grep -c -w ATOM $gro_box)
-if [[ $nb_atoms -gt 9999 ]]; then
+nb_atoms=$(grep -c -w ATOM $output)
+if [[ $nb_atoms -gt 99999 ]]; then
   echo "[pdb with water] Too much atoms to create connection. We use unconnected pdb"
-  mv $output $output_conect
+  ln -s $output $output_conect
 else
-  gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" < $tmp_stdin >6.trjconv-conect.stdout 2> 6.trjconv-conect.stderr
+  gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin >6.trjconv-conect.stdout 2> 6.trjconv-conect.stderr
   echo "File $output_conect has been written."
 fi
 
