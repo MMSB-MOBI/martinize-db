@@ -2,7 +2,7 @@ import { TopFile } from 'itp-parser';
 import fs, { promises as FsPromise } from 'fs';
 import path from 'path';
 import TmpDirHelper from '../TmpDirHelper';
-import { LIPIDS_ROOT_DIR } from '../constants';
+import { LIPIDS_ROOT_DIR, INSANE_HACK_SCRIPT } from '../constants';
 import { Martinizer } from './Martinizer';
 import RadiusDatabase from '../Entities/RadiusDatabase';
 import logger from '../logger';
@@ -221,6 +221,8 @@ export const MembraneBuilder = new class MembraneBuilder {
       "exportVar" : {
           "basedir" : workdir,
           "insaneArgs" : command_line,
+          "insaneHackBefore" : INSANE_HACK_SCRIPT.BEFORE,
+          "insaneHackAfter" : INSANE_HACK_SCRIPT.AFTER, 
           "inputFile" : molecule_pdb as string
       },
       "inputs" : {}
@@ -228,7 +230,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     // Start insane
     try {
-      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : command_line, workdir);
+      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir);
     } catch (e) {
       // Handle error and throw the right error
       console.error("ShellManager.run crash"); 
