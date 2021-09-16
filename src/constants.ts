@@ -98,6 +98,10 @@ export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(_
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
 export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
+export const INSANE_HACK_SCRIPT = {
+  BEFORE: path.resolve(__dirname, "../utils/insane_hack.py"),  
+  AFTER: path.resolve(__dirname, "../utils/insane_hack_reverse.py")
+} //scripts to hack pdb coordinates when we have nan atoms
 
 //Venv for local computation
 export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
