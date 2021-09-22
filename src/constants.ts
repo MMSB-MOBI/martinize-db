@@ -125,3 +125,5 @@ export const SLURM_PROFILES = {
   JOB_PROFILE : process.env.JOB_PROFILE ?? "", 
   SYS_SETTINGS : process.env.JOB_SYS_SETTINGS ?? ""
 }
+
+export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"

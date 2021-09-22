@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken } from '../../helpers';
 import Uploader from '../Uploader';
 import { Martinizer, MartinizeSettings, ElasticOrGoBounds, GoMoleculeDetails } from '../../Builders/Martinizer';
-import { SETTINGS_FILE } from '../../constants';
+import { SETTINGS_FILE, MARTINIZE_VERSION } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
 import Errors, { ErrorType, ApiError } from '../../Errors';
@@ -184,7 +184,7 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
 export async function SocketIoMartinizer(app: Server) {
   const io = SocketIo(app);
 
-  let dir = await TmpDirHelper.get();
+  /*let dir = await TmpDirHelper.get();
   //console.log(dir);
 
   const jobOpt: JobInputs = { 
@@ -201,12 +201,13 @@ export async function SocketIoMartinizer(app: Server) {
     dir, 
     'martinize_version'
   );
-  let version = await FsPromise.readFile(dir+"/martinize_version.stdout", 'utf-8');
+  let version = await FsPromise.readFile(dir+"/martinize_version.stdout", 'utf-8');*/
 
 
   io.on('connection', socket => {
-    socket.on('previewMartinize', async (settings: any) => {
 
+    socket.on('previewMartinize', async (settings: any) => {
+      logger.silly("socket on previewMartinize")
       const settings_file: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
       const runner = createRunner(settings_file, settings);
 
@@ -215,7 +216,7 @@ export async function SocketIoMartinizer(app: Server) {
       socket.emit('martinizePreviewContent', command_line)
     })
 
-    socket.emit('martinizeVersion', version);
+    //socket.emit('martinizeVersion', version);
 
     socket.on('martinize', async (file: Buffer, run_id: string, settings: any) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
@@ -378,6 +379,11 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
   })().catch(errorCatcher(res));
 });
 
+MartinizerRouter.get('/version', (req, res) => {
+  res.json({version:MARTINIZE_VERSION})
+})
+
+MartinizerRouter.all('/version', methodNotAllowed('GET'))
 MartinizerRouter.all('/', methodNotAllowed('POST'));
 
 export default MartinizerRouter;
