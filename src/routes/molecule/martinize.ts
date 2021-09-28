@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken } from '../../helpers';
 import Uploader from '../Uploader';
 import { Martinizer, MartinizeSettings, ElasticOrGoBounds, GoMoleculeDetails } from '../../Builders/Martinizer';
-import { SETTINGS_FILE } from '../../constants';
+import { SETTINGS_FILE, MARTINIZE_VERSION } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
 import Errors, { ErrorType, ApiError } from '../../Errors';
@@ -205,29 +205,10 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
 export async function SocketIoMartinizer(app: Server) {
   const io = SocketIo(app);
 
-  let dir = await TmpDirHelper.get();
-  //console.log(dir);
-
-  const jobOpt: JobInputs = { 
-    exportVar: {
-      basedir: dir,
-      martinizeArgs: "--version",
-    },
-    inputs: {},
-  };
-
-  await ShellManager.run(
-    'martinize_version', 
-    ShellManager.mode === "jm" ? jobOpt : "",  
-    dir, 
-    'martinize2'
-  );
-  let version = await FsPromise.readFile(dir+"/martinize_version.stdout", 'utf-8');
-
-
   io.on('connection', socket => {
-    socket.on('previewMartinize', async (settings: any) => {
 
+    socket.on('previewMartinize', async (settings: any) => {
+      logger.silly("socket on previewMartinize")
       const settings_file: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
       const runner = createRunner(settings_file, settings);
 
@@ -236,7 +217,7 @@ export async function SocketIoMartinizer(app: Server) {
       socket.emit('martinizePreviewContent', command_line)
     })
 
-    socket.emit('martinizeVersion', version);
+    //socket.emit('martinizeVersion', version);
 
     socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId:string) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
@@ -253,7 +234,7 @@ export async function SocketIoMartinizer(app: Server) {
               resolve();
             }
           );
-        });
+        })  as Promise<void> ;
       }
 
       if (!run_id || !file || !settings) {
@@ -359,19 +340,30 @@ export async function SocketIoMartinizer(app: Server) {
 
       } catch (e) {
         // Error catch, test the error :D
-        if (e instanceof ApiError && e.code === ErrorType.MartinizeRunFailed) {
-          const { error, type, dir } = e.data as MartinizeRunFailedPayload;
+        if (e instanceof ApiError){
+          if (e.code === ErrorType.MartinizeRunFailed){
+            const { error, type, dir } = e.data as MartinizeRunFailedPayload;
           
-          // Compress the directory
-          const compressed_run = await Martinizer.zipDirectory(dir);
+            // Compress the directory
+            const compressed_run = await Martinizer.zipDirectory(dir);
 
-          socket.emit('martinize error', {
-            id: run_id,
-            error,
-            type,
-            stack: e.stack,
-          }, compressed_run);
-        }  
+            socket.emit('martinize error', {
+              id: run_id,
+              error,
+              type,
+              stack: e.stack,
+            }, compressed_run);
+          }
+          else {
+            const { error } = e.data
+            socket.emit('martinize error', {
+              id : run_id, 
+              error, 
+              stack : e.stack
+            })
+          }
+        }
+
         else {
           socket.emit('martinize error', {
             id: run_id,
@@ -423,6 +415,11 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
   })().catch(errorCatcher(res));
 });
 
+MartinizerRouter.get('/version', (req, res) => {
+  res.json({version:MARTINIZE_VERSION})
+})
+
+MartinizerRouter.all('/version', methodNotAllowed('GET'))
 MartinizerRouter.all('/', methodNotAllowed('POST'));
 
 export default MartinizerRouter;

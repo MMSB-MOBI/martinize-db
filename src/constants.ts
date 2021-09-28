@@ -74,7 +74,7 @@ export const JOB_MANAGER_SETTINGS = {
 
 /* - Martinizer constants - */
 /** DSSP Path. For now, due to a bug in Martinize2, it's optional. */
-export const DSSP_PATH = process.env.DSSP_PATH;
+export const DSSP_PATH = process.env.DSSP_PATH; //if undefined => don't use dssp
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
@@ -94,14 +94,18 @@ export const CONECT_MDP_PATH = process.env.CONECT_MDP_PATH ?? path.resolve(__dir
 export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
 export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
-export const MARTINIZE_PATH_JM = path.resolve(__dirname, "../utils/martinize_coreScript.sh");
+export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(__dirname, "../utils/martinize_coreScript.sh"); //need to provide a script with chmod hack for old infra
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
 export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
+export const INSANE_HACK_SCRIPT = {
+  BEFORE: path.resolve(__dirname, "../utils/insane_hack.py"),  
+  AFTER: path.resolve(__dirname, "../utils/insane_hack_reverse.py")
+} //scripts to hack pdb coordinates when we have nan atoms
 
-/*VENV FOR LOCAL USAGE*/
-export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate")
+//Venv for local computation
+export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
 export const INSANE_VENV = process.env.INSANE_VENV ?? path.resolve(__dirname, "../insanevenv/bin/activate")
 
 /**
@@ -122,3 +126,5 @@ export const SLURM_PROFILES = {
   JOB_PROFILE : process.env.JOB_PROFILE ?? "", 
   SYS_SETTINGS : process.env.JOB_SYS_SETTINGS ?? ""
 }
+
+export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"

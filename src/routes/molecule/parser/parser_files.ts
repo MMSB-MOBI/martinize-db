@@ -66,6 +66,7 @@ export const parser_files = function(path : string) : InfosJson[] { //, type : k
                 for(let line of file_splitten) {
                     line = line.trim(); 
                     if (line.startsWith(';')) {
+                        line = line.trim();
                         comments.push(line);
                     } else {
                         break;

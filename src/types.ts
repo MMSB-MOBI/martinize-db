@@ -29,8 +29,15 @@ export type JSONWebToken = JSONWebTokenPartial & TokenPayload;
 
 export interface SettingsJson {
   force_fields: string[];
+  force_fields_info: ForceFielsdInfo
   create_way: { [wayId: string]: string };
   category_tree: CategoryTree;
+}
+
+interface ForceFielsdInfo{
+  [ff_name: string]: {
+    polarizable: boolean
+  };
 }
 
 export interface CategoryTree {

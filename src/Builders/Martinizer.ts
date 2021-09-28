@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { ExecException } from 'child_process';
 import FormData from 'form-data';
-import fs, { promises as FsPromise } from 'fs';
+import fs, { exists, promises as FsPromise } from 'fs';
 import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
@@ -14,8 +14,7 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
-import ShellManager, { JobInputs } from './ShellManager';
-import { command } from 'commander';
+import ShellManager, { JobInputs, JMError } from './ShellManager';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -141,7 +140,8 @@ export const Martinizer = new class Martinizer {
 
     // Check dssp ps
     // TODO: DSSP gives bad results... this should not append
-    let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position + " -dssp " + DSSP_PATH;
+    let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position
+    if(DSSP_PATH) command_line += " -dssp " + DSSP_PATH
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
     if (full.advanced){
@@ -260,10 +260,10 @@ export const Martinizer = new class Martinizer {
           'martinize'
         );
       } catch (e) {
+        if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
-
         return Errors.throw(ErrorType.MartinizeRunFailed, { 
-          error: "Martinize has failed with an non-zero exit code.", 
+          error: "Martinize has failed with an non-zero exit code.",
           type: "non-zero",
           stdout,
           stderr,
@@ -349,7 +349,8 @@ export const Martinizer = new class Martinizer {
             dir, 
             'go-virt-sites', 
           );
-        } catch {
+        } catch(e) {
+          if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create go virtual sites.",
             type: "create-go-virt",
@@ -421,7 +422,7 @@ export const Martinizer = new class Martinizer {
    * 
    * Returns new TOP filename and all the used ITPs to generate top.
    */
-  async createTopFile(current_directory: string, original_top_path: string, itps_path: string[], force_field: string) {
+  async createTopFile(current_directory: string, original_top_path: string | undefined, itps_path: string[] |undefined, force_field: string) {
     let itps_ff = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
 
     if (!itps_ff) {
@@ -430,7 +431,13 @@ export const Martinizer = new class Martinizer {
 
     itps_ff = typeof itps_ff === 'string' ? [itps_ff] : itps_ff;
 
-    const itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    let itps = undefined;
+    if (itps_path !== undefined) {
+      itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    }
+    else {
+      itps = [...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    }
     const base_ff_itps = [] as string[];
 
     // Create everysym link
@@ -441,13 +448,20 @@ export const Martinizer = new class Martinizer {
 
       await FsPromise.symlink(itp_path, dest);
     }
+    
 
-    const real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
+    let real_itps = undefined;
+    if (itps_path !== undefined) {
+      real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
+    }
+    else {
+      real_itps = [...base_ff_itps];
+    }
     const top = current_directory + "/full.top";
     
     const includes: string[] = [];
 
-    // Define the includes
+      // Define the includes
     for (const itp of real_itps) {
       // Exclude the GO ITPs, they're already included in martini_304.itp
       if (itp.endsWith('VirtGoSites.itp') || itp.endsWith('go4view_harm.itp')) {
@@ -458,34 +472,44 @@ export const Martinizer = new class Martinizer {
     }
 
     const top_write_stream = fs.createWriteStream(top);
-    const top_read_stream = readline.createInterface({
-      input: fs.createReadStream(original_top_path),
-      crlfDelay: Infinity,
-    });
+    if (original_top_path !== "") {
+      const top_read_stream = readline.createInterface({
+        //@ts-ignore
+        input: fs.createReadStream(original_top_path),
+        crlfDelay: Infinity,
+      });
+    
+    
 
-    let includes_included = false;
+      let includes_included = false;
 
-    // Remove every #include line
-    for await (const line of top_read_stream) {
-      if (line.startsWith('#include')) {
-        if (!includes_included) {
-          // Include the hand-crafted includes
-          top_write_stream.write(includes.join('\n') + '\n');
-          includes_included = true;
+      // Remove every #include line
+      for await (const line of top_read_stream) {
+        if (line.startsWith('#include')) {
+          if (!includes_included) {
+            // Include the hand-crafted includes
+            top_write_stream.write(includes.join('\n') + '\n');
+            includes_included = true;
+          }
+
+          continue;
         }
+        top_write_stream.write(line + '\n');
 
-        continue;
       }
-      top_write_stream.write(line + '\n');
-
+    }
+    else {
+      top_write_stream.write(includes.join('\n') + '\n');
     }
 
     top_write_stream.close();
+
 
     return {
       top,
       itps,
     };
+
   }
 
   /**
@@ -514,12 +538,18 @@ export const Martinizer = new class Martinizer {
     const command_line = `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`
 
     // Compute contacts with the CA pdb
-    await ShellManager.run(
-      'ccmap', 
-      ShellManager.mode === "jm" ? jobOpt : command_line, 
-      use_tmp_dir, 
-      'distances',
-    );
+    try {
+      await ShellManager.run(
+        'ccmap', 
+        ShellManager.mode === "jm" ? jobOpt : command_line, 
+        use_tmp_dir, 
+        'distances',
+      );
+    }
+    catch(e) {
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+    }
+    
 
     const distances_exists = await fileExists(distances_file);
 
@@ -657,7 +687,7 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false) {
+  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false, lipids? : any) {
     let tmp_original_filename: string | null = null;
     logger.debug("PDB WITH CONNECT")
     if (pdb_or_gro_filename.endsWith('output-conect.pdb')) {
@@ -665,9 +695,14 @@ export const Martinizer = new class Martinizer {
       tmp_original_filename = pdb_or_gro_filename.slice(0, pdb_or_gro_filename.length - 4) + '.original.pdb';
       await FsPromise.rename(pdb_or_gro_filename, tmp_original_filename);
     }
+    let groups_to_del = 17;
+    if (lipids) {
+      groups_to_del += lipids.length*2;
+    }
+    
 
     const pdb_out = base_directory + "/output-conect.pdb";
-    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""} "${groups_to_del}"`;
 
     const command: JobInputs = { 
       exportVar: {
@@ -680,13 +715,19 @@ export const Martinizer = new class Martinizer {
       inputs: {}
     };
 
-    await ShellManager.run(
-      'conect', 
-      ShellManager.mode === 'jm' ? command : command_line, 
-      base_directory, 
-      'gromacs', 
-      this.MAX_JOB_EXECUTION_TIME
-    );
+    try {
+      await ShellManager.run(
+        'conect', 
+        ShellManager.mode === 'jm' ? command : command_line, 
+        base_directory, 
+        'gromacs', 
+        this.MAX_JOB_EXECUTION_TIME
+      );
+    }
+    catch(e){
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+    }
+    
 
     if (tmp_original_filename) {
       // Rename the output to original name
@@ -715,8 +756,8 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string) {
-    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true);
+  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string, lipids?: any) {
+    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true, lipids);
 
     const pdb_no_w = base_directory + "/output-conect-no-w.pdb";
     const exists = await FsPromise.access(pdb_no_w, fs.constants.F_OK).then(() => true).catch(() => false);

@@ -2,7 +2,7 @@ import { TopFile } from 'itp-parser';
 import fs, { promises as FsPromise } from 'fs';
 import path from 'path';
 import TmpDirHelper from '../TmpDirHelper';
-import { LIPIDS_ROOT_DIR } from '../constants';
+import { LIPIDS_ROOT_DIR, INSANE_HACK_SCRIPT } from '../constants';
 import { Martinizer } from './Martinizer';
 import RadiusDatabase from '../Entities/RadiusDatabase';
 import logger from '../logger';
@@ -10,7 +10,8 @@ import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
 import { Lipid } from '../Entities/entities';
-import ShellManager, { JobInputs } from './ShellManager';
+import ShellManager, { JobInputs, JMError } from './ShellManager';
+import Errors, { ErrorType } from '../Errors';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -34,6 +35,9 @@ export interface InsaneSettings {
   hydrophobic_ratio?: number;
   fudge?: number;
   shift_protein?: number;
+  charge?: number;
+  salt_concentration?: number;
+  solvent_type?: string;
 }
 
 // @ts-ignore
@@ -49,14 +53,17 @@ const InsaneParamToCliArg: { [T in keyof InsaneSettings]: string } = {
   hydrophobic_ratio: '-op',
   fudge: '-fudge',
   shift_protein: '-dm',
+  charge: '-charge',
+  salt_concentration: '-salt',
+  solvent_type: '-sol',
 };
 
 export interface InsaneRunnerOptions {
   force_field: string, 
-  molecule_pdb: string, 
-  molecule_top: string,
-  molecule_itps: string[], 
-  lipids: LipidMap, 
+  molecule_pdb?: string, 
+  molecule_top?: string,
+  molecule_itps?: string[], 
+  lipids?: LipidMap, 
   upper_leaflet?: LipidMap,
   settings?: Partial<InsaneSettings>,
 }
@@ -111,33 +118,39 @@ export const MembraneBuilder = new class MembraneBuilder {
       ff_location = [ff_location];
     }
 
-    if (!lipids.length) {
-      throw new Error("You need at least one lipid to insert.");
-    }
-    
-    // If string[], convert to [string, 1][]
-    const lipid_param: SimpleLipidMap = typeof lipids[0] === 'string' ? 
-      (lipids as string[]).map(e => [e, 1]) : 
-      lipids as SimpleLipidMap;
+    let lipid_param: SimpleLipidMap;
+    let upper_lipid_param: SimpleLipidMap;
 
-    // Same for upper leaflet
-    const upper_lipid_param: SimpleLipidMap = upper_leaflet.length && typeof upper_leaflet[0] === 'string' ? 
-      (upper_leaflet as string[]).map(e => [e, 1]) : 
-      upper_leaflet as SimpleLipidMap;
-
-    /// WITH DATABASE
-    // Download every lipid
-    // const lipids_entities = await Database.lipid.getAndThrowIfMissing([...lipid_param, ...upper_lipid_param].map(e => e[0]), force_field);
-    
-    /// WITH FILES
-    // Check if every lipid is supported
-    if (
-      !lipid_param.every(l => this.SUPPORTED_LIPIDS[ff_prefix].includes(l[0])) ||
-      !upper_lipid_param.every(l => this.SUPPORTED_LIPIDS[ff_prefix].includes(l[0]))
-    ) {
-      // unsupported lipid
-      throw new Error("Unsupported lipid.");
+    if (lipids){
+      if (!lipids.length) {
+        throw new Error("You need at least one lipid to insert.");
+      }
+      
+      // If string[], convert to [string, 1][]
+      lipid_param = typeof lipids[0] === 'string' ? 
+        (lipids as string[]).map(e => [e, 1]) : 
+        lipids as SimpleLipidMap;
+  
+      // Same for upper leaflet
+      upper_lipid_param = upper_leaflet.length && typeof upper_leaflet[0] === 'string' ? 
+        (upper_leaflet as string[]).map(e => [e, 1]) : 
+        upper_leaflet as SimpleLipidMap;
+  
+      /// WITH DATABASE
+      // Download every lipid
+      // const lipids_entities = await Database.lipid.getAndThrowIfMissing([...lipid_param, ...upper_lipid_param].map(e => e[0]), force_field);
+      
+      /// WITH FILES
+      // Check if every lipid is supported
+      if (
+        !lipid_param.every(l => this.SUPPORTED_LIPIDS[ff_prefix].includes(l[0])) ||
+        !upper_lipid_param.every(l => this.SUPPORTED_LIPIDS[ff_prefix].includes(l[0]))
+      ) {
+        // unsupported lipid
+        throw new Error("Unsupported lipid.");
+      }
     }
+
 
     // Get a tmp dir
     const workdir = await TmpDirHelper.get();
@@ -157,19 +170,25 @@ export const MembraneBuilder = new class MembraneBuilder {
       throw new Error("Box has unsupported number of dimensions.");
     }
 
+    let command_line = '';
     // Build the command line with fixed options (or that requires treatment)
-    let command_line = `-f "${molecule_pdb}" ` +
+    if (molecule_pdb !== "") {
+      command_line = `-f "${molecule_pdb}" `;
+    }
       // Output files (system and topology) 
-      "-o system.gro -p __insane.top " +
+      command_line += "-o system.gro -p __insane.top " +
       // Box size
-      `-box ${options.box.map(e => Math.trunc(e)).join(',')} ` +
-      // Solvant FIXED (todo) settings
-      `-sol W ` + 
+      `-box ${options.box.map(e => Math.trunc(e)).join(',')} `;
       // Add all the lipids
-      // Lower leaflet/both leaflets if -u is missing
-      `-l ${lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -l ')} ` +
-      // Upper leaflet (if defined)
-      (upper_lipid_param.length ? `-u ${upper_lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -u ')} ` : "");
+      if (lipids) {
+        // Lower leaflet/both leaflets if -u is missing
+        //@ts-ignore
+        command_line += `-l ${lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -l ')} ` +
+        // Upper leaflet (if defined)
+        //@ts-ignore
+        (upper_lipid_param.length ? `-u ${upper_lipid_param.map(e => `${e[0]}:${e[1]}`).join(' -u ')} ` : "");
+      }
+      
     
     if (options.rotate) {
       if (options.rotate === 'angle') {
@@ -203,17 +222,21 @@ export const MembraneBuilder = new class MembraneBuilder {
       "exportVar" : {
           "basedir" : workdir,
           "insaneArgs" : command_line,
+          "insaneHackBefore" : INSANE_HACK_SCRIPT.BEFORE,
+          "insaneHackAfter" : INSANE_HACK_SCRIPT.AFTER, 
+          "inputFile" : molecule_pdb as string
       },
       "inputs" : {}
     };   
 
     // Start insane
     try {
-      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : command_line, workdir);
+      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir);
     } catch (e) {
       // Handle error and throw the right error
       console.error("ShellManager.run crash"); 
       console.error(e.stack); 
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
       throw new InsaneError('insane_crash', workdir, 'error' in e ? e.error.stack : e.stack);
     }
 
@@ -227,6 +250,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     Compile with gromacs script
     ~/Prog/martinize-db/utils/create_conect_pdb.sh system.gro __prepared.top "/Users/alki/Prog/martinize-db/utils/run.mdp" --remove-water
     */
+
     
     logger.debug(`[INSANE] Creating TOP file.`);
     try {
@@ -245,13 +269,16 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     const molecule_full_top = await TopFile.read(full_top);
 
-    // Compile the top files
-    // Includes are normally all resolved in molecule_full_top (with the force field !)
-    // We need to includes also the lipids ITPs
-    const lipids_itp_names = this.getUniqueLipids(lipid_param, upper_lipid_param).map(e => e + ".itp");
+    if (lipids) {
+      // Compile the top files
+      // Includes are normally all resolved in molecule_full_top (with the force field !)
+      // We need to includes also the lipids ITPs
+      //@ts-ignore
+      const lipids_itp_names = this.getUniqueLipids(lipid_param, upper_lipid_param).map(e => e + ".itp");
 
-    // Add the includes at the end of headlines
-    molecule_full_top.headlines.push(...lipids_itp_names.map(e => `#include "${e}"`));
+      // Add the includes at the end of headlines
+      molecule_full_top.headlines.push(...lipids_itp_names.map(e => `#include "${e}"`));
+    }
 
     // Compile the top files together
     logger.debug(`[INSANE] Writing prepared TOP file.`);
@@ -262,19 +289,24 @@ export const MembraneBuilder = new class MembraneBuilder {
     // + symlink of the molecule ITPs (needed)
     logger.debug(`[INSANE] Creating files for lipids ITPs.`);
 
-    /// WITH DATABASE
-    // await this.createLipidItpFiles(workdir, lipids_entities);
-    /// WITH FILES
-    await this.createLipidItpSymlinks(workdir, force_field, lipid_param, upper_lipid_param);
-
-    for (const itp of new Set(molecule_itps)) {
-      await FsPromise.symlink(itp, workdir + "/" + path.basename(itp));
+    if (lipids) {
+      /// WITH DATABASE
+      // await this.createLipidItpFiles(workdir, lipids_entities);
+      /// WITH FILES
+      //@ts-ignore
+      await this.createLipidItpSymlinks(workdir, force_field, lipid_param, upper_lipid_param);
     }
+    if (molecule_itps !== undefined) {
+      for (const itp of new Set(molecule_itps)) {
+        await FsPromise.symlink(itp, workdir + "/" + path.basename(itp));
+      }
+    }
+    
 
     // Ok, all should be ready. Start gromacs!
     logger.debug(`[INSANE] Creating the CONECT-ed PDB with GROMACS.`);
     try {
-      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system.gro", prepared_top, workdir);
+      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system-insane-hack.gro", prepared_top, workdir, lipids);
     } catch (e) {
       throw new InsaneError('gromacs_crash', workdir, e.stack);
     }

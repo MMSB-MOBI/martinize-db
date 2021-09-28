@@ -49,6 +49,9 @@ export enum ErrorType {
 
   /** MARTINIZE Errors */
   MartinizeRunFailed = 401,
+
+  /** JM Error */
+  JMError
 }
 
 const ErrorsToText = {
@@ -86,6 +89,7 @@ const ErrorsToText = {
   [ErrorType.MartinizeRunFailed]: [400, "Martinize run failed"],
   [ErrorType.IncorrectItpName]: [400, "The itp file name could not be parsed, please check the syntax"],
   [ErrorType.MissingTopFiles]: [400, "Missing files attached to request, there must be one top file for each itp"],
+  [ErrorType.JMError] : [400, "Error with Job manager"]
 };
 
 export default new class Errors {
