@@ -1,3 +1,11 @@
+import dotenv from 'dotenv'; 
+const conf = dotenv.config({path: __dirname + "/../.env"})
+if(conf.error){
+  console.log("Error while loading conf. Verify or create .env file")
+  console.log("Stack trace:", 'stack' in conf.error ? conf.error  : conf.error)
+  process.exit(2)
+}
+
 import express from 'express';
 import commander from 'commander';
 import { VERSION, URLS, DEFAULT_TMP_BASE_DIR } from './constants';
@@ -19,6 +27,7 @@ import TEST_CLI from './cli/test.cli';
 import { SocketIoMartinizer } from './routes/molecule/martinize';
 import http from 'http';
 import ShellManager from './Builders/ShellManager';
+import fs from 'fs'; 
 
 commander
   .version(VERSION)

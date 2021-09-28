@@ -1,4 +1,8 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC, MARTINIZE_VERSION_PATH} from '../constants';
+<<<<<<< HEAD
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, MARTINIZE_VENV, INSANE_VENV, SLURM_PROFILES } from '../constants';
+=======
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV } from '../constants';
+>>>>>>> dev
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -7,6 +11,7 @@ import * as JobManager from 'ms-jobmanager';
 import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
+import EventEmitter from 'events'; 
 
 const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', "martinize_version"] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
@@ -22,6 +27,7 @@ export default new class ShellManager {
    */
   public mode: JobMethod = DEFAULT_JOB_METHOD;
   private _jm?: Promise<void>;
+  private connect : boolean = false; 
   /**
    * Link a script name `SupportedScript` to a .sh path.
    */
@@ -40,14 +46,17 @@ export default new class ShellManager {
   protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
     'conect': {},
     'go_virt': {
-      venv: GO_VIRT_VENV_SRC
+      venv: MARTINIZE_VENV
     },
     'ccmap': {
-      venv: GO_VIRT_VENV_SRC
+      venv: MARTINIZE_VENV
     },
-    'insane': {},
-    'martinize': {},
-    "martinize_version": {}
+    'insane': {
+      venv: INSANE_VENV
+    },
+    'martinize': {
+      venv: MARTINIZE_VENV
+    }
   };
 
   /**
@@ -56,9 +65,9 @@ export default new class ShellManager {
   private engine = { 
     "engineSpecs" : 'slurm',
     "binariesSpec" : { 
-      "submitBin" : "/data/www_dev/mad/bin/slurm/bin/sbatch",
-      "cancelBin" : "/data/www_dev/mad/bin/slurm/bin/scancel",
-      "queueBin"  : "/data/www_dev/mad/bin/slurm/bin/squeue"
+      "submitBin" : "/usr/bin/sbatch",
+      "cancelBin" : "/usr/bin/scancel",
+      "queueBin"  : "/usr/bin/squeue"
     }
   }
 
@@ -66,40 +75,62 @@ export default new class ShellManager {
     'conect': {
       'script' : CONECT_PDB_PATH_JM,
       'modules': ['gromacs'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'go_virt': {
       'script': CREATE_GO_PATH_JM,
       'modules': ['mad-utils'],
-      'jobProfile': "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'ccmap': {
       'script': CREATE_MAP_PATH_JM,
       'modules': ['mad-utils'],
-      'jobProfile': "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'insane': {
       'script' : INSANE_PATH_JM,
       'modules': ['insane'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     },
     'martinize': {
       'script' : MARTINIZE_PATH_JM,
-      'modules': ['martinize2/0.7.0'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
-    },
-    "martinize_version": {
-      'script' : MARTINIZE_PATH_JM,
-      'modules': ['martinize2/0.7.0'],
-      'jobProfile' : "mad-dev",
-      'sysSettingsKey' : "mad-dev"
+      'modules': ['martinize2'],
+      'jobProfile' : SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
     }
   };
+
+  async start(){
+    return new Promise(async (res,rej) => {
+      if (this.connect) {
+        logger.silly("Job manager already connected")
+        res()
+      }
+      else{
+        JobManager.start({'port': JOB_MANAGER_SETTINGS.port, 'TCPip': JOB_MANAGER_SETTINGS.address})
+        .then((disconnectEmitter: EventEmitter) => {
+            logger.silly('JM has been connected')
+            this.connect = true; 
+            disconnectEmitter.on("disconnect", () => {
+              logger.warn("JM disconnect")
+              this.connect = false; 
+            })
+            console.log("resolve")
+            res()
+            
+        }).catch((e:any) => {
+          logger.error("Can't connect to JM")
+          rej(e)
+        })
+        
+      }
+    }) as Promise<void>
+  }
+
 
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
@@ -186,10 +217,18 @@ export default new class ShellManager {
     });
 
     logger.silly("Getting Job manager connection...");
-    await this.job_manager;
-    logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
     
-    return new Promise((resolve, reject) => {
+    logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
+
+    try{ 
+      await this.start(); 
+    }
+    catch(e) {
+      throw new JMError(`Error with job manager : ${e}`)
+    }
+    
+
+    return new Promise(async (resolve, reject) => {
       const jobCreatePdbWithConect = JobManager.push(jobOpt);
 
       jobCreatePdbWithConect.on('completed', (stdout:Stream, stderr:Stream) => {
@@ -210,18 +249,23 @@ export default new class ShellManager {
       });
 
       jobCreatePdbWithConect.on('error', reject);
+      jobCreatePdbWithConect.on("disconnect_error", () => {
+        reject(new JMError(`Error with job manager : Job manager has been disconnected`))
+      })
+      jobCreatePdbWithConect.on("lostJob", () => {
+        reject(new JMError(`Error with job manager : Job has been lost`))
+      })
     }) as Promise<void>;
   }
 
   get job_manager() {
-    if (this._jm) return this._jm;
-    return this._jm = new Promise((resolve, reject) => 
-      JobManager.start({ 
-        'port': JOB_MANAGER_SETTINGS.port,
-        'TCPip': JOB_MANAGER_SETTINGS.address
-      })
-        .on('ready', resolve)
-        .on('error', reject)
-    );
+    if (this._jm) {
+      return this._jm;
+    }
+    return this._jm = JobManager.start({'port': JOB_MANAGER_SETTINGS.port,
+    'TCPip': JOB_MANAGER_SETTINGS.address})
   }
 }();
+
+export class JMError extends Error{
+}
