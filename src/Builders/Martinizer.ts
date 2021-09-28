@@ -14,8 +14,7 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser';
 import JSZip from 'jszip';
-import ShellManager, { JobInputs } from './ShellManager';
-import { command } from 'commander';
+import ShellManager, { JobInputs, JMError } from './ShellManager';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -260,10 +259,10 @@ export const Martinizer = new class Martinizer {
           'martinize'
         );
       } catch (e) {
+        if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
-
         return Errors.throw(ErrorType.MartinizeRunFailed, { 
-          error: "Martinize has failed with an non-zero exit code.", 
+          error: "Martinize has failed with an non-zero exit code.",
           type: "non-zero",
           stdout,
           stderr,
@@ -349,7 +348,8 @@ export const Martinizer = new class Martinizer {
             dir, 
             'go-virt-sites', 
           );
-        } catch {
+        } catch(e) {
+          if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create go virtual sites.",
             type: "create-go-virt",
@@ -536,12 +536,18 @@ export const Martinizer = new class Martinizer {
     const command_line = `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`
 
     // Compute contacts with the CA pdb
-    await ShellManager.run(
-      'ccmap', 
-      ShellManager.mode === "jm" ? jobOpt : command_line, 
-      use_tmp_dir, 
-      'distances',
-    );
+    try {
+      await ShellManager.run(
+        'ccmap', 
+        ShellManager.mode === "jm" ? jobOpt : command_line, 
+        use_tmp_dir, 
+        'distances',
+      );
+    }
+    catch(e) {
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+    }
+    
 
     const distances_exists = await fileExists(distances_file);
 
@@ -707,13 +713,19 @@ export const Martinizer = new class Martinizer {
       inputs: {}
     };
 
-    await ShellManager.run(
-      'conect', 
-      ShellManager.mode === 'jm' ? command : command_line, 
-      base_directory, 
-      'gromacs', 
-      this.MAX_JOB_EXECUTION_TIME
-    );
+    try {
+      await ShellManager.run(
+        'conect', 
+        ShellManager.mode === 'jm' ? command : command_line, 
+        base_directory, 
+        'gromacs', 
+        this.MAX_JOB_EXECUTION_TIME
+      );
+    }
+    catch(e){
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+    }
+    
 
     if (tmp_original_filename) {
       // Rename the output to original name

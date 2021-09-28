@@ -184,26 +184,6 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
 export async function SocketIoMartinizer(app: Server) {
   const io = SocketIo(app);
 
-  /*let dir = await TmpDirHelper.get();
-  //console.log(dir);
-
-  const jobOpt: JobInputs = { 
-    exportVar: {
-      basedir: dir,
-      martinizeArgs: "--version",
-    },
-    inputs: {},
-  };
-
-  await ShellManager.run(
-    'martinize', 
-    ShellManager.mode === "jm" ? jobOpt : "--version",  
-    dir, 
-    'martinize_version'
-  );
-  let version = await FsPromise.readFile(dir+"/martinize_version.stdout", 'utf-8');*/
-
-
   io.on('connection', socket => {
 
     socket.on('previewMartinize', async (settings: any) => {
@@ -233,7 +213,7 @@ export async function SocketIoMartinizer(app: Server) {
               resolve();
             }
           );
-        });
+        })  as Promise<void> ;
       }
 
       if (!run_id || !file || !settings) {
@@ -315,19 +295,30 @@ export async function SocketIoMartinizer(app: Server) {
 
       } catch (e) {
         // Error catch, test the error :D
-        if (e instanceof ApiError && e.code === ErrorType.MartinizeRunFailed) {
-          const { error, type, dir } = e.data as MartinizeRunFailedPayload;
+        if (e instanceof ApiError){
+          if (e.code === ErrorType.MartinizeRunFailed){
+            const { error, type, dir } = e.data as MartinizeRunFailedPayload;
           
-          // Compress the directory
-          const compressed_run = await Martinizer.zipDirectory(dir);
+            // Compress the directory
+            const compressed_run = await Martinizer.zipDirectory(dir);
 
-          socket.emit('martinize error', {
-            id: run_id,
-            error,
-            type,
-            stack: e.stack,
-          }, compressed_run);
-        }  
+            socket.emit('martinize error', {
+              id: run_id,
+              error,
+              type,
+              stack: e.stack,
+            }, compressed_run);
+          }
+          else {
+            const { error } = e.data
+            socket.emit('martinize error', {
+              id : run_id, 
+              error, 
+              stack : e.stack
+            })
+          }
+        }
+
         else {
           socket.emit('martinize error', {
             id: run_id,

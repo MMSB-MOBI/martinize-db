@@ -10,7 +10,8 @@ import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
 import { Lipid } from '../Entities/entities';
-import ShellManager, { JobInputs } from './ShellManager';
+import ShellManager, { JobInputs, JMError } from './ShellManager';
+import Errors, { ErrorType } from '../Errors';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -235,6 +236,7 @@ export const MembraneBuilder = new class MembraneBuilder {
       // Handle error and throw the right error
       console.error("ShellManager.run crash"); 
       console.error(e.stack); 
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
       throw new InsaneError('insane_crash', workdir, 'error' in e ? e.error.stack : e.stack);
     }
 
