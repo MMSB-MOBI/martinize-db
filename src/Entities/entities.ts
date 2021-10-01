@@ -1,5 +1,7 @@
 import { GoTerms, UserRole } from '../types';
 
+export type JobType = "martinize" | "insane"
+
 export interface BaseCouchDocument {
   _id?: string;
   _rev?: string;
@@ -111,3 +113,9 @@ export interface History extends BaseCouchDocument {
   job_ids : string[]; 
 }
 
+export interface Job extends BaseCouchDocument {
+  id: string; 
+  date : string; 
+  type : JobType; 
+  parameters : Object; 
+}

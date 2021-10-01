@@ -32,6 +32,7 @@ export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR      = process.env.FORCE_FIELD_DIR ?? path.resolve(__dirname, "../force_fields/")
 export const DEFAULT_TMP_BASE_DIR = process.env.DEFAULT_TMP_BASE_DIR ?? path.resolve(__dirname, "../tmp/")
+export const HISTORY_ROOT_DIR = process.env.HISTORY_DIR ?? path.resolve(__dirname, "../history")
 
 /* - Couch database - */
 export const DB_PREFIX = process.env.DB_PREFIX ?? ""

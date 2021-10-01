@@ -10,7 +10,7 @@ import shellescape from 'shell-escape';
 import logger from '../../logger';
 import path from 'path';
 import { Database } from '../../Entities/CouchHelper';
-import { History } from '../../Entities/entities'; 
+import { Job } from '../../Entities/entities'; 
 import SocketIo from 'socket.io';
 import TmpDirHelper from '../../TmpDirHelper';
 import { Server } from 'http';
@@ -219,7 +219,7 @@ export async function SocketIoMartinizer(app: Server) {
 
     //socket.emit('martinizeVersion', version);
 
-    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId:string) => {
+    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId:string|undefined, date:string) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
         return new Promise(async (resolve, reject) => {
           const timeout = setTimeout(reject, 1000 * 60 * 60);
@@ -315,30 +315,56 @@ export async function SocketIoMartinizer(app: Server) {
             console.log("ERROR: " + error);
           });
         socket.emit('martinize stderr', stdout);
+        
+        /*if(userId){
+          const jobId = path.basename(dir); 
+          console.log("history organizer")
+          HistoryOrganizer.save(jobId, [top, pdb, ...itps], userId)
+            .then(() => {
+              logger.debug(`job ${jobId} successfully saved to history associated with user ${userId}`)
+            })
+            .catch(err => {
+              logger.warn(`Error while save job ${jobId} to history`)
+              console.log(err)
+              console.log("socket emit pouet")
+              socket.emit("pouet")
+              new HistoryError("Pouet", "warning", "history").socketEmit(socket); 
+            }) //Send warning to client
+        } else logger.warn("No user seems to be connected, no save into history")*/
 
+        if(userId){
+          const job : Job = {
+            id : path.basename(dir),
+            date : date, 
+            type : "martinize", 
+            parameters : {}
+          }
+
+          
+          try {
+            await HistoryOrganizer.save(job, [INPUT, top, pdb, ...itps], userId)
+            socket.emit("history ok", )
+          }
+          catch(e){
+            logger.warn(`Error while save job ${job.id} to history`)
+            console.log(e)
+            console.log("socket emit history error")
+            socket.emit("history error", "This job can't be saved into history. An error occured")
+          }
+        } else {
+          socket.emit("history error", "No user seems to be connected, this job is not saved in history")
+          //throw new HistoryError("No user seems to be connected, no save into history", "warning")
+        }
+       
+        
+        console.log("socket emit end")
         socket.emit('martinize end', { id: run_id, elastic_bonds, radius });
-
-        logger.info(`MARTINIZE END ${run_id}`)
-
-        logger.info(`DIRECTORY ${dir}`)
         
         //ADD TO HISTORY
-        logger.info("ADD TO HISTORY")
-        
-        const jobId = path.basename(dir); 
-
-        HistoryOrganizer.save(jobId, [top, pdb, ...itps])
-          .then(() => {
-            Database.history.addToHistory(userId, jobId).then(ok => console.log("saved to db")).catch(e => console.log(e))
-          })
-          .catch(err => console.log(err))
-        
-        
-
-
-        
+      
 
       } catch (e) {
+        console.log("CATCH ERROR")
         // Error catch, test the error :D
         if (e instanceof ApiError){
           if (e.code === ErrorType.MartinizeRunFailed){
@@ -363,6 +389,7 @@ export async function SocketIoMartinizer(app: Server) {
             })
           }
         }
+  
 
         else {
           socket.emit('martinize error', {

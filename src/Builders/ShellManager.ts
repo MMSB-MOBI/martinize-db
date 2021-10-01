@@ -7,9 +7,9 @@ import * as JobManager from 'ms-jobmanager';
 import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
-import EventEmitter from 'events'; 
+import { EventEmitter } from 'events'; 
 
-const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', "martinize_version"] as const;
+const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 export interface JobInputs {
@@ -32,9 +32,7 @@ export default new class ShellManager {
     'go_virt': CREATE_GO_PATH,
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
-    'martinize': MARTINIZE_PATH,
-    'martinize_version' : MARTINIZE_VERSION_PATH
-  };
+    'martinize': MARTINIZE_PATH  };
 
   /**
    * Assign the following variables into child processes env.

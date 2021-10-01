@@ -8,6 +8,7 @@ import logger from '../logger';
 import RadiusDatabase from './RadiusDatabase';
 import LipidDatabase from './LipidDatabase';
 import HistoryDatabase from './HistoryDatabase'; 
+import JobDatabase from './JobDatabase';
 
 export class CouchDatabase<T> {
   constructor(protected collection: nano.DocumentScope<T>) {}
@@ -25,6 +26,7 @@ interface Databases {
   radius: RadiusDatabase;
   lipid: LipidDatabase;
   history: HistoryDatabase; 
+  job : JobDatabase; 
 }
 
 export default class CouchHelper {
@@ -38,6 +40,7 @@ export default class CouchHelper {
   static readonly RADIUS_COLLECTION = `${DB_PREFIX}vanderwaalsradii`;
   static readonly LIPID_COLLECTION = `${DB_PREFIX}lipid`;
   static readonly HISTORY_COLLECTION = `${DB_PREFIX}history`;
+  static readonly JOB_COLLECTION = `${DB_PREFIX}job`; 
   static readonly DBS = [
     `${DB_PREFIX}molecule`,
     `${DB_PREFIX}stashed`,
@@ -45,7 +48,8 @@ export default class CouchHelper {
     `${DB_PREFIX}token`,
     `${DB_PREFIX}vanderwaalsradii`,
     `${DB_PREFIX}lipid`,
-    `${DB_PREFIX}history`
+    `${DB_PREFIX}history`, 
+    `${DB_PREFIX}job`
   ];
 
   constructor(url: string) {
@@ -65,7 +69,8 @@ export default class CouchHelper {
       token: new TokenDatabase(this.link.use(CouchHelper.TOKEN_COLLECTION)),
       radius: new RadiusDatabase(this.link.use(CouchHelper.RADIUS_COLLECTION)),
       lipid: new LipidDatabase(this.link.use(CouchHelper.LIPID_COLLECTION)),
-      history: new HistoryDatabase(this.link.use(CouchHelper.HISTORY_COLLECTION))
+      history: new HistoryDatabase(this.link.use(CouchHelper.HISTORY_COLLECTION)), 
+      job : new JobDatabase(this.link.use(CouchHelper.JOB_COLLECTION))
     };
   }
 
@@ -106,6 +111,10 @@ export default class CouchHelper {
 
   get history() {
     return this.dbs.history
+  }
+
+  get job() {
+    return this.dbs.job
   }
 
   /** Create a database */
