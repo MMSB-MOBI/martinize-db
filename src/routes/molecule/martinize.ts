@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken } from '../../helpers';
+import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken, dateFormatter } from '../../helpers';
 import Uploader from '../Uploader';
 import { Martinizer, MartinizeSettings, ElasticOrGoBounds, GoMoleculeDetails } from '../../Builders/Martinizer';
 import { SETTINGS_FILE, MARTINIZE_VERSION } from '../../constants';
@@ -219,12 +219,11 @@ export async function SocketIoMartinizer(app: Server) {
 
     //socket.emit('martinizeVersion', version);
 
-    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId:string|undefined, date:string) => {
+    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId: string, inputName?: string) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
         return new Promise(async (resolve, reject) => {
           const timeout = setTimeout(reject, 1000 * 60 * 60);
           infos.id = run_id;
-
           socket.emit(
             'martinize download', 
             infos, 
@@ -237,7 +236,7 @@ export async function SocketIoMartinizer(app: Server) {
         })  as Promise<void> ;
       }
 
-      if (!run_id || !file || !settings) {
+      if (!run_id || !file || !settings || !userId) {
         return;
       }
       if (run_id.length > 64) {
@@ -254,9 +253,8 @@ export async function SocketIoMartinizer(app: Server) {
 
       // Save to a temporary directory
       const tmp_dir = await TmpDirHelper.get();
-      const INPUT = tmp_dir + '/input.pdb';
+      const INPUT = inputName ? `${tmp_dir}/${inputName}` : `${tmp_dir}/input.pdb`
       
-      logger.info(`MARTINIZE USER ${userId}`); 
       try {
         await FsPromise.writeFile(INPUT, file);
 
@@ -315,52 +313,26 @@ export async function SocketIoMartinizer(app: Server) {
             console.log("ERROR: " + error);
           });
         socket.emit('martinize stderr', stdout);
-        
-        /*if(userId){
-          const jobId = path.basename(dir); 
-          console.log("history organizer")
-          HistoryOrganizer.save(jobId, [top, pdb, ...itps], userId)
-            .then(() => {
-              logger.debug(`job ${jobId} successfully saved to history associated with user ${userId}`)
-            })
-            .catch(err => {
-              logger.warn(`Error while save job ${jobId} to history`)
-              console.log(err)
-              console.log("socket emit pouet")
-              socket.emit("pouet")
-              new HistoryError("Pouet", "warning", "history").socketEmit(socket); 
-            }) //Send warning to client
-        } else logger.warn("No user seems to be connected, no save into history")*/
 
-        if(userId){
-          const job : Job = {
-            id : path.basename(dir),
-            date : date, 
-            type : "martinize", 
-            parameters : {}
-          }
-
-          
-          try {
-            await HistoryOrganizer.save(job, [INPUT, top, pdb, ...itps], userId)
-            socket.emit("history ok", )
-          }
-          catch(e){
-            logger.warn(`Error while save job ${job.id} to history`)
-            console.log(e)
-            console.log("socket emit history error")
-            socket.emit("history error", "This job can't be saved into history. An error occured")
-          }
-        } else {
-          socket.emit("history error", "No user seems to be connected, this job is not saved in history")
-          //throw new HistoryError("No user seems to be connected, no save into history", "warning")
-        }
        
+        const job = {
+          jobId : path.basename(dir),
+          userId,
+          type : "martinize",
+          date : dateFormatter("Y-m-d H:i"), 
+          files : {
+            all_atom : path.basename(INPUT),
+            coarse_grained : path.basename(pdb), 
+            itp_files : itps.map(itp => path.basename(itp)), 
+            top_file : path.basename(top)
+          } 
+          
+        }
+
+        await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps])
+        socket.emit('martinize end', { id: run_id, elastic_bonds, radius});
         
-        console.log("socket emit end")
-        socket.emit('martinize end', { id: run_id, elastic_bonds, radius });
-        
-        //ADD TO HISTORY
+
       
 
       } catch (e) {

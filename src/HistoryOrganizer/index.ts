@@ -1,13 +1,15 @@
 import logger from '../logger';
 import { HISTORY_ROOT_DIR } from '../constants';
 import fs, { promises as FsPromise } from 'fs';
-import path from 'path';
+import path, { resolve } from 'path';
 import { Database } from '../Entities/CouchHelper';
-import { Job } from "../Entities/entities"
+import { getFormattedFile } from "../helpers"; 
 
-
-interface MartinizeFiles {
-
+interface MartinizeFileNames {
+    all_atom : string; 
+    coarse_grained: string; 
+    itp_files : string[]; 
+    top_file : string; 
 }
 
 export const HistoryOrganizer = new class HistoryOrganizer{
@@ -30,17 +32,39 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         })
     }
 
-    async save(jobInfos: Job, files: string[], userId: string){
-        await this._saveToFileSystem(jobInfos.id, files)
-        await Database.job.addToJob(jobInfos)
-        await Database.history.addToHistory(userId, jobInfos.id)
+    async _saveToCouch(job: any){
+        const jobDoc = {id : job.jobId, ...job}
+        await Database.job.addToJob(jobDoc)
+        await Database.history.addToHistory(job.userId, job.jobId)
+    }
+
+    async saveToHistory(job : any, files: string[]){
+        this._saveToFileSystem(job.jobId, files)
+        this._saveToCouch(job)
     }
 
     async getHistory(userId: string){
         const jobIds = await Database.history.getAllJobs(userId)
-        return await Database.job.getJobsDetails(jobIds)
-        
+        return await Database.job.getJobsDetails(jobIds) 
     }
+
+    async getJob(jobId: string) {
+        const job = await Database.job.get(jobId)
+        return job; 
+    }
+
+    async readFiles(jobId: string, files:MartinizeFileNames){
+        const readedFiles = {
+            all_atom : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.all_atom}`),
+            top_file : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.top_file}`),
+            coarse_grained : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.coarse_grained}`),
+            itp_files : await Promise.all(files.itp_files.map(i => getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${i}`)))
+        }
+
+        return readedFiles
+    }
+    
 }
+
 
 export default HistoryOrganizer;
