@@ -341,7 +341,7 @@ export const Martinizer = new class Martinizer {
             inputs: {},
           };
           
-          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH} ${goArgs}`;
+          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH} ${goArgs}"`;
           
           await ShellManager.run(
             'go_virt', 

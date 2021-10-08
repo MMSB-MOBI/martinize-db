@@ -6,8 +6,6 @@
 # Place here commands to load the virtual env that contains python3 with numpy (martinize2 venv)
 
 cd $WORKDIR
-pwd
-echo POUET
 echo $ARGS
 
 # path
