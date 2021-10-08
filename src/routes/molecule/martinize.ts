@@ -325,8 +325,10 @@ export async function SocketIoMartinizer(app: Server) {
             coarse_grained : path.basename(pdb), 
             itp_files : itps.map(itp => path.basename(itp)), 
             top_file : path.basename(top)
-          } 
-          
+          },
+          settings, 
+          radius, 
+          name : inputName
         }
 
         await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps])
