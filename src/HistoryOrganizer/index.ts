@@ -31,6 +31,12 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         })
     }
 
+    async _deleteFromFileSystem(jobId: string){
+        logger.debug(`Delete ${jobId} from file system`)
+        const dirPath = HISTORY_ROOT_DIR + "/" + jobId
+        await FsPromise.rmdir(dirPath, {recursive: true}); 
+    }
+
     async _saveToCouch(job: any){
         const jobDoc = {id : job.jobId, ...job}
         await Database.job.addToJob(jobDoc)
@@ -38,8 +44,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
     }
 
     async saveToHistory(job : any, files: string[]){
-        this._saveToFileSystem(job.jobId, files)
-        this._saveToCouch(job)
+        return await Promise.all([this._saveToFileSystem(job.jobId, files), this._saveToCouch(job)]) 
     }
 
     async getHistory(userId: string){
@@ -66,8 +71,8 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         const job = await Database.job.get(jobId)
         const user = job.userId
         const resp = await Database.job.delete(job)
-        console.log("delete from job", resp)
         await Database.history.deleteJobs(user, [jobId]); 
+        await this._deleteFromFileSystem(jobId); 
         return {'deleted' : jobId}
     }
     

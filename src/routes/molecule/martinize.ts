@@ -331,8 +331,19 @@ export async function SocketIoMartinizer(app: Server) {
           name : inputName
         }
 
-        await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps])
-        socket.emit('martinize end', { id: run_id, elastic_bonds, radius});
+        let savedToHistory = false; 
+        try {
+          await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps])
+          savedToHistory = true; 
+        } catch(e){
+          logger.warn("error save to history", e)
+        }
+        
+        finally{
+          socket.emit('martinize end', { id: run_id, elastic_bonds, radius, savedToHistory});
+        } 
+        
+        
         
 
       
