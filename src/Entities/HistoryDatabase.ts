@@ -34,6 +34,25 @@ export default class HistoryDatabase extends AbstractDatabase<History>{
     return jobs.job_ids
   }
 
+  async deleteJobs(userId:string, jobIds : string[]){
+    const userDoc = await this.get(userId)
+    const notRegistered = jobIds.filter(id => !userDoc.job_ids.includes(id))
+    if (notRegistered.length > 0){
+      logger.error("Some jobs are not registered")
+      return Promise.reject((`jobs ${notRegistered} are not registered`))
+    } 
+    if (userDoc.job_ids.length === jobIds.length){
+      logger.debug("All jobs will be deleted, so delete user history associated")
+      return await this.delete(userDoc)
+    }
+    else {
+      logger.debug(`Delete jobs ${jobIds}`)
+      userDoc.job_ids = userDoc.job_ids.filter(job => !jobIds.includes(job))
+      return await this.save(userDoc); 
+    }
+
+  }
+
 }
 
 

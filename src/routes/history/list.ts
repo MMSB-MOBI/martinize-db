@@ -2,22 +2,24 @@
 import { Router } from 'express'; 
 import { cpuUsage } from 'process';
 import HistoryOrganizer from '../../HistoryOrganizer'
-import { errorCatcher } from '../../helpers'
+import { errorCatcher, sendError } from '../../helpers'
+import Errors, { ApiError, ErrorType } from "../../Errors";
+
 
 const ListHistoryRouter = Router(); 
 
-ListHistoryRouter.get('/', (req, res) => {
-    (async () => {
-        const user = req.user?.user_id; 
-        if(user) {
-            const jobs = await HistoryOrganizer.getHistory(user); 
-            console.log("jobs")
-            console.log(jobs)
-            res.json(jobs)
-        }
-        else throw new Error("no user given in history/list request")
+ListHistoryRouter.get('/', async (req, res) => {
+    const user = req.user?.user_id; 
+    if(user) {
+        HistoryOrganizer.getHistory(user).then(jobs => res.json(jobs))
+        .catch(e => {
+            if (e.error && e.error === "not_found") sendError(Errors.make(ErrorType.HistoryNotFound), res)
+            else sendError(Errors.make(ErrorType.Server), res)
+            
+        })
+    }
+    else sendError(Errors.make(ErrorType.UserNotProvided), res)
         
-    })().catch(errorCatcher(res))
 })
 
 export default ListHistoryRouter

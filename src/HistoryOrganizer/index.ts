@@ -22,7 +22,6 @@ export const HistoryOrganizer = new class HistoryOrganizer{
     }
 
     async _saveToFileSystem(job_id: string, files: string[]):Promise<any> {
-        logger.debug("HistoryOrganizer save")
         const dirPath = HISTORY_ROOT_DIR + "/" + job_id
         fs.mkdirSync(dirPath)
         files.forEach(file => {
@@ -45,12 +44,11 @@ export const HistoryOrganizer = new class HistoryOrganizer{
 
     async getHistory(userId: string){
         const jobIds = await Database.history.getAllJobs(userId)
-        return await Database.job.getJobsDetails(jobIds) 
+        return await Database.job.getJobsDetails(jobIds, userId) 
     }
 
     async getJob(jobId: string) {
-        const job = await Database.job.get(jobId)
-        return job; 
+        return await Database.job.get(jobId)
     }
 
     async readFiles(jobId: string, files:MartinizeFileNames){
@@ -62,6 +60,19 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         }
 
         return readedFiles
+    }
+
+    async deleteFromHistory(userId:string, jobId: string){
+        const userDoc = await Database.history.get(userId); 
+    }
+
+    async deleteJob(jobId : string){
+        const job = await Database.job.get(jobId)
+        const user = job.userId
+        const resp = await Database.job.delete(job)
+        console.log("delete from job", resp)
+        await Database.history.deleteJobs(user, [jobId]); 
+        return {'deleted' : jobId}
     }
     
 }

@@ -51,7 +51,13 @@ export enum ErrorType {
   MartinizeRunFailed = 401,
 
   /** JM Error */
-  JMError
+  JMError,
+
+  HistoryNotFound,
+  HistoryFilesNotFound, 
+
+  UserNotProvided,
+  JobNotProvided
 }
 
 const ErrorsToText = {
@@ -89,7 +95,11 @@ const ErrorsToText = {
   [ErrorType.MartinizeRunFailed]: [400, "Martinize run failed"],
   [ErrorType.IncorrectItpName]: [400, "The itp file name could not be parsed, please check the syntax"],
   [ErrorType.MissingTopFiles]: [400, "Missing files attached to request, there must be one top file for each itp"],
-  [ErrorType.JMError] : [400, "Error with Job manager"]
+  [ErrorType.JMError] : [400, "Error with Job manager"],
+  [ErrorType.HistoryNotFound] : [404, "History not found", "HistoryNotFound"], 
+  [ErrorType.UserNotProvided] : [400, "User not provided to server"], 
+  [ErrorType.JobNotProvided] : [400, "Job not provided to server"], 
+  [ErrorType.HistoryFilesNotFound] : [404, "Job result files not found on distant file system", "HistoryFileNotFound"]
 };
 
 export default new class Errors {
@@ -126,11 +136,14 @@ export default new class Errors {
    * If you're in a promise, make sure the error is correctly catched and sent !
    */
   make(code: ErrorType, additionnal?: object) : ApiError {
-    const [http_code, message] = ErrorsToText[code] as [number, string];
+    console.log("make error")
+    console.log(code); 
+    const [http_code, message, type] = ErrorsToText[code] as [number, string, string?];
 
     return new ApiError(String(http_code), {
       code,
       message,
+      type,
       ...(additionnal || {})
     });
   }
@@ -141,7 +154,7 @@ export class ApiError extends Error {
 
   constructor(
     public message: string, 
-    public data: { code: ErrorType, message: string, [additionnal: string]: any }
+    public data: { code: ErrorType, message: string, type?: string, [additionnal: string]: any }
   ) { 
     super(message); 
     this.name = "ApiError";
@@ -155,6 +168,7 @@ export class ApiError extends Error {
       code: this.code,
       message: this.data.message,
       data: this.data,
+      type : this.data.type, 
     };
   }
 }
