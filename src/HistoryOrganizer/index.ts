@@ -61,11 +61,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
 
         return readedFiles
     }
-
-    async deleteFromHistory(userId:string, jobId: string){
-        const userDoc = await Database.history.get(userId); 
-    }
-
+    
     async deleteJob(jobId : string){
         const job = await Database.job.get(jobId)
         const user = job.userId
