@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken, dateFormatter } from '../../helpers';
 import Uploader from '../Uploader';
 import { Martinizer, MartinizeSettings, ElasticOrGoBounds, GoMoleculeDetails } from '../../Builders/Martinizer';
-import { SETTINGS_FILE, MARTINIZE_VERSION } from '../../constants';
+import { SETTINGS_FILE, MARTINIZE_VERSION, URLS } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
 import Errors, { ErrorType, ApiError } from '../../Errors';
@@ -16,6 +16,7 @@ import TmpDirHelper from '../../TmpDirHelper';
 import { Server } from 'http';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import HistoryOrganizer from "../../HistoryOrganizer";
+import Mailer from '../../Mailer/Mailer';
 
 type MartinizeRunFailedPayload = { 
   error: string, 
@@ -202,6 +203,20 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
   }
 }
 
+async function sendMailMartinizeEnd(userId: string, jobId: string){
+  
+  const user = await Database.user.get(userId); 
+  logger.debug(`Send an email to ${user.email} for job completion`)
+  Mailer.send({
+      to: user.email, 
+      subject : "MArtini Database - Job completed"}, 
+    "mail_job_completed", {
+      name : user.name, 
+      job_id: jobId,
+      job_url : URLS.SERVER + '/builder/'
+    }).catch(logger.error)
+}
+
 export async function SocketIoMartinizer(app: Server) {
   const io = SocketIo(app);
 
@@ -341,6 +356,7 @@ export async function SocketIoMartinizer(app: Server) {
         
         finally{
           socket.emit('martinize end', { id: run_id, elastic_bonds, radius, savedToHistory});
+          sendMailMartinizeEnd(job.userId, job.jobId); 
         } 
         
         

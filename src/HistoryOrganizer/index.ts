@@ -44,7 +44,15 @@ export const HistoryOrganizer = new class HistoryOrganizer{
     }
 
     async saveToHistory(job : any, files: string[]){
-        return await Promise.all([this._saveToFileSystem(job.jobId, files), this._saveToCouch(job)]) 
+        return new Promise((res, rej) => {
+            this._saveToFileSystem(job.jobId, files).then(() => {
+                this._saveToCouch(job).then(() => res(job.jobId)).catch(e => {
+                    this._deleteFromFileSystem(job.jobId)
+                    rej(e)
+                })
+            }).catch(e => rej(e))
+        })
+        
     }
 
     async getHistory(userId: string){
