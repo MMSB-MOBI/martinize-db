@@ -1,9 +1,10 @@
 import AbstractDatabase from "./AbstractDatabase"
 import logger from "../logger";
 import { Database } from "./CouchHelper";
+import { Job } from './entities'
 
 
-export default class JobDatabase extends AbstractDatabase<any> {
+export default class JobDatabase extends AbstractDatabase<Job> {
 
     async addToJob(jobInfos : any){
         logger.debug(`JobDatabase : add job ${jobInfos.id}`)
@@ -30,6 +31,20 @@ export default class JobDatabase extends AbstractDatabase<any> {
             }
             return jobsDetails.filter(job => job !== null); 
         }
+
+
+    async updateManuallySavedBonds(id: string, newItpFiles: string[]) {
+        const updateFnc = (doc : Job) => {
+
+            const newItps = newItpFiles.filter(itp => ! doc.files.itp_files.includes(itp))
+            doc.files.itp_files = [...doc.files.itp_files, ...newItps]
+
+            if(doc.manual_bonds_edition) return doc
+            doc.manual_bonds_edition = true 
+            return doc
+        }
+        return await this.update(id, updateFnc) 
+    }
         
 
 }

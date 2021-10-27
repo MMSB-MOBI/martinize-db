@@ -2,25 +2,29 @@ import { Router } from 'express';
 import { sendError } from '../../helpers';
 import HistoryOrganizer from '../../HistoryOrganizer'
 import Errors, { ApiError, ErrorType } from "../../Errors";
+import { ReadedJob } from '../../types';
 
 const GetHistoryRouter = Router()
 
 GetHistoryRouter.get('/', async (req, res) => {
         const jobId = req.query.jobId as string
         if (jobId) {
-          try {
-            const job = await HistoryOrganizer.getJob(jobId)
-            const files = await HistoryOrganizer.readFiles(jobId, job.files)
-            job.files = files
-            res.json(job)
-          }catch(e){
-            console.error(e)
-            if (e.code && e.code === "ENOENT") {
-                await HistoryOrganizer.deleteJob(jobId)
-                sendError(Errors.make(ErrorType.HistoryFilesNotFound), res)
-            }
+          HistoryOrganizer.getJob(jobId).then(job => {
+            const {files, ...jobBase} = job
+            HistoryOrganizer.readFiles(jobId, files).then(readedFiles => {
+              const readedJob : ReadedJob = {
+                ...jobBase, 
+                files : readedFiles
+              }
+              res.json(readedJob)
+            }).catch(e => {
+              if (e === "not_found") sendError(Errors.make(ErrorType.HistoryFilesNotFound), res)
+              else sendError(Errors.make(ErrorType.Server, e), res)
+            })
+          }).catch(e => {
+            if (e === "not_found") sendError(Errors.make(ErrorType.JobNotFound), res)
             else sendError(Errors.make(ErrorType.Server, e), res)
-          }
+          })
         }
         else sendError(Errors.make(ErrorType.JobNotProvided), res)
     })

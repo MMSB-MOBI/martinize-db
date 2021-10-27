@@ -55,6 +55,7 @@ export enum ErrorType {
 
   HistoryNotFound,
   HistoryFilesNotFound, 
+  JobNotFound, 
 
   UserNotProvided,
   JobNotProvided
@@ -99,7 +100,8 @@ const ErrorsToText = {
   [ErrorType.HistoryNotFound] : [404, "History not found", "HistoryNotFound"], 
   [ErrorType.UserNotProvided] : [400, "User not provided to server"], 
   [ErrorType.JobNotProvided] : [400, "Job not provided to server"], 
-  [ErrorType.HistoryFilesNotFound] : [404, "Job result files not found on distant file system", "HistoryFileNotFound"]
+  [ErrorType.HistoryFilesNotFound] : [404, "Job result files not found on distant file system", "HistoryFileNotFound"], 
+  [ErrorType.JobNotFound] : [404, "Job doesn't exist in database", "JobNotFound"], 
 };
 
 export default new class Errors {
@@ -136,8 +138,6 @@ export default new class Errors {
    * If you're in a promise, make sure the error is correctly catched and sent !
    */
   make(code: ErrorType, additionnal?: object) : ApiError {
-    console.log("make error")
-    console.log(code); 
     const [http_code, message, type] = ErrorsToText[code] as [number, string, string?];
 
     return new ApiError(String(http_code), {
@@ -171,4 +171,12 @@ export class ApiError extends Error {
       type : this.data.type, 
     };
   }
+}
+
+export function isCouchNotFound(e : any){
+  return e.scope === "couch" && e.error === "not_found"
+}
+
+export function notFoundOnFileSystem(e: any){
+  return e.code === "ENOENT"
 }

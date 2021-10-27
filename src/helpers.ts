@@ -3,7 +3,7 @@ import { Molecule, BaseMolecule, User, StashedMolecule } from "./Entities/entiti
 import { simpleflake } from 'simpleflakes';
 import Errors, { ApiError, ErrorType } from "./Errors";
 import Express from 'express';
-import { TokenPayload } from "./types";
+import { TokenPayload, ReadedFile } from "./types";
 import JsonWebToken from 'jsonwebtoken';
 import { KEYS, UPLOAD_ROOT_DIR } from "./constants";
 import { Database } from "./Entities/CouchHelper";
@@ -429,7 +429,7 @@ export function dateFormatter(schema: string, date = new Date()) : string {
   return str;
 }
 
-export async function getFormattedFile(file: string) {
+export async function getFormattedFile(file: string) : Promise<ReadedFile> {
   const name = path.basename(file);
   const type = detectType(file.slice(file.indexOf('.') + 1));
 

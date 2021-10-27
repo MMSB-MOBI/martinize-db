@@ -129,3 +129,5 @@ export const SLURM_PROFILES = {
 }
 
 export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"
+
+export const SEND_COMPLETION_MAIL = process.env.SEND_COMPLETION_MAIL === 'false' ? false : true; 
