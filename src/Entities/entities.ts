@@ -1,10 +1,9 @@
-import { GoTerms, UserRole } from '../types';
-
-export type JobType = "martinize" | "insane"
+import { GoTerms, JobFilesNames, JobSettings, UserRole } from '../types';
 
 export interface BaseCouchDocument {
   _id?: string;
   _rev?: string;
+  update_date?: string; 
 }
 
 export interface BaseMolecule extends BaseCouchDocument {
@@ -113,9 +112,19 @@ export interface History extends BaseCouchDocument {
   job_ids : string[]; 
 }
 
-export interface Job extends BaseCouchDocument {
+export interface JobBase extends BaseCouchDocument {
   id: string; 
+  jobId: string; 
+  userId : string; 
+  type : "martinize" | "insane"; 
   date : string; 
-  type : JobType; 
-  parameters : Object; 
+  name : string; 
+  settings : JobSettings; 
+  radius : {[atom_name : string] : number}
+  manual_bonds_edition?: boolean; 
 }
+
+export interface Job extends JobBase { 
+  files : JobFilesNames
+}
+
