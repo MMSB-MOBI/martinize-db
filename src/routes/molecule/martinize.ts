@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { methodNotAllowed, cleanMulterFiles, errorCatcher, generateSnowflake, validateToken, dateFormatter } from '../../helpers';
 import Uploader from '../Uploader';
 import { Martinizer, MartinizeSettings, ElasticOrGoBounds, GoMoleculeDetails } from '../../Builders/Martinizer';
-import { SETTINGS_FILE, MARTINIZE_VERSION, URLS } from '../../constants';
+import { SETTINGS_FILE, MARTINIZE_VERSION, URLS, SEND_COMPLETION_MAIL } from '../../constants';
 import { SettingsJson } from '../../types';
 import { promises as FsPromise } from 'fs';
 import Errors, { ErrorType, ApiError } from '../../Errors';
@@ -213,7 +213,7 @@ async function sendMailMartinizeEnd(userId: string, jobId: string){
     "mail_job_completed", {
       name : user.name, 
       job_id: jobId,
-      job_url : URLS.SERVER + '/builder/'
+      job_url : URLS.SERVER + '/builder/' + jobId
     }).catch(logger.error)
 }
 
@@ -355,8 +355,9 @@ export async function SocketIoMartinizer(app: Server) {
         }
         
         finally{
-          socket.emit('martinize end', { id: run_id, elastic_bonds, radius, savedToHistory});
-          sendMailMartinizeEnd(job.userId, job.jobId); 
+
+          socket.emit('martinize end', { id: run_id, elastic_bonds, radius, savedToHistory, jobId: job.jobId});
+          if(SEND_COMPLETION_MAIL) sendMailMartinizeEnd(job.userId, job.jobId); 
         } 
         
         
