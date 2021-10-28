@@ -6,13 +6,12 @@ const DeleteHistoryRouter = Router()
 
 DeleteHistoryRouter.get('/', (req, res) => {
     (async () => {
-        const jobId = req.query.jobId as string
-        if (jobId) {
-            const resp = await HistoryOrganizer.deleteJob(jobId)
-            res.json(resp); 
+        if (!req.query.jobIds){
+            throw new Error("server receives no jobs")
         }
-        else throw new Error("server receives no job")
-
+        const jobIds = (req.query.jobIds as string).split(",")
+        const resp = await HistoryOrganizer.deleteJobs(jobIds)
+        res.json(resp); 
 
     })().catch(errorCatcher(res))
 })

@@ -8,6 +8,14 @@ import { getFormattedFile } from "../helpers";
 import { isCouchNotFound, notFoundOnFileSystem } from '../Errors';
 import { JobFilesNames, JobReadedFiles } from '../types'
 
+function getUserJobObject(jobsDoc:Job[]){
+    let obj : {[userId: string]: string[]} = {}
+    jobsDoc.forEach(job => {
+        if (!obj.hasOwnProperty(job.userId)) obj[job.userId] = [job.id]
+        else obj[job.userId].push(job.id)
+    })
+    return obj
+}
 
 export const HistoryOrganizer = new class HistoryOrganizer{
     constructor(){
@@ -51,6 +59,11 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         await FsPromise.rmdir(dirPath, {recursive: true}); 
     }
 
+    async deleteMultipleFromFileSystem(jobIds : string []){
+        logger.debug(`Delete ${jobIds} from file system`)
+        return await Promise.all(jobIds.map(id => FsPromise.rmdir(HISTORY_ROOT_DIR + "/" + id, {recursive:true}))
+    }
+
     async _deleteFromFileSystemIfExists(jobId : string){
         const dirPath = HISTORY_ROOT_DIR + "/" + jobId
         try {
@@ -66,6 +79,27 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         const job = await Database.job.get(jobId)
         const user = job.userId
         return await Promise.all([Database.job.delete(job), Database.history.deleteJobs(user, [jobId])]); 
+    }
+
+    async deleteMultipleFromCouch(jobIds: string[]){
+        logger.debug(`Delete multipe ${jobIds} from couch`)
+        const jobs = await Database.job.bulkGet(jobIds)
+        let notFoundIdx: number[] = []; 
+        const filteredJobs = jobs.filter((job, idx) => {
+            if (job === null){
+                notFoundIdx.push(idx); 
+                return false
+            } 
+            return true
+        })
+       
+        const usersRelatedToJobs = getUserJobObject(filteredJobs)
+        let promises = jobs.map(job => Database.job.delete(job))
+        for (const [user, jobIds] of Object.entries(usersRelatedToJobs)){
+            promises.push(Database.history.deleteJobs(user, jobIds))
+        } 
+        return await Promise.all(promises); 
+        
     }
 
     async _deleteFromCouchIfExists(jobId : string){
@@ -139,8 +173,8 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         })
     }
     
-    async deleteJob(jobId : string){
-        return Promise.all([this.deleteFromCouch(jobId), this.deleteFromFileSystem(jobId)])
+    async deleteJobs(jobIds : string[]){    
+        return Promise.all([this.deleteMultipleFromCouch(jobIds), this.deleteMultipleFromFileSystem(jobIds)])
 
     }
 
