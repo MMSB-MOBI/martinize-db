@@ -234,7 +234,7 @@ export async function SocketIoMartinizer(app: Server) {
 
     //socket.emit('martinizeVersion', version);
 
-    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId: string, inputName?: string) => {
+    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId: string, sendMail:boolean, inputName?: string) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
         return new Promise(async (resolve, reject) => {
           const timeout = setTimeout(reject, 1000 * 60 * 60);
@@ -357,7 +357,7 @@ export async function SocketIoMartinizer(app: Server) {
         finally{
 
           socket.emit('martinize end', { id: run_id, elastic_bonds, radius, savedToHistory, jobId: job.jobId});
-          if(SEND_COMPLETION_MAIL) sendMailMartinizeEnd(job.userId, job.jobId); 
+          if(sendMail) sendMailMartinizeEnd(job.userId, job.jobId); 
         } 
         
         
