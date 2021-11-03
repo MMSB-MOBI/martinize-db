@@ -128,6 +128,9 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
     if (parameters.commandline !== undefined) {
       runner.commandline = parameters.commandline
     }
+    if(parameters.builder_mode !== undefined){
+      runner.builder_mode = parameters.builder_mode; 
+    }
 
    return runner;
 }
@@ -167,14 +170,7 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
   const runner = createRunner(settings, parameters, pdb_path);
 
   try {
-    const { pdb, itps, top, warns, dir } = await Martinizer.run(runner, onStep, path);
-
-    // Create elastic if needed
-    let elastic_bonds: ElasticOrGoBounds[] | undefined = undefined;
-
-    if (runner.elastic) {
-      elastic_bonds = await Martinizer.computeElasticNetworkBounds(top, itps);
-    }
+    const { pdb, itps, top, warns, dir, elastic_bonds } = await Martinizer.run(runner, onStep, path);
 
     return {
       pdb, 
@@ -366,7 +362,6 @@ export async function SocketIoMartinizer(app: Server) {
       
 
       } catch (e) {
-        console.log("CATCH ERROR")
         // Error catch, test the error :D
         if (e instanceof ApiError){
           if (e.code === ErrorType.MartinizeRunFailed){

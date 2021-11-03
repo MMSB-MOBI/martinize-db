@@ -61,7 +61,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
 
     async deleteMultipleFromFileSystem(jobIds : string []){
         logger.debug(`Delete ${jobIds} from file system`)
-        return await Promise.all(jobIds.map(id => FsPromise.rmdir(HISTORY_ROOT_DIR + "/" + id, {recursive:true}))
+        return await Promise.all(jobIds.map(id => FsPromise.rmdir(HISTORY_ROOT_DIR + "/" + id, {recursive:true})))
     }
 
     async _deleteFromFileSystemIfExists(jobId : string){

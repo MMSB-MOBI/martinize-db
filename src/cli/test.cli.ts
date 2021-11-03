@@ -50,7 +50,7 @@ TEST_CLI.command('elastic-bonds', async rest => {
     return "Given folder must have a ITP file, TOP file and PDB file.";
   }
 
-  const relations = await Martinizer.computeElasticNetworkBounds(top_file, itps);
+  const relations = await Martinizer.computeElasticNetworkBounds(top_file, itps, rest);
 
   await FsPromise.writeFile(rest + 'relations.json', JSON.stringify(relations, null, 2));
 

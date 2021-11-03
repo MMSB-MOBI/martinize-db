@@ -43,6 +43,7 @@
     "form-data": "^3.0.0",
     "interactive-cli-helper": "^2.0.3",
     "itp-parser": "^2.1.2",
+    "itp-parser-forked": "^2.2.1",
     "job-manager": "0.0.4",
     "jsonwebtoken": "^8.5.1",
     "jszip": "^3.4.0",
