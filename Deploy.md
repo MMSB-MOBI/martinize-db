@@ -121,24 +121,20 @@ cd ..
 
 ### Constants
 
-This guide will help you to properly setup constants.
+This guide will help you to properly setup constants. We advice to setup these constants in a .env file, which will be readed directly by constants.ts file
 
-In file `src/constants.ts`:
+In file `.env`:
+SERVER_URL : Specify here server **public** URL. This will be used in sent emails.
+COUCH_URL : Specify here CouchDB URL.
+DSSP_PATH: (optional) Path to anaconda's DSSP. If not provided, dssp is not used. 
+DEFAULT_TMP_BASE_DIR: Base directory to creating run temporary directories (if argument `--os-tmp` is not given).
 
-- `URLS`:
-  - `SERVER`: Specify here server **public** URL. This will be used in sent emails.
-  - `COUCH`: Specify here CouchDB URL.
-- `DSSP_PATH`: (optional) Path to anaconda's DSSP.
-- `MAILER_ENFORCE_RECIPIENT`: Set this to `false`.
-- `DEFAULT_MAILER_ADDRESS`: Put here the e-mail address that will send e-mails to clients.
-- `DEFAULT_TMP_BASE_DIR`: Base directory to creating run temporary directories (if argument `--os-tmp` is not given).
+Through .env file, you can modify most of the constants that are in constants.ts if you need it. 
 
-Usually, you don't need to modify other constants.
-
-After configuring those constants, you need to rebuild the server.
-
-```bash
-npm run tsc
+Example of 2 lines of a .env file : 
+```
+SERVER_URL="http://localhost:3001"
+DSSP_PATH="/data1/cecile/python_venv/dssp/bin/mkdssp"
 ```
 
 

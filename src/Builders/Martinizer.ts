@@ -464,9 +464,10 @@ export const Martinizer = new class Martinizer {
       base_ff_itps.push(itp);
       try {
         await FsPromise.symlink(itp_path, dest);
-      } catch(e: any) { 
-        if(e.code === "EEXIST") logger.verbose(`${itp_path} symlink already exists`)
-        else throw new Error(e); 
+      } catch(e) { 
+        const err = e as any
+        if(err.code === "EEXIST") logger.verbose(`${itp_path} symlink already exists`)
+        else throw new Error(err); 
       }
       
     }
