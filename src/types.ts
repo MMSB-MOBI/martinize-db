@@ -51,14 +51,14 @@ export interface CategoryTree {
 export interface JobFilesNames { // just job files names or job files content
   all_atom: string
   coarse_grained: string
-  itp_files: string[]
+  itp_files: string[][]
   top_file: string
 }
 
 export interface JobReadedFiles { // just job files names or job files content
   all_atom: ReadedFile
   coarse_grained: ReadedFile
-  itp_files: ReadedFile[]
+  itp_files: ReadedFile[][]
   top_file: ReadedFile
 }
 

@@ -33,12 +33,20 @@ export default class JobDatabase extends AbstractDatabase<Job> {
         }
 
 
-    async updateManuallySavedBonds(id: string, newItpFiles: string[]) {
+    async updateManuallySavedBonds(id: string, newItpFiles: string[][]) {
         const updateFnc = (doc : Job) => {
 
-            const newItps = newItpFiles.filter(itp => ! doc.files.itp_files.includes(itp))
-            doc.files.itp_files = [...doc.files.itp_files, ...newItps]
+            for (const [idx, mol_files] of newItpFiles.entries()){
 
+                if (doc.files.itp_files.length <= idx){
+                    doc.files.itp_files.push(mol_files)
+                }
+                else {
+                    const newMolFiles = mol_files.filter(itp => ! doc.files.itp_files[idx].includes(itp))
+                    doc.files.itp_files[idx] = [...doc.files.itp_files[idx], ...newMolFiles]
+                }
+            }
+           
             if(doc.manual_bonds_edition) return doc
             doc.manual_bonds_edition = true 
             return doc

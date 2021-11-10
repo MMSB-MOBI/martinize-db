@@ -17,6 +17,7 @@ import { Server } from 'http';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import HistoryOrganizer from "../../HistoryOrganizer";
 import Mailer from '../../Mailer/Mailer';
+import { TopFile } from 'itp-parser-forked'
 
 type MartinizeRunFailedPayload = { 
   error: string, 
@@ -231,7 +232,7 @@ export async function SocketIoMartinizer(app: Server) {
     //socket.emit('martinizeVersion', version);
 
     socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId: string, sendMail:boolean, inputName?: string) => {
-      function sendFile(path: string, infos: { id?: string, name: string, type: string }) {
+      function sendFile(path: string, infos: { id?: string, name: string, type: string, mol_idx?:number }) {
         return new Promise(async (resolve, reject) => {
           const timeout = setTimeout(reject, 1000 * 60 * 60);
           infos.id = run_id;
@@ -264,6 +265,7 @@ export async function SocketIoMartinizer(app: Server) {
 
       // Save to a temporary directory
       const tmp_dir = await TmpDirHelper.get();
+      logger.debug(`[MARTINIZE] save input to ${tmp_dir}`)
       const INPUT = inputName ? `${tmp_dir}/${inputName}` : `${tmp_dir}/input.pdb`
       
       try {
@@ -278,7 +280,8 @@ export async function SocketIoMartinizer(app: Server) {
               step,
               data,
             });
-          }
+          },
+          tmp_dir
         );
 
         await sendFile(top, { 
@@ -291,11 +294,15 @@ export async function SocketIoMartinizer(app: Server) {
           type: 'chemical/x-pdb' 
         });
 
-        for (const itp of itps) {
-          await sendFile(itp, { 
-            name: path.basename(itp),
-            type: 'chemical/x-include-topology' 
-          });
+        for (const [mol,itp_files] of itps.entries()) {
+          for (const itp of itp_files){
+            await sendFile(itp, { 
+              name: path.basename(itp),
+              type: 'chemical/x-include-topology',
+              mol_idx: mol
+            });
+          }
+          
         }
 
         await sendFile(warns, { 
@@ -304,10 +311,10 @@ export async function SocketIoMartinizer(app: Server) {
         });
 
         socket.emit('martinize before end', { id: run_id });
-
+        const flatItps = itps.flat()
         const radius = await Database.radius.getRadius(
           settings.ff || 'martini22',
-          itps,
+          flatItps
         );
 
         let stdout : string[] = [];
@@ -334,7 +341,7 @@ export async function SocketIoMartinizer(app: Server) {
           files : {
             all_atom : path.basename(INPUT),
             coarse_grained : path.basename(pdb), 
-            itp_files : itps.map(itp => path.basename(itp)), 
+            itp_files : itps.map(mol_itps => mol_itps.map(itp => path.basename(itp))), 
             top_file : path.basename(top)
           },
           settings, 
@@ -344,7 +351,7 @@ export async function SocketIoMartinizer(app: Server) {
 
         let savedToHistory = false; 
         try {
-          await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps])
+          await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps.flat()])
           savedToHistory = true; 
         } catch(e){
           logger.warn("error save to history", e)
@@ -412,13 +419,19 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
     const { pdb, itps, top, elastic_bonds } = await martinizeRun(req.body, pdb_file.path);
 
     // Formatting itps
-    const res_itp: { content: string, name: string, type: string, }[] = [];
-    for (const itp of itps) {
-      res_itp.push({
-        content: await FsPromise.readFile(itp, 'utf-8'),
-        name: path.basename(itp),
-        type: 'chemical/x-include-topology',
-      });
+
+    const res_itp: { content: string, name: string, type: string, }[][] = [];
+    for (const mol_itps of itps) {
+
+      const readed_itps:{ content: string, name: string, type: string, }[]  = []
+      for (const itp of mol_itps){
+        readed_itps.push({
+          content: await FsPromise.readFile(itp, 'utf-8'),
+          name: path.basename(itp),
+          type: 'chemical/x-include-topology',
+        });
+      }
+      res_itp.push(readed_itps) 
     }
 
     // todo: create the custom pdb? à voir
@@ -426,7 +439,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
     // Get the radius for itps
     const radius = await Database.radius.getRadius(
       req.body.ff || 'martini22',
-      itps,
+      itps.flat(),
     );
 
     res.json({

@@ -416,11 +416,15 @@ export const Martinizer = new class Martinizer {
         });
       }
 
+      logger.debug("[MARTINIZER-RUN] Sort itps")
+
+      const sortedItps = settings.builder_mode === "elastic" ? await this.sortItpsFromTop(full_top, itp_files) : [itp_files]
+
       logger.debug("[MARTINIZER-RUN] Run is complete, everything seems to be fine :)");
 
       return {
         pdb: pdb_with_conect,
-        itps: itp_files,
+        itps: sortedItps,
         top: full_top,
         warns: dir + "/" + martinizeWarnOut, 
         dir: dir,
@@ -429,6 +433,17 @@ export const Martinizer = new class Martinizer {
     } finally {
       await FsPromise.rename(with_ext, basename);
     }
+  }
+
+  async sortItpsFromTop(topFile: string, itp_files: string[]){
+    const sortedItps : string[][] = []
+    const system = await TopFile.read(topFile); 
+    for (const mol of system.molecules){
+      const name = mol.type;
+      const itps = itp_files.filter(itp_filename => itp_filename.includes(name))
+      sortedItps.push(itps)
+    }
+    return sortedItps
   }
 
   /**

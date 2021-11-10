@@ -30,7 +30,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         const dirPath = HISTORY_ROOT_DIR + "/" + job_id
         fs.mkdirSync(dirPath)
         files.forEach(file => {
-            logger.silly(`copy ${file}`)
+            logger.verbose(`copy ${file}`)
             const name = path.basename(file); 
             fs.copyFileSync(file, dirPath + "/" + name)
         })
@@ -48,9 +48,8 @@ export const HistoryOrganizer = new class HistoryOrganizer{
 
     }
 
-    async updateJobForSavedBonds(jobId: string, itp_files: Express.Multer.File[]){
-        const fileNames = itp_files.map(file => file.originalname)
-        return await Database.job.updateManuallySavedBonds(jobId, fileNames); 
+    async updateJobForSavedBonds(jobId: string, itp_files_names: string[][]){
+        return await Database.job.updateManuallySavedBonds(jobId, itp_files_names); 
     }
 
     async deleteFromFileSystem(jobId: string){
@@ -160,7 +159,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
                     all_atom : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.all_atom}`),
                     top_file : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.top_file}`),
                     coarse_grained : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.coarse_grained}`),
-                    itp_files : await Promise.all(files.itp_files.map(i => getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${i}`)))
+                    itp_files : await Promise.all(files.itp_files.map(async mol_itp => await Promise.all(mol_itp.map(i => getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${i}`)))))
                 }
                 res(readedFiles)
             } catch(e) {

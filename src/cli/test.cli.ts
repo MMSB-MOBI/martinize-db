@@ -312,7 +312,7 @@ TEST_CLI.command('dry-run', async () => {
   const insane = await MembraneBuilder.run({
     force_field: 'martini304',
     molecule_pdb: pdb,
-    molecule_itps: itps,
+    molecule_itps: itps.flat(),
     molecule_top: top,
     lipids: [['DLPC', 4], ['DPPC', 1]],
     upper_leaflet: [['DLPC', 1]],
