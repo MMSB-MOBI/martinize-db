@@ -12,7 +12,7 @@ const ListHistoryRouter = Router();
 ListHistoryRouter.get('/', async (req, res) => {
     const user = req.user?.user_id; 
     if(user) {
-        HistoryOrganizer.getHistory(user).then(jobs => res.json(jobs))
+        HistoryOrganizer.getHistory(user).then(jobs => res.json(jobs.reverse()))
         .catch(e => {
             logger.error("Error while get user history", e)
             console.log(e)
