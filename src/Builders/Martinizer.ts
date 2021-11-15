@@ -147,7 +147,8 @@ export const Martinizer = new class Martinizer {
 
     if (full.advanced){
       //command_line += full.commandline;
-      command_line = full.commandline.substring(0, 4)+basename+' '+full.commandline.substring(4, full.commandline.length)
+      const tmpCmdLine = full.commandline.replace("-f input.pdb", "")
+      command_line = `-f ${with_ext} ${tmpCmdLine}`
     }
     else {
       if (full.ignore) {
@@ -217,7 +218,6 @@ export const Martinizer = new class Martinizer {
    * Returns created path to created PDB, TOP and ITP files.
    */
   async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
-    
     let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings);
     const martinizeWarnOut = "martinize_warnings.log"
 

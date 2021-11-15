@@ -53,6 +53,7 @@ export interface JobFilesNames { // just job files names or job files content
   coarse_grained: string
   itp_files: string[][]
   top_file: string
+  warnings: string
 }
 
 export interface JobReadedFiles { // just job files names or job files content
@@ -60,6 +61,7 @@ export interface JobReadedFiles { // just job files names or job files content
   coarse_grained: ReadedFile
   itp_files: ReadedFile[][]
   top_file: ReadedFile
+  warnings: ReadedFile
 }
 
 export interface ReadedFile {

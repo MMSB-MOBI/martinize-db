@@ -159,7 +159,8 @@ export const HistoryOrganizer = new class HistoryOrganizer{
                     all_atom : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.all_atom}`),
                     top_file : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.top_file}`),
                     coarse_grained : await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.coarse_grained}`),
-                    itp_files : await Promise.all(files.itp_files.map(async mol_itp => await Promise.all(mol_itp.map(i => getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${i}`)))))
+                    itp_files : await Promise.all(files.itp_files.map(async mol_itp => await Promise.all(mol_itp.map(i => getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${i}`))))), 
+                    warnings: await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.warnings}`),
                 }
                 res(readedFiles)
             } catch(e) {

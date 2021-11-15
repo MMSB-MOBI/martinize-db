@@ -132,6 +132,10 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
     if(parameters.builder_mode !== undefined){
       runner.builder_mode = parameters.builder_mode; 
     }
+    if(parameters.advanced !== undefined){
+      runner.advanced = parameters.advanced === "true" ? true : false
+    }
+
 
    return runner;
 }
@@ -317,21 +321,6 @@ export async function SocketIoMartinizer(app: Server) {
           flatItps
         );
 
-        let stdout : string[] = [];
-        await FsPromise.readFile(dir + '/martinize.stderr', 'utf-8')
-          .then(function(result) {
-            let tmp = result.split('\n');
-            tmp.forEach(line => {
-              if(line.match('WARNING')) {
-                stdout.push(line);
-              }
-            });
-          })
-          .catch(function(error) {
-            console.log("ERROR: " + error);
-          });
-        socket.emit('martinize stderr', stdout);
-
        
         const job = {
           jobId : path.basename(dir),
@@ -342,7 +331,8 @@ export async function SocketIoMartinizer(app: Server) {
             all_atom : path.basename(INPUT),
             coarse_grained : path.basename(pdb), 
             itp_files : itps.map(mol_itps => mol_itps.map(itp => path.basename(itp))), 
-            top_file : path.basename(top)
+            top_file : path.basename(top), 
+            warnings : path.basename(warns)
           },
           settings, 
           radius, 
@@ -351,7 +341,7 @@ export async function SocketIoMartinizer(app: Server) {
 
         let savedToHistory = false; 
         try {
-          await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps.flat()])
+          await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps.flat(), warns])
           savedToHistory = true; 
         } catch(e){
           logger.warn("error save to history", e)
