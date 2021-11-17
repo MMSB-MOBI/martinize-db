@@ -395,6 +395,7 @@ export const Martinizer = new class Martinizer {
           itp_files.push(itp); 
         }
         elasticBounds = elastic_bounds; 
+        //Create top file without elastic bounds to create pdb without elastic in CONECT fields
         const { top } = await this.createTopFile(dir, dir + '/system.top', itp_without_elastic, full.ff, "full_without_elastic.top");
         elasticTop = top; 
       }
