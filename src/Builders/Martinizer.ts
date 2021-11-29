@@ -387,7 +387,7 @@ export const Martinizer = new class Martinizer {
 
       let elasticBounds: ElasticOrGoBounds[] | undefined = undefined;
       let elasticTop : string  | undefined = undefined; 
-      if (settings.builder_mode === "elastic") {
+      if (settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn")) {
         console.log("elastic bounds", dir)
         const { elastic_bounds, elastic_itps, itp_without_elastic } = await this.computeElasticNetworkBounds(full_top, itp_files, dir);
         for(const itp of elastic_itps){
@@ -419,7 +419,7 @@ export const Martinizer = new class Martinizer {
 
       logger.debug("[MARTINIZER-RUN] Sort itps")
 
-      const sortedItps = settings.builder_mode === "elastic" ? await this.sortItpsFromTop(full_top, itp_files) : [itp_files]
+      const sortedItps = settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn") ? await this.sortItpsFromTop(full_top, itp_files) : [itp_files]
 
       logger.debug("[MARTINIZER-RUN] Run is complete, everything seems to be fine :)");
 
