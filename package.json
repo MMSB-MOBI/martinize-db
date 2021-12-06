@@ -46,7 +46,7 @@
     "itp-parser-forked": "^2.2.1",
     "job-manager": "0.0.4",
     "jsonwebtoken": "^8.5.1",
-    "jszip": "^3.4.0",
+    "jszip": "^3.7.0",
     "md5": "^2.2.1",
     "md5-file": "^4.0.0",
     "ms-jobmanager": "^2.3.1",
