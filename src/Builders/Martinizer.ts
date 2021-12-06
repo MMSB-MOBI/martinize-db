@@ -1,7 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { ExecException } from 'child_process';
 import FormData from 'form-data';
-import fs, { promises as FsPromise } from 'fs';
+import fs, { exists, promises as FsPromise } from 'fs';
 import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
@@ -12,10 +12,9 @@ import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
 import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper';
-import { TopFile, ItpFile } from 'itp-parser';
+import { TopFile, ItpFile } from 'itp-parser-forked';
 import JSZip from 'jszip';
-import ShellManager, { JobInputs } from './ShellManager';
-import { command } from 'commander';
+import ShellManager, { JobInputs, JMError } from './ShellManager';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -105,6 +104,7 @@ export interface MartinizeSettings {
   nter?: string;
   commandline: string;
   advanced?: boolean;
+  builder_mode?: "elastic" | "go" | "classic"
 }
 
 export const Martinizer = new class Martinizer {
@@ -147,7 +147,8 @@ export const Martinizer = new class Martinizer {
 
     if (full.advanced){
       //command_line += full.commandline;
-      command_line = full.commandline.substring(0, 4)+basename+' '+full.commandline.substring(4, full.commandline.length)
+      const tmpCmdLine = full.commandline.replace("-f input.pdb", "")
+      command_line = `-f ${with_ext} ${tmpCmdLine}`
     }
     else {
       if (full.ignore) {
@@ -217,8 +218,8 @@ export const Martinizer = new class Martinizer {
    * Returns created path to created PDB, TOP and ITP files.
    */
   async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
-    
     let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings);
+    const martinizeWarnOut = "martinize_warnings.log"
 
     logger.debug(`Starting a Martinize run for ${basename}.`);
 
@@ -244,11 +245,11 @@ export const Martinizer = new class Martinizer {
       try {
         // Step: Martinize Init
         onStep?.(this.STEP_MARTINIZE_INIT);
-
         let jobOpt: JobInputs = { 
           exportVar: {
             basedir: dir,
             martinizeArgs: command_line,
+            martinizeWarnOut : martinizeWarnOut
           },
           inputs: {},
         };
@@ -260,10 +261,10 @@ export const Martinizer = new class Martinizer {
           'martinize'
         );
       } catch (e) {
+        if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
         const { stdout, stderr } = e as { error: ExecException, stdout: string, stderr: string };
-
         return Errors.throw(ErrorType.MartinizeRunFailed, { 
-          error: "Martinize has failed with an non-zero exit code.", 
+          error: "Martinize has failed with an non-zero exit code.",
           type: "non-zero",
           stdout,
           stderr,
@@ -292,7 +293,7 @@ export const Martinizer = new class Martinizer {
       logger.debug(`[MARTINIZER-RUN] Generated PDB is found, run should be fine.`);
       onStep?.(this.STEP_MARTINIZE_ENDED_FINE);
 
-      
+    
 
 
       // If go mode, we should compute map + run a python script to refresh ITPs files.
@@ -341,15 +342,16 @@ export const Martinizer = new class Martinizer {
             inputs: {},
           };
           
-          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH} ${goArgs}`;
-
+          const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH} ${goArgs}"`;
+          
           await ShellManager.run(
             'go_virt', 
             ShellManager.mode === "jm" ? jobOptGo : command_line_go, 
             dir, 
             'go-virt-sites', 
           );
-        } catch {
+        } catch(e) {
+          if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create go virtual sites.",
             type: "create-go-virt",
@@ -383,12 +385,28 @@ export const Martinizer = new class Martinizer {
         });
       }
 
+      let elasticBounds: ElasticOrGoBounds[] | undefined = undefined;
+      let elasticTop : string  | undefined = undefined; 
+      if (settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn")) {
+        console.log("elastic bounds", dir)
+        const { elastic_bounds, elastic_itps, itp_without_elastic } = await this.computeElasticNetworkBounds(full_top, itp_files, dir);
+        for(const itp of elastic_itps){
+          console.log("elastic itp", itp)
+          itp_files.push(itp); 
+        }
+        elasticBounds = elastic_bounds; 
+        //Create top file without elastic bounds to create pdb without elastic in CONECT fields
+        const { top } = await this.createTopFile(dir, dir + '/system.top', itp_without_elastic, full.ff, "full_without_elastic.top");
+        elasticTop = top; 
+      }
+
       // Generate the right PDB file (with conect entries)
       logger.debug("[MARTINIZER-RUN] Creating PDB with CONECT entries for Martinize built molecule.");
       onStep?.(this.STEP_MARTINIZE_GROMACS);
       let pdb_with_conect: string;
       try {
-        pdb_with_conect = await this.createPdbWithConect(pdb_file, full_top, dir, false);
+        const to_use_top = elasticTop ? elasticTop : full_top
+        pdb_with_conect = await this.createPdbWithConect(pdb_file, to_use_top, dir, false);
       } catch {
         return Errors.throw(ErrorType.MartinizeRunFailed, { 
           error: "Creation of full PDB with Gromacs failed.",
@@ -399,17 +417,34 @@ export const Martinizer = new class Martinizer {
         });
       }
 
+      logger.debug("[MARTINIZER-RUN] Sort itps")
+
+      const sortedItps = settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn") ? await this.sortItpsFromTop(full_top, itp_files) : [itp_files]
+
       logger.debug("[MARTINIZER-RUN] Run is complete, everything seems to be fine :)");
 
       return {
         pdb: pdb_with_conect,
-        itps: itp_files,
+        itps: sortedItps,
         top: full_top,
+        warns: dir + "/" + martinizeWarnOut, 
         dir: dir,
+        elastic_bonds : elasticBounds,
       };
     } finally {
       await FsPromise.rename(with_ext, basename);
     }
+  }
+
+  async sortItpsFromTop(topFile: string, itp_files: string[]){
+    const sortedItps : string[][] = []
+    const system = await TopFile.read(topFile); 
+    for (const mol of system.molecules){
+      const name = mol.type;
+      const itps = itp_files.filter(itp_filename => itp_filename.includes(name))
+      sortedItps.push(itps)
+    }
+    return sortedItps
   }
 
   /**
@@ -420,7 +455,7 @@ export const Martinizer = new class Martinizer {
    * 
    * Returns new TOP filename and all the used ITPs to generate top.
    */
-  async createTopFile(current_directory: string, original_top_path: string, itps_path: string[], force_field: string) {
+  async createTopFile(current_directory: string, original_top_path: string | undefined, itps_path: string[] |undefined, force_field: string, top_name: string = "full.top") {
     let itps_ff = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
 
     if (!itps_ff) {
@@ -429,7 +464,13 @@ export const Martinizer = new class Martinizer {
 
     itps_ff = typeof itps_ff === 'string' ? [itps_ff] : itps_ff;
 
-    const itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    let itps = undefined;
+    if (itps_path !== undefined) {
+      itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    }
+    else {
+      itps = [...itps_ff.map(e => FORCE_FIELD_DIR + e)];
+    }
     const base_ff_itps = [] as string[];
 
     // Create everysym link
@@ -437,16 +478,28 @@ export const Martinizer = new class Martinizer {
       const itp_path = FORCE_FIELD_DIR + itp;
       const dest = path.resolve(current_directory + "/" + itp);
       base_ff_itps.push(itp);
-
-      await FsPromise.symlink(itp_path, dest);
+      try {
+        await FsPromise.symlink(itp_path, dest);
+      } catch(e) { 
+        const err = e as any
+        if(err.code === "EEXIST") logger.verbose(`${itp_path} symlink already exists`)
+        else throw new Error(err); 
+      }
+      
     }
-
-    const real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
-    const top = current_directory + "/full.top";
+    
+    let real_itps = undefined;
+    if (itps_path !== undefined) {
+      real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
+    }
+    else {
+      real_itps = [...base_ff_itps];
+    }
+    const top = current_directory + "/" + top_name;
     
     const includes: string[] = [];
 
-    // Define the includes
+      // Define the includes
     for (const itp of real_itps) {
       // Exclude the GO ITPs, they're already included in martini_304.itp
       if (itp.endsWith('VirtGoSites.itp') || itp.endsWith('go4view_harm.itp')) {
@@ -457,34 +510,44 @@ export const Martinizer = new class Martinizer {
     }
 
     const top_write_stream = fs.createWriteStream(top);
-    const top_read_stream = readline.createInterface({
-      input: fs.createReadStream(original_top_path),
-      crlfDelay: Infinity,
-    });
+    if (original_top_path !== "") {
+      const top_read_stream = readline.createInterface({
+        //@ts-ignore
+        input: fs.createReadStream(original_top_path),
+        crlfDelay: Infinity,
+      });
+    
+    
 
-    let includes_included = false;
+      let includes_included = false;
 
-    // Remove every #include line
-    for await (const line of top_read_stream) {
-      if (line.startsWith('#include')) {
-        if (!includes_included) {
-          // Include the hand-crafted includes
-          top_write_stream.write(includes.join('\n') + '\n');
-          includes_included = true;
+      // Remove every #include line
+      for await (const line of top_read_stream) {
+        if (line.startsWith('#include')) {
+          if (!includes_included) {
+            // Include the hand-crafted includes
+            top_write_stream.write(includes.join('\n') + '\n');
+            includes_included = true;
+          }
+
+          continue;
         }
+        top_write_stream.write(line + '\n');
 
-        continue;
       }
-      top_write_stream.write(line + '\n');
-
+    }
+    else {
+      top_write_stream.write(includes.join('\n') + '\n');
     }
 
     top_write_stream.close();
+
 
     return {
       top,
       itps,
     };
+
   }
 
   /**
@@ -513,12 +576,18 @@ export const Martinizer = new class Martinizer {
     const command_line = `${CREATE_MAP_PY_SCRIPT_PATH} "${path.resolve(pdb_filename)}" "${distances_file}"`
 
     // Compute contacts with the CA pdb
-    await ShellManager.run(
-      'ccmap', 
-      ShellManager.mode === "jm" ? jobOpt : command_line, 
-      use_tmp_dir, 
-      'distances',
-    );
+    try {
+      await ShellManager.run(
+        'ccmap', 
+        ShellManager.mode === "jm" ? jobOpt : command_line, 
+        use_tmp_dir, 
+        'distances',
+      );
+    }
+    catch(e) {
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+    }
+    
 
     const distances_exists = await fileExists(distances_file);
 
@@ -656,7 +725,7 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false) {
+  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false, lipids? : any) {
     let tmp_original_filename: string | null = null;
     logger.debug("PDB WITH CONNECT")
     if (pdb_or_gro_filename.endsWith('output-conect.pdb')) {
@@ -664,9 +733,14 @@ export const Martinizer = new class Martinizer {
       tmp_original_filename = pdb_or_gro_filename.slice(0, pdb_or_gro_filename.length - 4) + '.original.pdb';
       await FsPromise.rename(pdb_or_gro_filename, tmp_original_filename);
     }
+    let groups_to_del = 17;
+    if (lipids) {
+      groups_to_del += lipids.length*2;
+    }
+    
 
     const pdb_out = base_directory + "/output-conect.pdb";
-    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""}`;
+    const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""} "${groups_to_del}"`;
 
     const command: JobInputs = { 
       exportVar: {
@@ -679,13 +753,19 @@ export const Martinizer = new class Martinizer {
       inputs: {}
     };
 
-    await ShellManager.run(
-      'conect', 
-      ShellManager.mode === 'jm' ? command : command_line, 
-      base_directory, 
-      'gromacs', 
-      this.MAX_JOB_EXECUTION_TIME
-    );
+    try {
+      await ShellManager.run(
+        'conect', 
+        ShellManager.mode === 'jm' ? command : command_line, 
+        base_directory, 
+        'gromacs', 
+        this.MAX_JOB_EXECUTION_TIME
+      );
+    }
+    catch(e){
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+    }
+    
 
     if (tmp_original_filename) {
       // Rename the output to original name
@@ -714,8 +794,8 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string) {
-    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true);
+  async createPdbWithConectWithoutWater(pdb_or_gro_filename: string, top_filename: string, base_directory: string, lipids?: any) {
+    const pdb_water = await this.createPdbWithConect(pdb_or_gro_filename, top_filename, base_directory, true, lipids);
 
     const pdb_no_w = base_directory + "/output-conect-no-w.pdb";
     const exists = await FsPromise.access(pdb_no_w, fs.constants.F_OK).then(() => true).catch(() => false);
@@ -737,7 +817,7 @@ export const Martinizer = new class Martinizer {
    * 
    * TODO: worker thread
    */
-  async computeElasticNetworkBounds(top_file: string, itp_files: string[]) {
+  async computeElasticNetworkBounds(top_file: string, itp_files: string[], workdir: string) {
     logger.verbose("[ELASTIC-BUILD] Constructing elastic network bonds.");
 
     const bounds: ElasticOrGoBounds[] = [];
@@ -753,12 +833,63 @@ export const Martinizer = new class Martinizer {
 
     // Incrementer for designating PDB line
     let i = 0;
-
-    for (const molecule of top.molecules) {
+    let elasticItps = []; 
+    let withoutElasticItps = []; 
+    for (const molecule of top.molecules){
       logger.debug("[ELASTIC-BUILD] Reading molecule " + molecule.type + ".");
 
       // Get the number of atoms in a single chain of this molecule
       const itp = molecule.itp;
+      const atom_count = itp.atoms.filter(line => line && !line.startsWith(';')).length;
+
+      //const name = molecule.name; 
+      //Write elastic bonds in an other itp file to avoid elastic bonds representation with ngl. Output connect will be computed without this new file, and then it will be included again. 
+      const elastic_bonds = itp.getSubfield("bonds", "Rubber band")
+      const elastic_itp_name =  molecule.type + "_rubber_band.itp";
+      const elastic_itp_path = workdir + "/" + elastic_itp_name
+
+      const elastic_itp = new ItpFile(); 
+      elastic_itp.appendField("bonds", elastic_bonds)
+
+      fs.writeFileSync(elastic_itp_path, elastic_itp.toString())
+      elasticItps.push(elastic_itp_path)
+
+      //Delete elastic bonds from current itp
+      const correctedItp = workdir + "/" + molecule.type + "_without_elastic.itp"; 
+      itp.removeSubfield("bonds", "Rubber band"); 
+      fs.writeFileSync(correctedItp, itp.toString()) //Write itp without rubber bands
+      withoutElasticItps.push(correctedItp)
+
+
+      itp.appendInclude(elastic_itp_name, "bonds"); 
+      fs.writeFileSync(workdir + "/" + molecule.type + ".itp", itp.toString()) //Rewrite initial itp with include statement for rubber bands
+
+
+      for (const band of elastic_bonds){
+        if(!band.startsWith(";")){
+          const [atom_from, atom_to, ] = band.split(/\s+/g);
+          bounds.push([
+            Number(atom_from) + i,
+            Number(atom_to) + i,
+          ]);
+        }
+      }
+
+      i += atom_count;
+
+    }
+    return {
+      elastic_bounds : bounds,
+      elastic_itps : elasticItps,
+      itp_without_elastic : withoutElasticItps
+    }
+
+    /*for (const molecule of top.molecules) {
+      logger.debug("[ELASTIC-BUILD] Reading molecule " + molecule.type + ".");
+
+      // Get the number of atoms in a single chain of this molecule
+      const itp = molecule.itp;
+
       const atom_count = itp.atoms.filter(line => line && !line.startsWith(';')).length;
       let chain_n = 0;
 
@@ -815,9 +946,9 @@ export const Martinizer = new class Martinizer {
         // Add atom count of this molecule to i
         i += atom_count;
       }
-    }
+    }*/
 
-    return bounds;
+    
   }
 
   /**

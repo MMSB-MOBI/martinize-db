@@ -32,9 +32,11 @@ export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR      = process.env.FORCE_FIELD_DIR ?? path.resolve(__dirname, "../force_fields/")
 export const DEFAULT_TMP_BASE_DIR = process.env.DEFAULT_TMP_BASE_DIR ?? path.resolve(__dirname, "../tmp/")
+export const HISTORY_ROOT_DIR = process.env.HISTORY_DIR ?? path.resolve(__dirname, "../history")
 
 /* - Couch database - */
 export const DB_PREFIX = process.env.DB_PREFIX ?? ""
+
 
 
 /* - Job manager - */
@@ -77,7 +79,6 @@ export const DSSP_PATH = process.env.DSSP_PATH; //if undefined => don't use dssp
 /** Link to script used to create go virtual sites launcher. */
 export const CREATE_GO_PATH = path.resolve(__dirname, "../utils/create_go_virt.sh");
 export const CREATE_GO_PATH_JM = path.resolve(__dirname, "../utils/create_go_virt_coreScript.sh");
-export const GO_VIRT_VENV_SRC = path.resolve(__dirname, "../martinize2venv/");
 /** Link to script used to create go virtual sites. */
 export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create_goVirt.py");
 /** Link to script that can start ccmap */
@@ -99,6 +100,15 @@ export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(_
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
 export const INSANE_PATH_JM = path.resolve(__dirname, "../utils/insane_coreScript.sh");
+export const INSANE_HACK_SCRIPT = {
+  BEFORE: path.resolve(__dirname, "../utils/insane_hack.py"),  
+  AFTER: path.resolve(__dirname, "../utils/insane_hack_reverse.py")
+} //scripts to hack pdb coordinates when we have nan atoms
+
+//Venv for local computation
+export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
+export const INSANE_VENV = process.env.INSANE_VENV ?? path.resolve(__dirname, "../insanevenv/bin/activate")
+
 /**
  * Default URLs.
  * - `SERVER` is the public URL of the server. Don't forget to set it in order to have working URLs in e-mails !
@@ -113,7 +123,12 @@ export const URLS = {
 export const USERNAME_REGEX = /^[a-z][a-z0-9_-]*[a-z0-9]$/i;
 export const EMAIL_REGEX = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
 
+// Slurm profile to use for job manager
 export const SLURM_PROFILES = {
   JOB_PROFILE : process.env.JOB_PROFILE ?? "", 
   SYS_SETTINGS : process.env.JOB_SYS_SETTINGS ?? ""
 }
+
+export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"
+
+export const SEND_COMPLETION_MAIL = process.env.SEND_COMPLETION_MAIL === 'false' ? false : true; 

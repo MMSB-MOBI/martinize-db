@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, GO_VIRT_VENV_SRC, SLURM_PROFILES } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -7,6 +7,7 @@ import * as JobManager from 'ms-jobmanager';
 import { inspect } from 'util';
 import logger from '../logger';
 import { Stream } from 'stream';
+import { EventEmitter } from 'events'; 
 
 const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
@@ -22,6 +23,7 @@ export default new class ShellManager {
    */
   public mode: JobMethod = DEFAULT_JOB_METHOD;
   private _jm?: Promise<void>;
+  private connect : boolean = false; 
   /**
    * Link a script name `SupportedScript` to a .sh path.
    */
@@ -30,8 +32,7 @@ export default new class ShellManager {
     'go_virt': CREATE_GO_PATH,
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
-    'martinize': MARTINIZE_PATH,
-  };
+    'martinize': MARTINIZE_PATH  };
 
   /**
    * Assign the following variables into child processes env.
@@ -39,13 +40,17 @@ export default new class ShellManager {
   protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
     'conect': {},
     'go_virt': {
-      venv: GO_VIRT_VENV_SRC
+      venv: MARTINIZE_VENV
     },
     'ccmap': {
-      venv: GO_VIRT_VENV_SRC
+      venv: MARTINIZE_VENV
     },
-    'insane': {},
-    'martinize': {},
+    'insane': {
+      venv: INSANE_VENV
+    },
+    'martinize': {
+      venv: MARTINIZE_VENV
+    }
   };
 
   /**
@@ -93,6 +98,34 @@ export default new class ShellManager {
     }
   };
 
+  async start(){
+    return new Promise(async (res,rej) => {
+      if (this.connect) {
+        logger.silly("Job manager already connected")
+        res()
+      }
+      else{
+        JobManager.start({'port': JOB_MANAGER_SETTINGS.port, 'TCPip': JOB_MANAGER_SETTINGS.address})
+        .then((disconnectEmitter: EventEmitter) => {
+            logger.silly('JM has been connected')
+            this.connect = true; 
+            disconnectEmitter.on("disconnect", () => {
+              logger.warn("JM disconnect")
+              this.connect = false; 
+            })
+            console.log("resolve")
+            res()
+            
+        }).catch((e:any) => {
+          logger.error("Can't connect to JM")
+          rej(e)
+        })
+        
+      }
+    }) as Promise<void>
+  }
+
+
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
@@ -129,7 +162,8 @@ export default new class ShellManager {
         stdout?.close();
         stderr?.close();
         child.stderr?.removeAllListeners();
-  
+        
+        //logger.error(`${err}`)
         if (err) {
           reject({ 
             error: err, 
@@ -161,6 +195,8 @@ export default new class ShellManager {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = {...options, ...jobData};
 
+    if(save_std_name) jobOpt.exportVar["OUTPUT_PREFIX"] = save_std_name
+
     logger.debug("JM PROCESS");
     
     if (!options) {
@@ -175,17 +211,18 @@ export default new class ShellManager {
     });
 
     logger.silly("Getting Job manager connection...");
-    try{
-      await this.job_manager
-    }
-    catch(e) {
-      logger.error("AWAIT JM FAIL")
-      logger.error(e.message)
-    }
     
     logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
+
+    try{ 
+      await this.start(); 
+    }
+    catch(e) {
+      throw new JMError(`Error with job manager : ${e}`)
+    }
     
-    return new Promise((resolve, reject) => {
+
+    return new Promise(async (resolve, reject) => {
       const jobCreatePdbWithConect = JobManager.push(jobOpt);
 
       jobCreatePdbWithConect.on('completed', (stdout:Stream, stderr:Stream) => {
@@ -206,6 +243,12 @@ export default new class ShellManager {
       });
 
       jobCreatePdbWithConect.on('error', reject);
+      jobCreatePdbWithConect.on("disconnect_error", () => {
+        reject(new JMError(`Error with job manager : Job manager has been disconnected`))
+      })
+      jobCreatePdbWithConect.on("lostJob", () => {
+        reject(new JMError(`Error with job manager : Job has been lost`))
+      })
     }) as Promise<void>;
   }
 
@@ -217,3 +260,6 @@ export default new class ShellManager {
     'TCPip': JOB_MANAGER_SETTINGS.address})
   }
 }();
+
+export class JMError extends Error{
+}
