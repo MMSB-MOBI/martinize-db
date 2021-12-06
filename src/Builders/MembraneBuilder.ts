@@ -232,7 +232,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     // Start insane
     try {
-      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir);
+      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir, "insane");
     } catch (e) {
       // Handle error and throw the right error
       console.error("ShellManager.run crash"); 
@@ -340,7 +340,8 @@ export const MembraneBuilder = new class MembraneBuilder {
     logger.debug(`[INSANE] Creating the CONECT-ed PDB with GROMACS.`);
     try {
       const to_use_top = prepared_top_wo_elastic ? prepared_top_wo_elastic : prepared_top
-      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system-insane-hack.gro", to_use_top, workdir, lipids);
+      const to_use_gro = molecule_pdb ? "system-insane-hack.gro" : "system.gro"
+      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
     } catch (e) {
       throw new InsaneError('gromacs_crash', workdir, e.stack);
     }
