@@ -9,5 +9,4 @@ cd $basedir
 martinize2_path="martinize2"
 echo run $martinize2_path $martinizeArgs --maxwarn 9999
 $martinize2_path $martinizeArgs -maxwarn 9999 2> martinize_redirect.stderr
-
 { grep "WARNING" martinize_redirect.stderr > martinize_warnings.log || true; }
