@@ -315,7 +315,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     // Compile the top files together
     logger.debug(`[INSANE] Writing prepared TOP file.`);
     
-    const prepared_top = await this.writePreparedTopFile(workdir + "full.top", insane_top, molecule_full_top);
+    const prepared_top = await this.writePreparedTopFile(workdir + "/full.top", insane_top, molecule_full_top);
     const prepared_top_wo_elastic = readed_wo_elastic_top ? await this.writePreparedTopFile(workdir + "/__prepared-no-elastic.top", insane_top, readed_wo_elastic_top) : undefined
 
     // Create lipids ITP files in working dir.
