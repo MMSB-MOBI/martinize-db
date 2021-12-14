@@ -16,7 +16,7 @@ ListHistoryRouter.get('/', async (req, res) => {
         .catch(e => {
             logger.error("Error while get user history", e)
             console.log(e)
-            if (e.error && e.error === "not_found" && e.reason && e.reason === "deleted") sendError(Errors.make(ErrorType.HistoryNotFound), res)
+            if (e.error && e.error === "not_found") sendError(Errors.make(ErrorType.HistoryNotFound), res)
             else sendError(Errors.make(ErrorType.Server), res)
             
         })
