@@ -178,6 +178,8 @@ export const HistoryOrganizer = new class HistoryOrganizer{
 
     }
 
+    //TO DO : delete history function that delete everything (couch jobs, couch history, file system)
+
     
     
 }

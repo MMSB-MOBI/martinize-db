@@ -278,10 +278,11 @@ export const MembraneBuilder = new class MembraneBuilder {
         workdir,
         molecule_top,
         itps_for_top,
-        force_field
+        force_field,
+        "original.top"
       );
       if(itps_without_elastic.length > 0) {
-        const { top } = await Martinizer.createTopFile(workdir, molecule_top, itps_without_elastic, force_field)
+        const { top } = await Martinizer.createTopFile(workdir, molecule_top, itps_without_elastic, force_field, "original.top")
         wo_elastic_top = top; 
       }
 
@@ -314,7 +315,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     // Compile the top files together
     logger.debug(`[INSANE] Writing prepared TOP file.`);
     
-    const prepared_top = await this.writePreparedTopFile(workdir + "/__prepared.top", insane_top, molecule_full_top);
+    const prepared_top = await this.writePreparedTopFile(workdir + "full.top", insane_top, molecule_full_top);
     const prepared_top_wo_elastic = readed_wo_elastic_top ? await this.writePreparedTopFile(workdir + "/__prepared-no-elastic.top", insane_top, readed_wo_elastic_top) : undefined
 
     // Create lipids ITP files in working dir.
