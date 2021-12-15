@@ -18,6 +18,7 @@ import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import HistoryOrganizer from "../../HistoryOrganizer";
 import Mailer from '../../Mailer/Mailer';
 import { TopFile } from 'itp-parser-forked'
+import {validateClientSettings, ClientSettings} from './martinize_validator'
 
 type MartinizeRunFailedPayload = { 
   error: string, 
@@ -28,6 +29,7 @@ type MartinizeRunFailedPayload = {
   code: ErrorType, 
   message: string, 
 };
+
 
 const MartinizerRouter = Router();
 
@@ -52,7 +54,6 @@ function numberOrError(num: any) {
 }
 
 function createRunner(settings: any, parameters: any, pdb_path? : string) {
-
   let inp = '';
   if (pdb_path) {
     inp = pdb_path;
@@ -104,10 +105,7 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
     if (parameters.em) {
       runner.em = numberOrError(parameters.em);
     }
-    if (parameters.eb && typeof parameters.eb === 'string') {
-      const arg = shellescape([parameters.eb]);
-      runner.eb = arg.split(',');
-    }
+
     if (parameters.use_go === "true") {
       runner.use_go_virtual_sites = true;
     }
@@ -132,9 +130,6 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
     if(parameters.builder_mode !== undefined){
       runner.builder_mode = parameters.builder_mode; 
     }
-    if(parameters.advanced !== undefined){
-      runner.advanced = parameters.advanced === "true" ? true : false
-    }
 
 
    return runner;
@@ -158,7 +153,7 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
   
 }*/
 
-async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: string, ...data: any[]) => void, path?: string) {
+async function martinizeRun(parameters: ClientSettings, pdb_path: string, onStep?: (step: string, ...data: any[]) => void, path?: string) {
   //const { ff, position, posref_fc, elastic, ef, el, eu, ea, ep, em, eb, use_go, sc_fix, nter, cter, neutral_termini, commandline, cystein_bridge } = parameters;
 
   const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
@@ -172,10 +167,17 @@ async function martinizeRun(parameters: any, pdb_path: string, onStep?: (step: s
    *  cystein_bridge?: string;
    */
 
-  const runner = createRunner(settings, parameters, pdb_path);
+  console.log("martinizeRun")
+  const validatedParams = validateClientSettings(parameters)
+  const martinizeSettings : MartinizeSettings = Object.assign({}, {
+    input: pdb_path,
+    ff: 'martini22',
+    position: 'none',
+    commandline: ''
+  }, validatedParams);
 
   try {
-    const { pdb, itps, top, warns, dir, elastic_bonds } = await Martinizer.run(runner, onStep, path);
+    const { pdb, itps, top, warns, dir, elastic_bonds } = await Martinizer.run(martinizeSettings, onStep, path);
 
     return {
       pdb, 
@@ -223,19 +225,10 @@ export async function SocketIoMartinizer(app: Server) {
 
   io.on('connection', socket => {
 
-    socket.on('previewMartinize', async (settings: any) => {
-      logger.silly("socket on previewMartinize")
-      const settings_file: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
-      const runner = createRunner(settings_file, settings);
-
-      let {command_line} = Martinizer.settingsToCommandline(runner)
-      
-      socket.emit('martinizePreviewContent', command_line)
-    })
 
     //socket.emit('martinizeVersion', version);
 
-    socket.on('martinize', async (file: Buffer, run_id: string, settings: any, userId: string, sendMail:boolean, inputName?: string) => {
+    socket.on('martinize', async (file: Buffer, run_id: string, settings : any) => {
       function sendFile(path: string, infos: { id?: string, name: string, type: string, mol_idx?:number }) {
         return new Promise(async (resolve, reject) => {
           const timeout = setTimeout(reject, 1000 * 60 * 60);
@@ -252,7 +245,7 @@ export async function SocketIoMartinizer(app: Server) {
         })  as Promise<void> ;
       }
 
-      if (!run_id || !file || !settings || !userId) {
+      if (!run_id || !file || !settings || !settings.user_id) {
         return;
       }
       if (run_id.length > 64) {
@@ -268,9 +261,12 @@ export async function SocketIoMartinizer(app: Server) {
       // }
 
       // Save to a temporary directory
+
+      //SECURITY : CHECK PDB CONTENT BEFORE WRITE
+
       const tmp_dir = await TmpDirHelper.get();
       logger.debug(`[MARTINIZE] save input to ${tmp_dir}`)
-      const INPUT = inputName ? `${tmp_dir}/${inputName}` : `${tmp_dir}/input.pdb`
+      const INPUT = settings.pdb_name ? `${tmp_dir}/${settings.pdb_name}` : `${tmp_dir}/input.pdb`
       
       try {
         await FsPromise.writeFile(INPUT, file);
@@ -324,7 +320,7 @@ export async function SocketIoMartinizer(app: Server) {
        
         const job = {
           jobId : path.basename(dir),
-          userId,
+          userId : settings.user_id,
           type : "martinize",
           date : dateFormatter("Y-m-d H:i"), 
           files : {
@@ -336,7 +332,7 @@ export async function SocketIoMartinizer(app: Server) {
           },
           settings, 
           radius, 
-          name : inputName
+          name : settings.pdb_name
         }
 
         let savedToHistory = false; 
@@ -350,7 +346,7 @@ export async function SocketIoMartinizer(app: Server) {
         finally{
 
           socket.emit('martinize end', { id: run_id, elastic_bonds, radius, savedToHistory, jobId: job.jobId});
-          if(sendMail) sendMailMartinizeEnd(job.userId, job.jobId); 
+          if(settings.send_mail) sendMailMartinizeEnd(job.userId, job.jobId); 
         } 
         
         

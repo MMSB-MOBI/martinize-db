@@ -145,12 +145,6 @@ export const Martinizer = new class Martinizer {
     if(DSSP_PATH) command_line += " -dssp " + DSSP_PATH
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
-    if (full.advanced){
-      //command_line += full.commandline;
-      const tmpCmdLine = full.commandline.replace("-f input.pdb", "")
-      command_line = `-f ${with_ext} ${tmpCmdLine}`
-    }
-    else {
       if (full.ignore) {
         command_line += " " + full.ignore.join(',');
       }
@@ -208,7 +202,6 @@ export const Martinizer = new class Martinizer {
       if (full.nter) {
         command_line += " -nter " + full.nter
       }
-    }
     
     return {command_line:command_line, basename: basename, with_ext: with_ext, full: full}
   }
@@ -219,6 +212,10 @@ export const Martinizer = new class Martinizer {
    */
   async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
     let {command_line, basename, with_ext, full} = this.settingsToCommandline(settings);
+
+    console.log("run", settings); 
+    console.log('command_line', command_line)
+
     const martinizeWarnOut = "martinize_warnings.log"
 
     logger.debug(`Starting a Martinize run for ${basename}.`);
