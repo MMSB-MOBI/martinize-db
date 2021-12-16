@@ -12,9 +12,9 @@ import { Martinizer } from '../../Builders/Martinizer';
 import logger from '../../logger';
 import { inspect } from 'util';
 import { plainToInstance } from 'class-transformer';
-import { ClientInsaneSettingsDto } from './membrane_builder.dto';
+import { ClientInsaneSettingsDto, FileDto } from './membrane_builder.dto';
 import { validateOrReject } from 'class-validator';
-import { AvailableForceFields } from './martinize_validator';
+import { AvailableForceFields } from '../types';
 
 const MembraneBuilderRouter = Router();
 
@@ -88,31 +88,31 @@ MembraneBuilderRouter.post('/', Uploader.fields([
 ]), (req, res) => {
   
   (async () => {
-    function convertOrThrow(str: string) : number {
-      const n = Number(str);
-      if (isNaN(n)) {
-        return Errors.throw(ErrorType.Format);
-      }
-
-      return n;
-    }
     
     // Init
-
-    console.log("body", req.body); 
-    console.log("lipids", typeof req.body.lipids_added)
-
+    console.log("files", req.files);
     const validatedParams = plainToInstance(ClientInsaneSettingsDto, req.body);
+
+    //Validate file names
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    const validatedPdb = plainToInstance(FileDto, files.pdb[0])
+    const validatedTop = plainToInstance(FileDto, files.top[0])
+    const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
 
     try {
       await validateOrReject(validatedParams); 
+      await validateOrReject(validatedPdb); 
+      await validateOrReject(validatedTop); 
+      await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
     } catch(e) {
       res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
       return; 
     }
 
     //const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] }; // Maybe security check
+     // Maybe security check
     const molecule_id = validatedParams.from_id
     const { 
       pbc, 

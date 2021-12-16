@@ -1,16 +1,5 @@
 import Errors, {ErrorType} from '../../Errors'; 
-
-//REPLACE THIS BY WEBSOCKET GATEWAY
-
-export const FORCE_FIELDS = [
-    "elnedyn",
-    "elnedyn22",
-    "elnedyn22p",
-    "martini22",
-    "martini22p",
-    "martini3001"
-] as const
-export type AvailableForceFields = typeof FORCE_FIELDS[number]
+import {FORCE_FIELDS, AvailableForceFields} from '../types'
 
 const POSITION = ['none', 'all', 'backbone'] as const;
 type AvailablePositions = typeof POSITION[number]
@@ -131,12 +120,18 @@ export function validateClientSettings(settings : ClientSettings) : ClientSettin
   if(settings.user_id) validated.user_id = numberOrError(settings.user_id)
 
   if(settings.pdb_name){
-    if(settings.pdb_name.endsWith(".pdb")) validated.pdb_name = settings.pdb_name
+
+    if(regexFileName(settings.pdb_name)) validated.pdb_name = settings.pdb_name
     else return Errors.throw(ErrorType.Format)
   }
 
   return validated
 
+}
+
+function regexFileName(str: string): boolean {
+  const regex = new RegExp('\^[A-Z0-9a-z.\-_]*$')
+  return regex.test(str); 
 }
 
 function checkBooleanString(val?: string) {

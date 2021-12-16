@@ -1,7 +1,7 @@
 import { Transform } from "class-transformer";
 import { IsNotEmpty, IsString, IsIn, IsBoolean, IsOptional, Matches, IsNumber } from "class-validator";
 import { CpuInfo } from "os";
-import { AvailableForceFields, FORCE_FIELDS } from "./martinize_validator";
+import { AvailableForceFields, FORCE_FIELDS } from "../types";
 
 const BOX_TYPE = ["hexagonal", "rectangular", "square", "cubic", "optimal", "keep"] as const
 type AvailableBoxType = typeof BOX_TYPE[number]
@@ -133,4 +133,13 @@ export class ClientInsaneSettingsDto {
     @IsNotEmpty()
     @IsIn(SOLVENT)
     solvent_type!: AvailableSolvent;
+}
+
+export class FileDto{
+    @IsString()
+    @IsNotEmpty()
+    @Matches('^[A-Z0-9a-z.\-_]*$')
+    originalname!: string; 
+
+
 }
