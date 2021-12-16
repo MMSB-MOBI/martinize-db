@@ -8,13 +8,13 @@ import nano = require('nano');
 import { DISABLE_MODERATION_PROCESS } from '../../constants';
 import { MoleculeChecker } from './MoleculeChecker';
 import logger from '../../logger';
+import { plainToInstance } from 'class-transformer'; 
+import { validateOrReject } from 'class-validator'; 
+import { FileDto } from './membrane_builder.dto'; 
 
 
 
 //import * as test from "../../test";
-
-
-let util = require('util');
 
 
 const CreateMoleculeRouter = Router();
@@ -48,6 +48,26 @@ CreateMoleculeRouter.post('/', Uploader.fields([
   { name: 'map', maxCount: 99 },
 ]), (req, res) => {
   (async () => {  //console.log("HERE>>");console.log(req.files);
+
+    console.log("files", req.files); 
+    //Validate file names and length
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    const validatedPdb = plainToInstance(FileDto, files.pdb[0])
+    const validatedTop = plainToInstance(FileDto, files.top[0])
+    const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
+    const validatedMaps = files.map ? files.map.map(map => plainToInstance(FileDto, map)) : undefined
+
+    try {
+      await validateOrReject(validatedPdb); 
+      await validateOrReject(validatedTop); 
+      await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
+      if(validatedMaps) await Promise.all(validatedMaps.map(dto => validateOrReject(dto)))
+    } catch(e) {
+      res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
+      return; 
+    }
     const logged_user = req.full_user!;
     
     const user_role = DISABLE_MODERATION_PROCESS ? "admin" : logged_user.role;

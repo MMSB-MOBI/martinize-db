@@ -32,9 +32,11 @@ export const SETTINGS_FILE        = path.resolve(__dirname, "../settings.json");
 export const TEMPLATE_DIR         = path.resolve(__dirname, "../templates/") + "/";
 export const FORCE_FIELD_DIR      = process.env.FORCE_FIELD_DIR ?? path.resolve(__dirname, "../force_fields/")
 export const DEFAULT_TMP_BASE_DIR = process.env.DEFAULT_TMP_BASE_DIR ?? path.resolve(__dirname, "../tmp/")
+export const HISTORY_ROOT_DIR = process.env.HISTORY_DIR ?? path.resolve(__dirname, "../history")
 
 /* - Couch database - */
 export const DB_PREFIX = process.env.DB_PREFIX ?? ""
+
 
 
 /* - Job manager - */
@@ -121,7 +123,12 @@ export const URLS = {
 export const USERNAME_REGEX = /^[a-z][a-z0-9_-]*[a-z0-9]$/i;
 export const EMAIL_REGEX = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
 
+// Slurm profile to use for job manager
 export const SLURM_PROFILES = {
   JOB_PROFILE : process.env.JOB_PROFILE ?? "", 
   SYS_SETTINGS : process.env.JOB_SYS_SETTINGS ?? ""
 }
+
+export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"
+
+export const SEND_COMPLETION_MAIL = process.env.SEND_COMPLETION_MAIL === 'false' ? false : true; 

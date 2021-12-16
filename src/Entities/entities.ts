@@ -1,8 +1,9 @@
-import { GoTerms, UserRole } from '../types';
+import { GoTerms, JobFilesNames, JobSettings, UserRole } from '../types';
 
 export interface BaseCouchDocument {
   _id?: string;
   _rev?: string;
+  update_date?: string; 
 }
 
 export interface BaseMolecule extends BaseCouchDocument {
@@ -104,5 +105,26 @@ export interface Lipid extends BaseCouchDocument {
   name: string;
   /** Content of the ITP file for this lipid. */
   itp: string;
+}
+
+export interface History extends BaseCouchDocument {
+  id : string; //user id
+  job_ids : string[]; 
+}
+
+export interface JobBase extends BaseCouchDocument {
+  id: string; 
+  jobId: string; 
+  userId : string; 
+  type : "martinize" | "insane"; 
+  date : string; 
+  name : string; 
+  settings : JobSettings; 
+  radius : {[atom_name : string] : number}
+  manual_bonds_edition?: boolean; 
+}
+
+export interface Job extends JobBase { 
+  files : JobFilesNames
 }
 

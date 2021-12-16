@@ -11,6 +11,10 @@ import path from 'path';
 import { Martinizer } from '../../Builders/Martinizer';
 import logger from '../../logger';
 import { inspect } from 'util';
+import { plainToInstance } from 'class-transformer';
+import { ClientInsaneSettingsDto, FileDto } from './membrane_builder.dto';
+import { validateOrReject } from 'class-validator';
+import { AvailableForceFields } from '../types';
 
 const MembraneBuilderRouter = Router();
 
@@ -80,31 +84,44 @@ const VALID_BODY_ITEMS = [
 MembraneBuilderRouter.post('/', Uploader.fields([
   { name: 'itp', maxCount: 99 }, 
   { name: 'top', maxCount: 1 },
-  { name: 'pdb', maxCount: 1 },
+  { name: 'pdb', maxCount: 1 }, 
 ]), (req, res) => {
+  
   (async () => {
-    function convertOrThrow(str: string) : number {
-      const n = Number(str);
-      if (isNaN(n)) {
-        return Errors.throw(ErrorType.Format);
-      }
+    
+    // Init
+    console.log("files", req.files);
+    const validatedParams = plainToInstance(ClientInsaneSettingsDto, req.body);
 
-      return n;
+    //Validate file names
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    const validatedPdb = plainToInstance(FileDto, files.pdb[0])
+    const validatedTop = plainToInstance(FileDto, files.top[0])
+    const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
+
+    try {
+      await validateOrReject(validatedParams); 
+      await validateOrReject(validatedPdb); 
+      await validateOrReject(validatedTop); 
+      await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
+    } catch(e) {
+      res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
+      return; 
     }
 
-    // Init
-    const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] }; //
-    const molecule_id = req.body.from_id as string | undefined; // m
+    //const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
+     // Maybe security check
+    const molecule_id = validatedParams.from_id
     const { 
       pbc, 
       box, 
       lipids: lipids_str, 
       upper_leaflet: upper_leaflet_str 
-    } = req.body; // l
-    let force_field: string = req.body.force_field;
+    } = validatedParams
+    let force_field = validatedParams.force_field
 
-    //console.log(files, molecule_id, force_field) // null prototype, undefined, undefined
 
     const opts: Partial<InsaneSettings> = {};
 
@@ -118,17 +135,14 @@ MembraneBuilderRouter.post('/', Uploader.fields([
 
     if (molecule_id) {
       // from molecule id
-      const { pdb, itps, top, force_field: ff } = await MembraneBuilder.prepareRunWithDatabaseMolecule(molecule_id);
+      const { pdb, itps, top, force_field: ff } = await MembraneBuilder.prepareRunWithDatabaseMolecule(molecule_id.toString());
       molecule_entries.molecule_itps = itps;
       molecule_entries.molecule_pdb = pdb;
       molecule_entries.molecule_top = top;
-      force_field = ff;
+      force_field = ff as AvailableForceFields;
     } // m
     else {
-      if (!settings.force_fields.includes(force_field)) {
-        return Errors.throw(ErrorType.InvalidForceField);
-      }
-      if (req.body.molecule_added === "true") {
+      if (validatedParams.molecule_added) {
         // except them from files
         if (!files || !files.itp || !files.top || !files.pdb) {
           return Errors.throw(ErrorType.MissingFiles);
@@ -163,7 +177,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
 
     let upper_leaflet: LipidMap = [];
     let lipids = undefined;
-    if (req.body.lipids_added === "true") {
+    if (validatedParams.lipids_added) {
       if (!lipids_str || !force_field) {
         return Errors.throw(ErrorType.MissingParameters);
       } // l  
@@ -192,53 +206,44 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     }
 
     // Parse settings
-    if (pbc && checkPbc(pbc)) {
-      opts.pbc = pbc;
+    opts.pbc = pbc;
+    const items = (box as string).split(',').map(e => parseInt(e, 10));
+    if (!items.every(e => !isNaN(e) && e >= 0)) {
+      return Errors.throw(ErrorType.Format);
     }
-    if (box) {
-      const items = (box as string).split(',').map(e => parseInt(e, 10));
-
-      if (!items.every(e => !isNaN(e) && e >= 0)) {
-        return Errors.throw(ErrorType.Format);
-      }
-      opts.box = items;
-    }
-
-    // Auto convert all items that are numbers
-    for (const item of VALID_BODY_ITEMS) {
-      if (item in req.body && req.body[item]) {
-        opts[item] = convertOrThrow(req.body[item]);
-      } 
-    }
-
+    opts.box = items;
+    
     // Handle rotate
-    if (req.body.rotate && req.body.rotate !== 'none') {
-      if (req.body.rotate === 'angle') {
-        opts.rotate_angle = convertOrThrow(req.body.rotate_angle);
+    if (validatedParams.rotate !== 'none') {
+      if (validatedParams.rotate === 'angle') {
+        opts.rotate_angle = validatedParams.rotate_angle;
         opts.rotate = 'angle';
       }
       else {
-        opts.rotate = req.body.rotate;
+        opts.rotate = validatedParams.rotate;
       }
     }
 
-    if (req.body.molecule_added === "true") {
-      if (isBoolTrue(req.body.center)) {
+    if (validatedParams.molecule_added) {
+      if (validatedParams.center) {
         opts.center = true;
       }
     }
-    if (req.body.lipids_added === "true" && req.body.molecule_added === "true") {
-      if (isBoolTrue(req.body.orient)) {
+    if (validatedParams.lipids_added && validatedParams.molecule_added) {
+      if (validatedParams.orient) {
         opts.orient = true;
       }
     }
 
-    opts.salt_concentration = req.body.salt_concentration;
-    if(req.body.charge !== "0"){
-      opts.charge = req.body.charge;
+    opts.salt_concentration = validatedParams.salt_concentration;
+    if(validatedParams.charge !== 0){
+      opts.charge = validatedParams.charge;
     }
-    opts.solvent_type = req.body.solvent_type;
+    opts.solvent_type = validatedParams.solvent_type;
     
+    if(!force_field){
+      return Errors.throw(ErrorType.MissingParameters)
+    }
 
     try {
       const { pdbs: { water, no_water }, top, itps } = await MembraneBuilder.run({
@@ -275,7 +280,9 @@ MembraneBuilderRouter.post('/', Uploader.fields([
         throw e;
       }
     }
-  })().catch(errorCatcher(res));
+  })().catch(
+    errorCatcher(res)
+  );
 });
 
 MembraneBuilderRouter.all('/', methodNotAllowed(['POST']));

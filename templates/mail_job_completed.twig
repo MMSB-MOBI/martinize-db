@@ -1,0 +1,18 @@
+{% extends "index.twig" %}
+
+{% block content %}
+  <p>
+    <strong>Dear {{ name }},</strong>
+  </p>
+  <br />
+
+  Your job {{ job_id }} is completed. 
+
+  <br />
+
+  You can view your results <strong><a href="{{ job_url }}"> here</a></strong> or in your history on MAD website.
+
+  <br />
+
+  <em>This e-mail is automatically sent to you. Please do not reply to this e-mail address.</em>
+{% endblock %}

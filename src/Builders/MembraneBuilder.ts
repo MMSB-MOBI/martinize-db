@@ -10,7 +10,9 @@ import { Database } from '../Entities/CouchHelper';
 import MoleculeOrganizer from '../MoleculeOrganizer';
 import { ArrayValues } from '../helpers';
 import { Lipid } from '../Entities/entities';
-import ShellManager, { JobInputs } from './ShellManager';
+import ShellManager, { JobInputs, JMError } from './ShellManager';
+import Errors, { ErrorType } from '../Errors';
+import ItpFile from 'itp-parser-forked';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -230,11 +232,12 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     // Start insane
     try {
-      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir);
+      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir, "insane");
     } catch (e) {
       // Handle error and throw the right error
       console.error("ShellManager.run crash"); 
       console.error(e.stack); 
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
       throw new InsaneError('insane_crash', workdir, 'error' in e ? e.error.stack : e.stack);
     }
 
@@ -251,21 +254,51 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     
     logger.debug(`[INSANE] Creating TOP file.`);
+    //If we have a _rubber_band.itp, don't include it in the top file because it's included in molecule_x.itp. Also need to have a molecule_x.itp without this included itp to compute pdb without elastic bonds in conect fields.
+
+    const itps_for_top = molecule_itps?.filter(itp => !itp.includes("_rubber_band"))
+
+    let itps_without_elastic: string[] = []; 
+    if(itps_for_top && (itps_for_top?.length != molecule_itps?.length)) { //We have elastic bonds, so filter "#include" statements and write new *_without_elastic.itp
+      for (const itp of itps_for_top){
+        const readedItp = await ItpFile.read(itp); 
+        const bonds = readedItp.getField("bonds")
+        const bonds_without_included_elastic = bonds.filter(line => !(line.startsWith("#include") && line.includes("_rubber_band")))
+        if (bonds.length !== bonds_without_included_elastic.length) logger.warn("[INSANE] It seems *_rubber_band.itp exists but is not included inside molecule_*.itp")
+        readedItp.setField("bonds", bonds_without_included_elastic)
+        const itpPath = workdir + "/" + readedItp.type + "_without_elastic.itp"
+        fs.writeFileSync(itpPath, readedItp.toString())
+        itps_without_elastic.push(itpPath); 
+      }
+    }
+
+    let wo_elastic_top = undefined; 
     try {
       var { top: full_top } = await Martinizer.createTopFile(
         workdir,
         molecule_top,
-        molecule_itps,
-        force_field
+        itps_for_top,
+        force_field,
+        "original.top"
       );
+      if(itps_without_elastic.length > 0) {
+        const { top } = await Martinizer.createTopFile(workdir, molecule_top, itps_without_elastic, force_field, "original.top")
+        wo_elastic_top = top; 
+      }
+
     } catch (e) {
       throw new InsaneError('top_file_crash', workdir, e.stack);
     }
+
+
+
     
     logger.debug(`[INSANE] Reading built TOP file and INSANE generate TOP file.`);
     const insane_top = await TopFile.read(workdir + "/__insane.top");
 
     const molecule_full_top = await TopFile.read(full_top);
+    const readed_wo_elastic_top = wo_elastic_top ? await TopFile.read(wo_elastic_top) : undefined
+
 
     if (lipids) {
       // Compile the top files
@@ -276,11 +309,14 @@ export const MembraneBuilder = new class MembraneBuilder {
 
       // Add the includes at the end of headlines
       molecule_full_top.headlines.push(...lipids_itp_names.map(e => `#include "${e}"`));
+      if(readed_wo_elastic_top) readed_wo_elastic_top.headlines.push(...lipids_itp_names.map(e => `#include "${e}"`))
     }
 
     // Compile the top files together
     logger.debug(`[INSANE] Writing prepared TOP file.`);
-    const prepared_top = await this.writePreparedTopFile(workdir + "/__prepared.top", insane_top, molecule_full_top);
+    
+    const prepared_top = await this.writePreparedTopFile(workdir + "/full.top", insane_top, molecule_full_top);
+    const prepared_top_wo_elastic = readed_wo_elastic_top ? await this.writePreparedTopFile(workdir + "/__prepared-no-elastic.top", insane_top, readed_wo_elastic_top) : undefined
 
     // Create lipids ITP files in working dir.
     // FF(s) symlink has been created by createTopFile() method.
@@ -304,7 +340,9 @@ export const MembraneBuilder = new class MembraneBuilder {
     // Ok, all should be ready. Start gromacs!
     logger.debug(`[INSANE] Creating the CONECT-ed PDB with GROMACS.`);
     try {
-      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/system-insane-hack.gro", prepared_top, workdir, lipids);
+      const to_use_top = prepared_top_wo_elastic ? prepared_top_wo_elastic : prepared_top
+      const to_use_gro = molecule_pdb ? "system-insane-hack.gro" : "system.gro"
+      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
     } catch (e) {
       throw new InsaneError('gromacs_crash', workdir, e.stack);
     }

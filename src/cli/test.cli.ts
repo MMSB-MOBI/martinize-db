@@ -50,7 +50,7 @@ TEST_CLI.command('elastic-bonds', async rest => {
     return "Given folder must have a ITP file, TOP file and PDB file.";
   }
 
-  const relations = await Martinizer.computeElasticNetworkBounds(top_file, itps);
+  const relations = await Martinizer.computeElasticNetworkBounds(top_file, itps, rest);
 
   await FsPromise.writeFile(rest + 'relations.json', JSON.stringify(relations, null, 2));
 
@@ -312,7 +312,7 @@ TEST_CLI.command('dry-run', async () => {
   const insane = await MembraneBuilder.run({
     force_field: 'martini304',
     molecule_pdb: pdb,
-    molecule_itps: itps,
+    molecule_itps: itps.flat(),
     molecule_top: top,
     lipids: [['DLPC', 4], ['DPPC', 1]],
     upper_leaflet: [['DLPC', 1]],

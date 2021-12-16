@@ -1,7 +1,8 @@
 import nano from "nano";
 import logger from "../logger";
+import { dateFormatter } from '../helpers'
 
-export default abstract class AbstractDatabase<T extends { id: string, _id?: string, _rev?: string }> {
+export default abstract class AbstractDatabase<T extends { id: string, _id?: string, _rev?: string, update_date?:string }> {
   constructor(protected _db: nano.DocumentScope<T>) {}
 
   /** Get all documents in the database */
@@ -82,6 +83,13 @@ export default abstract class AbstractDatabase<T extends { id: string, _id?: str
 
   delete(element: T) {
     return this._db.destroy(element._id!, element._rev!);
+  }
+
+  async update(id: string, updateFnc : (doc:T) => T) {
+    const doc = await this.get(id)
+    const newDoc = updateFnc(doc); 
+    newDoc.update_date = dateFormatter("Y-m-d H:i:s")
+    return this.save(newDoc); 
   }
 
   async count() {

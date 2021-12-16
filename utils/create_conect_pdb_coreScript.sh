@@ -79,12 +79,12 @@ then
 else
   # Create the box
   echo Create box : gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc
-  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc  >editconf.stdout 2>editconf.stderr
+  gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc  > 1.editconf.stdout 2> 1.editconf.stderr
 fi
 
 # Create the computed topology .tpr
 echo Create tpr : gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"
-gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" >grompp.stdout 2>grompp.stderr
+gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" > 2.grompp.stdout 2> 2.grompp.stderr
 
 if [ $DEL_WATER_BOOL == "YES" ]
 then
