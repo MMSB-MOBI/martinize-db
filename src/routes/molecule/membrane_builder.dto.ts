@@ -44,10 +44,10 @@ export class ClientInsaneSettingsDto {
     @IsIn(FORCE_FIELDS)
     force_field?: AvailableForceFields;
 
-    @IsNumber()
+    @IsString()
     @IsOptional()
-    @Transform(({ value }) => Number(value))
-    from_id?:number
+    @Matches('^[0-9]$')
+    from_id?:string
 
     @IsString()
     @IsNotEmpty()

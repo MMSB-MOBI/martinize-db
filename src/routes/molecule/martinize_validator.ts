@@ -54,7 +54,7 @@ export interface ClientSettingsValidate {
   use_go ? : boolean; 
   builder_mode : AvailableBuilderMode; 
   send_mail : Boolean;
-  user_id? : number;  
+  user_id? : string;  
   pdb_name?: string ; //string that ends with .pdb
 }
 
@@ -117,7 +117,12 @@ export function validateClientSettings(settings : ClientSettings) : ClientSettin
   if(checkBooleanString(settings.send_mail)) validated.send_mail = true
   else validated.send_mail = false
 
-  if(settings.user_id) validated.user_id = numberOrError(settings.user_id)
+  console.log("check user id", settings.user_id)
+  if(settings.user_id){
+    const regexp = new RegExp("\^[0-9]*$")
+    if (regexp.test(settings.user_id)) validated.user_id = settings.user_id
+  } 
+  console.log("validated user id", validated.user_id); 
 
   if(settings.pdb_name){
 
