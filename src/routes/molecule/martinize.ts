@@ -335,7 +335,7 @@ export async function SocketIoMartinizer(app: Server) {
             top_file : path.basename(top), 
             warnings : path.basename(warns)
           },
-          validatedParams, 
+          settings : validatedParams, 
           radius, 
           name : validatedParams.pdb_name
         }
