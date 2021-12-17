@@ -138,7 +138,7 @@ export class ClientInsaneSettingsDto {
 export class FileDto{
     @IsString()
     @IsNotEmpty()
-    @Matches('^[A-Z0-9a-z.\-_]*$')
+    @Matches('^[A-Z0-9a-z._-]*$')
     originalname!: string; 
 
 
