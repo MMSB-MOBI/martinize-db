@@ -66,58 +66,58 @@ export function validateClientSettings(settings : ClientSettings) : ClientSettin
   if(settings.ff){
     const ff = settings.ff as AvailableForceFields
     if(FORCE_FIELDS.includes(ff)) validated.ff = ff
-    else return Errors.throw(ErrorType.Format)
+    else throw new Error("Force field is not valid"); 
   } 
   else{
-    return Errors.throw(ErrorType.MissingParameters)
+    throw new Error("Force field is missing")
   }
 
   if(settings.position) {
     const position = settings.position as AvailablePositions
     if(POSITION.includes(position)) validated.position = position
-    else throw Errors.throw(ErrorType.Format)
-  } else return Errors.throw(ErrorType.MissingParameters)
+    else throw new Error("Position is not valid"); 
+  } else throw new Error("Position is missing")
 
   if(settings.cter) {
     const cter = settings.cter as AvailableCter
     if(CTER.includes(cter)) validated.cter = cter
-    else throw Errors.throw(ErrorType.Format)
-  } else return Errors.throw(ErrorType.MissingParameters)
+    else throw new Error("Cter is not valid")
+  } else throw new Error("Cter is missing")
 
   if(settings.nter) {
     const nter = settings.nter as AvailableNter
     if(NTER.includes(nter)) validated.nter = nter
-    else return Errors.throw(ErrorType.Format)
-  } else return Errors.throw(ErrorType.MissingParameters)
+    else throw new Error("Nter is not valid")
+  } else throw new Error("Nter is missing")
 
   if(checkBooleanString(settings.sc_fix)) validated.side_chain_fix = true; 
 
   if(settings.cystein_bridge){
     const cystein_bridge = settings.cystein_bridge as AvailableCysteinBridge
     if(CYSTEIN_BRIDGE.includes(cystein_bridge)) validated.cystein_bridge = cystein_bridge
-    else return Errors.throw(ErrorType.Format)
-  } else return Errors.throw(ErrorType.MissingParameters)
+    else throw new Error("Cystein bridge is not valid")
+  } else throw new Error("Cystein bridge is missing")
 
   if(settings.elastic === "true") validated.elastic = true; 
 
-  if(settings.ef) validated.ef = numberOrError(settings.ef)
-  if(settings.el) validated.el = numberOrError(settings.el)
-  if(settings.eu) validated.eu = numberOrError(settings.eu)
-  if(settings.ea) validated.ef = numberOrError(settings.ea)
-  if(settings.ep) validated.ef = numberOrError(settings.ep)
+  if(settings.ef) validated.ef = numberOrError(settings.ef, "Force constant")
+  if(settings.el) validated.el = numberOrError(settings.el, "Lower cutoff")
+  if(settings.eu) validated.eu = numberOrError(settings.eu, "Upper cutoff")
+  if(settings.ea) validated.ef = numberOrError(settings.ea, "Decay factor a")
+  if(settings.ep) validated.ef = numberOrError(settings.ep, "Decay power p")
+  if(settings.em) validated.em = numberOrError(settings.em, "Minimum force")
 
   if(settings.use_go === "true") validated.use_go = true
 
   if(settings.builder_mode){
     const builder_mode = settings.builder_mode as AvailableBuilderMode
     if(BUILDER_MODE.includes(builder_mode)) validated.builder_mode = builder_mode
-    else return Errors.throw(ErrorType.Format)
-  } else return Errors.throw(ErrorType.MissingParameters)
+    else throw new Error("Mode is not valid")
+  } else throw new Error("Mode is missing")
 
   if(checkBooleanString(settings.send_mail)) validated.send_mail = true
   else validated.send_mail = false
 
-  console.log("check user id", settings.user_id)
   if(settings.user_id){
     const regexp = new RegExp("\^[0-9]*$")
     if (regexp.test(settings.user_id)) validated.user_id = settings.user_id
@@ -127,7 +127,7 @@ export function validateClientSettings(settings : ClientSettings) : ClientSettin
   if(settings.pdb_name){
 
     if(regexFileName(settings.pdb_name)) validated.pdb_name = settings.pdb_name
-    else return Errors.throw(ErrorType.Format)
+    else throw new Error("File name contains forbidden characters.")
   }
 
   return validated
@@ -154,10 +154,10 @@ function isBooleanString(val : string): boolean {
   return val === "true" || val === "false"
 }
 
-function numberOrError(num: string) {
+function numberOrError(num: string, arg : string) {
   const pos = Number(num);
   if (isNaN(pos) || pos < 0) {
-    return Errors.throw(ErrorType.Format);
+    throw new Error(`${arg} is not a number`)
   }
   return pos;
 }
