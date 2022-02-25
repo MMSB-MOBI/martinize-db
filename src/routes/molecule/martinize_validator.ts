@@ -42,7 +42,7 @@ export interface ClientSettingsValidate {
   position : AvailablePositions,
   cter : AvailableCter, 
   nter : AvailableNter, 
-  side_chain_fix? : boolean, 
+  sc_fix? : boolean, 
   cystein_bridge : AvailableCysteinBridge,
   elastic? : boolean
   ef? : number; 
@@ -90,7 +90,8 @@ export function validateClientSettings(settings : ClientSettings) : ClientSettin
     else throw new Error("Nter is not valid")
   } else throw new Error("Nter is missing")
 
-  if(checkBooleanString(settings.sc_fix)) validated.side_chain_fix = true; 
+  if(checkBooleanString(settings.sc_fix)) validated.sc_fix = true; 
+  else validated.sc_fix = false; 
 
   if(settings.cystein_bridge){
     const cystein_bridge = settings.cystein_bridge as AvailableCysteinBridge
