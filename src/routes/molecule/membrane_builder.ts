@@ -95,21 +95,24 @@ MembraneBuilderRouter.post('/', Uploader.fields([
 
     //Validate file names
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
-    if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
-    const validatedPdb = plainToInstance(FileDto, files.pdb[0])
-    const validatedTop = plainToInstance(FileDto, files.top[0])
-    const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
-
-    try {
-      await validateOrReject(validatedParams); 
-      await validateOrReject(validatedPdb); 
-      await validateOrReject(validatedTop); 
-      await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
-    } catch(e) {
-      res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
-      return; 
+    if(Object.keys(files).length > 0) {
+      if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+      if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+      const validatedPdb = plainToInstance(FileDto, files.pdb[0])
+      const validatedTop = plainToInstance(FileDto, files.top[0])
+      const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
+  
+      try {
+        await validateOrReject(validatedParams); 
+        await validateOrReject(validatedPdb); 
+        await validateOrReject(validatedTop); 
+        await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
+      } catch(e) {
+        res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
+        return; 
+      }
     }
+
 
     //const settings: SettingsJson = JSON.parse(await FsPromise.readFile(SETTINGS_FILE, 'utf-8'));
      // Maybe security check
