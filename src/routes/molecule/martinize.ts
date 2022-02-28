@@ -18,7 +18,10 @@ import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import HistoryOrganizer from "../../HistoryOrganizer";
 import Mailer from '../../Mailer/Mailer';
 import { TopFile } from 'itp-parser-forked'
-import {validateClientSettings, ClientSettingsValidate, ClientSettings} from './martinize_validator'
+import { plainToInstance } from 'class-transformer';
+import { ClientSettingsMartinize } from './molecule.dto'; 
+import { validateOrReject } from 'class-validator';
+import { MartinizeJobToSave } from './molecule.types'
 
 type MartinizeRunFailedPayload = { 
   error: string, 
@@ -30,6 +33,26 @@ type MartinizeRunFailedPayload = {
   message: string, 
 };
 
+interface ClientSettings {
+  ff : string, 
+  position : string; 
+  cter : string
+  nter : string 
+  sc_fix : string; 
+  cystein_bridge : string; 
+  elastic? : string; 
+  ef? : string; 
+  el? : string; 
+  eu? : string; 
+  ea? : string; 
+  ep? : string; 
+  em? : string; 
+  use_go? : string; 
+  builder_mode : string; 
+  send_mail : string; 
+  user_id? : string; 
+  pdb_name?: string; 
+}
 
 const MartinizerRouter = Router();
 
@@ -153,7 +176,7 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
   
 }*/
 
-async function martinizeRun(parameters: ClientSettingsValidate, pdb_path: string, onStep?: (step: string, ...data: any[]) => void, path?: string) {
+async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: string, onStep?: (step: string, ...data: any[]) => void, path?: string) {
   //const { ff, position, posref_fc, elastic, ef, el, eu, ea, ep, em, eb, use_go, sc_fix, nter, cter, neutral_termini, commandline, cystein_bridge } = parameters;
 
   /// NON PRIS EN CHARGE (TODO) ///
@@ -266,11 +289,14 @@ export async function SocketIoMartinizer(app: Server) {
 
       const tmp_dir = await TmpDirHelper.get();
       const INPUT = `${tmp_dir}/input.pdb`
-      
       try {
-        const validatedParams = validateClientSettings(settings)
-
-        
+        const validatedParams = plainToInstance(ClientSettingsMartinize, settings)
+        try {
+          await validateOrReject(validatedParams)
+        }catch(e){
+          throw new Error(e as any); 
+        }
+                
         logger.debug(`[MARTINIZE] save input to ${tmp_dir}`)
         
 
@@ -323,7 +349,7 @@ export async function SocketIoMartinizer(app: Server) {
         );
 
        
-        const job = {
+        const job : MartinizeJobToSave = {
           jobId : path.basename(dir),
           userId : validatedParams.user_id,
           type : "martinize",
@@ -335,14 +361,10 @@ export async function SocketIoMartinizer(app: Server) {
             top_file : path.basename(top), 
             warnings : path.basename(warns)
           },
-          settings : validatedParams, 
+          settings : validatedParams, //To avoid class into class that create conflicts for plainToInstance later (why ??)
           radius, 
           name : validatedParams.pdb_name
         }
-
-        console.log("settings id", settings.user_id)
-        console.log("validate id", validatedParams.user_id)
-        console.log("job user id", job.userId)
 
         let savedToHistory = false; 
         try {
@@ -358,14 +380,11 @@ export async function SocketIoMartinizer(app: Server) {
           
           if(validatedParams.send_mail && job.userId) sendMailMartinizeEnd(job.userId, job.jobId); 
         } 
-        
-        
-        
-
       
 
       } catch (e) {
         // Error catch, test the error :D
+        console.error("ERROR", e)
         if (e instanceof ApiError){
           if (e.code === ErrorType.MartinizeRunFailed){
             const { error, type, dir } = e.data as MartinizeRunFailedPayload;

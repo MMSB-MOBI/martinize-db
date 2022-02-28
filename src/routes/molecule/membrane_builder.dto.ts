@@ -1,7 +1,7 @@
 import { Transform } from "class-transformer";
 import { IsNotEmpty, IsString, IsIn, IsBoolean, IsOptional, Matches, IsNumber } from "class-validator";
 import { CpuInfo } from "os";
-import { AvailableForceFields, FORCE_FIELDS } from "../types";
+import { AvailableForceFields, FORCE_FIELDS, castStringTrueFalseToBoolean } from "../types";
 
 const BOX_TYPE = ["hexagonal", "rectangular", "square", "cubic", "optimal", "keep"] as const
 type AvailableBoxType = typeof BOX_TYPE[number]
@@ -12,11 +12,6 @@ type AvailableRotateMode = typeof ROTATE[number]
 const SOLVENT = ["W", "PW"] as const
 type AvailableSolvent = typeof SOLVENT[number]
 
-function castStringTrueFalseToBoolean(val: string) : boolean | undefined {
-    //Don't work with 0 and 1
-    if(val.toLowerCase() === "true") return true
-    if(val.toLowerCase() === "false") return false
-}
 
 export class ClientInsaneSettingsDto {
     @IsBoolean()
