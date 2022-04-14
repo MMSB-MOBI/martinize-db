@@ -24,23 +24,53 @@
   "category_tree": {
     "MC:0001": {
       "name": "Sugars",
+      "dir" : "sugars",
       "children": {}
     },
     "MC:0002": {
       "name": "Proteins",
+      "dir" : "proteins",
       "children": {}
     },
     "MC:0003": {
       "name": "Polymers",
+      "dir" : "polymers",
       "children": {}
     },
     "MC:0004": {
       "name": "Amino acids",
+      "dir" : "aminoacids", 
       "children": {}
     },
     "MC:0005": {
       "name": "Lipids",
+      "dir" : "lipids",
       "children": {}
-    }
+    }, 
+    "MC:0006": {
+      "name" : "Ions",
+      "dir" : "ions",
+      "children" : {}
+    }, 
+    "MC:0007" : {
+      "name" : "Phytochemicals",
+      "dir" : "phytochemicals",
+      "children" : {}
+    }, 
+    "MC:0008" : {
+      "name" : "Solvents", 
+      "dir" : "solvents",
+      "children" : {}
+    }, 
+    "MC:0009" : {
+      "name" : "Sterols", 
+      "dir" : "sterols",
+      "children" : {}
+    }, 
+    "MC:0010" : {
+      "name" : "Surfactants",
+      "dir" : "surfactants",
+      "children" : {}
+    } 
   }
 }

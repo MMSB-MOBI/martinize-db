@@ -10,6 +10,7 @@ import logger from '../../logger';
 import { resolve } from 'path';
 import { CONNECTED_USER_CLI } from '../../cli/user_cli';
 import { Excel } from '../../cli/molecule_cli';
+import { info } from 'console';
 
 
 
@@ -35,7 +36,7 @@ export interface InfosJson {
   /* Name of the molecule */
   name: string,
   alias: string,
-  category: keyof typeof GoTerms[],
+  category: string[],
   create_way: string,
   directory: string,
   top: {version: string, infos: SimuFile}[],
@@ -65,7 +66,7 @@ export interface SimuRequest{
     alias: string,
     smiles: string,
     version: string,
-    category: keyof typeof GoTerms[],
+    category: string[],
     command_line: string,
     comments: string,
     create_way: string,
@@ -112,13 +113,7 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
 
       let ver : VersionItp = infos.versions[i];
 
-      let martiniVer = '';
-      if (ver.force_field == 'v2.0' || ver.force_field == 'v2.1' || ver.force_field == 'v2.2') {
-        martiniVer = 'martini22';
-      }
-      else if (ver.force_field == 'v3' || ver.force_field == 'v304') {
-        martiniVer = 'martini304';
-      }
+      const martiniVer = ver.force_field;
 
       let req : SimuRequest = {
         full_user: {
@@ -153,12 +148,12 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
       }
 
       // If there are no top file correspnding to the itp
-      if (!infos.top[i].infos.originalname.match(ver.number)){
+      if (infos.versions[i].number !== infos.top[i].version){
         return Errors.throw(ErrorType.MissingTopFiles);
       }
 
       // If the molecule version is the first one, we check if the molecule is already in the database
-      if (ver.number == '01') {
+      if (i === 0) {
         const checker = new MoleculeChecker(req);
         try {
           await checker.checkName(req.body.name, '');
