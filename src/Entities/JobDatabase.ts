@@ -1,4 +1,4 @@
-import AbstractDatabase from "./AbstractDatabase"
+import AbstractDatabase from "./AbstractDatabase";
 import logger from "../logger";
 import { Database } from "./CouchHelper";
 import { Job } from './entities'
@@ -20,17 +20,17 @@ export default class JobDatabase extends AbstractDatabase<Job> {
     }
 
     async getJobsDetails(jobIds : string[], userId: string){
-            const jobsDetails = await this.bulkGet(jobIds)
-            const jobsFound = jobsDetails.filter(job => job !== null).map(job => job.id)
-            const notFound = jobIds.filter(x => !jobsFound.includes(x));
-            if (notFound.length > 0) {
-                logger.warn(`job(s) ${notFound} not found in job database`)
-                //Clean
-                await Database.history.deleteJobs(userId, notFound);
-                
-            }
-            return jobsDetails.filter(job => job !== null); 
+        const jobsDetails = await this.bulkGet(jobIds)
+        const jobsFound = jobsDetails.filter(job => job !== null).map(job => job.id)
+        const notFound = jobIds.filter(x => !jobsFound.includes(x));
+        if (notFound.length > 0) {
+            logger.warn(`job(s) ${notFound} not found in job database`)
+            //Clean
+            await Database.history.deleteJobs(userId, notFound);
+            
         }
+        return jobsDetails.filter(job => job !== null); 
+    }
 
 
     async updateManuallySavedBonds(id: string, newItpFiles: string[][]) {

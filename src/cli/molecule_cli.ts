@@ -22,7 +22,7 @@ const MOLECULE_CLI = new CliListener(
       'get <id>': 'Get details about molecule <id>',
       'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
       'load <path>': 'Load in memory all the molecules in the directory to insert them in the database',
-      'push': 'Insert the molecules in memory in the database',
+      'push <log_path>': 'Insert the molecules in memory in the database, write recap in log_path',
       'top <path>': 'Create top files for all the molecules in the directory',
       'itp <path>' : 'Modify itp to include more informations. Only work with a specific directory organization.'
     },
@@ -189,15 +189,39 @@ MOLECULE_CLI.command('load', rest => {
 
 
 
-MOLECULE_CLI.command('push', async() => {
+MOLECULE_CLI.command('push', async rest => {
+  rest = rest.trim();
+  let logged = ''
+  if(! rest) {
+    logger.warn("No log file to write insertion recap")
+  }
+  else {
+    logged = "# MAD molecules batch insertion"
+  }
+
   if (!CONNECTED_USER_CLI) {
     return 'Please connect before using this command by using user connect';
   }
   else {
     if (BATCH_MOLECULES) {
       try {
-        await CreateMoleculeFromJson(BATCH_MOLECULES);
-        logger.info('push done');
+        const recapInsertion = await CreateMoleculeFromJson(BATCH_MOLECULES);
+        logger.info(`${recapInsertion.inserted.length} molecules inserted`);
+        if (logged !== '') logged += "\n## Inserted \n" + recapInsertion.inserted.join("\n")
+        logger.warn(`Molecules not inserted :`)
+        if (logged !== '') logged += "\n## Not inserted\n"
+        for(const reason in recapInsertion.not_inserted){
+          console.log('##', reason)
+          if (logged !== '') logged += `\n### ${reason}\n`
+          if(logged === '') console.log(recapInsertion.not_inserted[reason].join("\n"))
+          else {
+            console.log(recapInsertion.not_inserted[reason].length)
+            logged += recapInsertion.not_inserted[reason].join("\n")
+          }
+        }
+
+        if(logged !== '') fs.writeFileSync(rest, logged)
+        
         //logger.debug(Excel.text);
         //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
       } catch (e) {

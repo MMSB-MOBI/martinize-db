@@ -424,7 +424,6 @@ export const parser_files = (path: string) => {
     const batch : InfosJson[] = []
     const itpDirIterator = dirRecursive(path)
     for (const itpDir of itpDirIterator){
-        console.log(itpDir)
         const files = fs.readdirSync(itpDir)
         const itp = files.filter((f: string) => f.endsWith('.itp'))
         const gro = files.filter((f : string) => f.endsWith('.gro'))
