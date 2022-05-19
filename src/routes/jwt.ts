@@ -57,6 +57,8 @@ export default jwt({
     "/api/user/contact",
     "/api/force_fields/list",
     "/api/force_fields/download",
+    "/api/polymergenerator/hello",
+    "/api/polymergenerator/data",
     /^\/api\/molecule\/representation\/.+$/,
   ] }
 );

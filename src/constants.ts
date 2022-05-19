@@ -96,6 +96,13 @@ export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
 export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
 export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(__dirname, "../utils/martinize_coreScript.sh"); //need to provide a script with chmod hack for old infra
+
+
+export const POLYPLY_PATH = path.resolve(__dirname, "../utils/run_polyply.sh");
+export const POLYPLY_PATH_JM = process.env.POLYMER_PATH_JM ?? path.resolve(__dirname, "../utils/run_polyply.sh"); //need to provide a script with chmod hack for old infra
+export const POLYPLY_VENV = process.env.POLYPLY_VENV ?? path.resolve(__dirname, "/polyply_1.0/venv/bin/activate");
+export const POLYPLYPATH = "/data3/rmarin/projet_polyply"
+export const POLYPLYPATHDATA = "/data3/rmarin/projet_polyply/PolymerGeneratorServerDev/data/"
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
@@ -105,9 +112,13 @@ export const INSANE_HACK_SCRIPT = {
   AFTER: path.resolve(__dirname, "../utils/insane_hack_reverse.py")
 } //scripts to hack pdb coordinates when we have nan atoms
 
+
+
 //Venv for local computation
 export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
 export const INSANE_VENV = process.env.INSANE_VENV ?? path.resolve(__dirname, "../insanevenv/bin/activate")
+
+
 
 /**
  * Default URLs.
