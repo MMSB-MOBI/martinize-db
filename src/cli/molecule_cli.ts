@@ -11,6 +11,7 @@ import cliFileSuggestor from '@interactive-cli-helper/file-suggestor';
 import { ErrorType } from "../Errors";
 import { GoTerms } from "../types";
 import { CONNECTED_USER_CLI } from "./user_cli";
+import { correctVersions} from '../routes/molecule/tmp_version'
 const fs = require('fs');
 
 const MOLECULE_CLI = new CliListener(
@@ -187,6 +188,10 @@ MOLECULE_CLI.command('load', rest => {
   onSuggest: cliFileSuggestor,
 });
 
+MOLECULE_CLI.command('tmpversion', async () => {
+  await correctVersions()
+
+})
 
 
 MOLECULE_CLI.command('push', async rest => {
