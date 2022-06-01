@@ -101,8 +101,8 @@ export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(_
 export const POLYPLY_PATH = path.resolve(__dirname, "../utils/run_polyply.sh");
 export const POLYPLY_PATH_JM = process.env.POLYMER_PATH_JM ?? path.resolve(__dirname, "../utils/run_polyply.sh"); //need to provide a script with chmod hack for old infra
 export const POLYPLY_VENV = process.env.POLYPLY_VENV ?? path.resolve(__dirname, "/polyply_1.0/venv/bin/activate");
-export const POLYPLYPATH = "/data3/rmarin/projet_polyply"
-export const POLYPLYPATHDATA = "/data3/rmarin/projet_polyply/PolymerGeneratorServerDev/data/"
+export const POLYPLYPATHDATA  = process.env.POLYPLYPATHDATA ?? path.resolve(__dirname, "../data"); 
+
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");

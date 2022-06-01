@@ -8,17 +8,16 @@ import * as JobManager from 'ms-jobmanager';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import TmpDirHelper from '../../TmpDirHelper';
 import * as fs from 'fs';
-
+import {POLYPLYPATHDATA} from "../../constants";
 
 interface ErrorToClient {
     disjoint: boolean,
     errorlinks: any[]
 }
-
-
+ 
+//const PATHDATA = "/data3/rmarin/projet_polyply/PolymerGeneratorServerDev/data/"
 const polymer = Router();
-const PATH = "/data3/rmarin/projet_polyply"
-const PATHDATA = "/data3/rmarin/projet_polyply/PolymerGeneratorServerDev/data/"
+
 //Build a dictionnary with all molecule avaible and a dictionnary with linking rules
 // Settings file "settings.json" at project root
 //const jobmanagerClient = new PromiseManager("localhost", 6001)
@@ -31,10 +30,10 @@ polymer.get('/hello', async (req, res) => {
 
 polymer.get('/data', async (req, res) => {
     let avaibleData: any = {}
-    let listfile = glob.sync(PATH + "/polyply_1.0-master/polyply/data/*/*.+(itp|ff)").map(f => { return f })
-
+    let listfile = glob.sync(POLYPLYPATHDATA + "/polyply_1.0/polyply/data/*/*.+(itp|ff)").map(f => { return f })
+     
     for (let file of listfile) {
-        let forcefield = file.split('/')[7]
+        let forcefield = file.split('/')[ file.split('/').length - 2 ]
 
         const itp = await ItpFile.read(file);
         for (let e of itp.getField('moleculetype')) {
@@ -50,26 +49,26 @@ polymer.get('/data', async (req, res) => {
         }
     }
 
-    for (let ff of Object.keys(avaibleData)) {
-        let list2 = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return f })
-        for (let file of list2) {
-            let forcefield = file.split('/')[6]
+    // for (let ff of Object.keys(avaibleData)) {
+    //     let list2 = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return f })
+    //     for (let file of list2) {
+    //         let forcefield = file.split('/')[6]
 
-            const itp = await ItpFile.read(file);
-            for (let e of itp.getField('moleculetype')) {
-                e = e.split('\t')[0]
-                if (!e.startsWith(';')) {
-                    const mol = e.split(' ')[0]
-                    if (Object.keys(avaibleData).includes(forcefield)) {
-                        avaibleData[forcefield].push(mol)
-                    }
-                    else {
-                        avaibleData[forcefield] = [mol]
-                    }
-                }
-            }
-        }
-    }
+    //         const itp = await ItpFile.read(file);
+    //         for (let e of itp.getField('moleculetype')) {
+    //             e = e.split('\t')[0]
+    //             if (!e.startsWith(';')) {
+    //                 const mol = e.split(' ')[0]
+    //                 if (Object.keys(avaibleData).includes(forcefield)) {
+    //                     avaibleData[forcefield].push(mol)
+    //                 }
+    //                 else {
+    //                     avaibleData[forcefield] = [mol]
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     //remove duplkiicate 
     for (let forcefield of Object.keys(avaibleData)) {
@@ -77,41 +76,41 @@ polymer.get('/data', async (req, res) => {
     }
 
     res.send(avaibleData);
-    console.log("Sending forcefields and residues data")
+    console.log("Sending forcefields and residues data" )
 });
 
-polymer.get("/customdata/:forcefield", (req, res) => {
-    let avaibleData: any = {}
-    let testdico: any = {}
-    console.log(req.params)
-    let ff = req.params.forcefield
-    const pathPolyplyData =
-        glob(PATHDATA + ff + "/*.itp", async function (er, files) {
-            for (let file of files) {
-                let forcefield = file.split('/')[7]
-                const itp = await ItpFile.read(file);
-                for (let e of itp.getField('moleculetype')) {
-                    e = e.split('\t')[0]
-                    if (!e.startsWith(';')) {
-                        const mol = e.split(' ')[0]
-                        if (Object.keys(avaibleData).includes(forcefield)) {
-                            avaibleData[forcefield].push(mol)
-                        }
-                        else {
-                            avaibleData[forcefield] = [mol]
-                        }
-                        if (Object.keys(testdico).includes(forcefield)) {
-                            testdico[forcefield].push(mol)
-                        }
-                        else {
-                            testdico[forcefield] = [mol]
-                        }
-                    }
-                }
-            }
-            res.send(avaibleData);
-        })
-});
+// polymer.get("/customdata/:forcefield", (req, res) => {
+//     let avaibleData: any = {}
+//     let testdico: any = {}
+//     console.log(req.params)
+//     let ff = req.params.forcefield
+//     const pathPolyplyData =
+//         glob(PATHDATA + ff + "/*.itp", async function (er, files) {
+//             for (let file of files) {
+//                 let forcefield = file.split('/')[7]
+//                 const itp = await ItpFile.read(file);
+//                 for (let e of itp.getField('moleculetype')) {
+//                     e = e.split('\t')[0]
+//                     if (!e.startsWith(';')) {
+//                         const mol = e.split(' ')[0]
+//                         if (Object.keys(avaibleData).includes(forcefield)) {
+//                             avaibleData[forcefield].push(mol)
+//                         }
+//                         else {
+//                             avaibleData[forcefield] = [mol]
+//                         }
+//                         if (Object.keys(testdico).includes(forcefield)) {
+//                             testdico[forcefield].push(mol)
+//                         }
+//                         else {
+//                             testdico[forcefield] = [mol]
+//                         }
+//                     }
+//                 }
+//             }
+//             res.send(avaibleData);
+//         })
+// });
 
 polymer.get("/fastaconversion", (req, res) => {
     const fasta = {
@@ -183,29 +182,29 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         //Get forcefield 
         const ff = dataFromClient['polymer']['forcefield']
         //-f martini_v3.0.0_phospholipids_v1.itp
-        const additionalfile = PATHDATA + ff + "/martini_v3.0.0_phospholipids_v1.itp"
+        //const additionalfile = PATHDATA + ff + "/martini_v3.0.0_phospholipids_v1.itp"
         const jsonInStr = JSON.stringify(dataFromClient.polymer)
         const name = dataFromClient['name']
         const density = dataFromClient['density']
         const jobOpt1: JobInputs = {
             "exportVar": {
-                "polyplyenv": PATH + "/polyply_1.0/venv/bin/activate",
+                "polyplyenv": POLYPLYPATHDATA + "/polyply_1.0/venv/bin/activate",
                 "ff": ff,
                 "density": density,
                 "name": name,
-                "file": additionalfile,
+                //"file": additionalfile,
                 "action": "itp"
             },
             "inputs": {
                 "json": jsonInStr,
-                "martiniForceField": PATH + "/martini_v3.0.0.itp",
+                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
             }
         }
 
         const tmp_dir = await TmpDirHelper.get();
-        console.log(tmp_dir)
-
+        
         console.log("Run polyply gen itp in ", tmp_dir)
+        console.log("POLYPLYPATHDATA",POLYPLYPATHDATA )
         try {
 
             //Run gen itp 
@@ -228,10 +227,10 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                     //Liste les fichier itp du champs de force 
                     //Tres belle ligne (1h de travail)
                     //let bordelitp = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return "#include " + f + "\r" }).join('')
-
+                   
                     //super stupid variable pour avoir un retour a la ligne
                     const stupidline = '\r'
-                    const topfilestr = `#include "${PATH + "/martini_v3.0.0.itp"}"${stupidline}
+                    const topfilestr = `#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"${stupidline}
             #include "polymere.itp"${stupidline}
             [ system ]${stupidline}
             ; name${stupidline}
@@ -242,7 +241,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
                     const jobOpt2: JobInputs = {
                         "exportVar": {
-                            "polyplyenv": PATH + "/polyply_1.0/venv/bin/activate",
+                            "polyplyenv": POLYPLYPATHDATA + "/polyply_1.0/venv/bin/activate",
                             "density": density,
                             "name": name,
                             "top": topfilestr,
@@ -250,7 +249,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                         },
                         "inputs": {
                             "itp": itp,
-                            "martiniForceField": PATH + "/martini_v3.0.0.itp",
+                            "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
                         }
                     }
                     try {
