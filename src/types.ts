@@ -45,6 +45,7 @@ export interface CategoryTree {
   [go_id: string]: {
     children: CategoryTree,
     name: string;
+    dir : string; 
   };
 }
 

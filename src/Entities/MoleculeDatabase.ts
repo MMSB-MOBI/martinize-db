@@ -51,4 +51,18 @@ export default class MoleculeDatabase extends AbstractDatabase<Molecule> {
     SearchWorker.clearCache();
     return super.delete(element);
   }
+
+  async stats(){
+    SearchWorker.clearCache();
+    const mols = await this.all()
+    let byCategories: any = {}
+    let byForceField: any = {}
+    for (const mol of mols){
+      if(!(mol.category in byCategories)) byCategories[mol.category] = []
+      if(!(mol.force_field in byForceField)) byForceField[mol.force_field] = []
+      byCategories[mol.category].push(mol)
+      byForceField[mol.force_field].push(mol)
+    }
+    return({byCategories, byForceField, all:mols})
+  }
 }

@@ -2,7 +2,7 @@ import CliHelper, { CliListener } from "interactive-cli-helper";
 import CouchHelper, { Database } from "../Entities/CouchHelper";
 import MoleculeOrganizer from "../MoleculeOrganizer";
 import { Molecule, StashedMolecule } from "../Entities/entities";
-import { MOLECULE, parser_files } from "../routes/molecule/parser/parser_files";
+import { parser_files, completeItpFiles, decodeCategory } from "../routes/molecule/parser/parser_files";
 import { CreateMoleculeFromJson, InfosJson } from "../routes/molecule/CreateMoleculeJson";
 import logger from "../logger";
 import { create_top_in_dir } from "../routes/molecule/parser/create_topFile";
@@ -11,6 +11,7 @@ import cliFileSuggestor from '@interactive-cli-helper/file-suggestor';
 import { ErrorType } from "../Errors";
 import { GoTerms } from "../types";
 import { CONNECTED_USER_CLI } from "./user_cli";
+import { correctVersions} from '../routes/molecule/tmp_version'
 const fs = require('fs');
 
 const MOLECULE_CLI = new CliListener(
@@ -18,11 +19,13 @@ const MOLECULE_CLI = new CliListener(
     commands: {
       list: 'List registred molecules',
       'longlist': 'list registered molecules with informations',
+      'stats': 'basic stats on molecules that are in the database',
       'get <id>': 'Get details about molecule <id>',
       'wipe <id>/all': 'Delete registred molecule <id> / all molecules',
       'load <path>': 'Load in memory all the molecules in the directory to insert them in the database',
-      'push': 'Insert the molecules in memory in the database',
+      'push <log_path>': 'Insert the molecules in memory in the database, write recap in log_path',
       'top <path>': 'Create top files for all the molecules in the directory',
+      'itp <path>' : 'Modify itp to include more informations. Only work with a specific directory organization.'
     },
     onNoMatch: "Command is incorrect. Type \"molecule\" for help.",
   })
@@ -77,6 +80,22 @@ MOLECULE_CLI.command('get', async rest => {
   }
 });
 
+MOLECULE_CLI.command('stats', async () => {
+  const {byCategories, byForceField, all} = await Database.molecule.stats()
+  const molCount = `# Number of molecules : ${all.length}`
+  const categories = `# ${Object.keys(byCategories).length} categories :`
+  let categoriesPrint = ''
+  for (const cat in byCategories){
+    categoriesPrint += `${decodeCategory(cat)} : ${byCategories[cat].length}\n`
+  }
+  const ffHeader = `# ${Object.keys(byForceField).length} force fields :`
+  let ffPrint = ''
+  for (const ff in byForceField){
+    ffPrint += `${ff} : ${byForceField[ff].length}\n`
+  }
+  return(`${molCount}\n\n${categories}\n${categoriesPrint}\n${ffHeader}\n${ffPrint}`)
+})
+
 MOLECULE_CLI.command('wipe', async rest => {
   rest = rest.trim();
   
@@ -124,7 +143,7 @@ MOLECULE_CLI.command('wipe', async rest => {
 
 
 
-export let BATCH_MOLECULES: InfosJson[];
+export let BATCH_MOLECULES: InfosJson[] | undefined;
 
 export class Excel {
   public static text: string = 'git repository = https://forge.ibcp.fr/glaunay/martini-molecule-repository,,,\nMolecule,No GRO,ITPs incompatible with GRO,Specific force_field not in server,Inserted successfuly\n'
@@ -155,10 +174,12 @@ MOLECULE_CLI.command('load', rest => {
 
         try {
           BATCH_MOLECULES = parser_files(path);
-          logger.info('load done');
+          logger.info(`batched ${BATCH_MOLECULES.length} molecules`);
+          
 
         } catch (e) {
-          logger.warn(e.data !== undefined ? e.data.message : e);
+          logger.error("Error during load");
+          console.log(e)
         }
       }
     }
@@ -167,17 +188,45 @@ MOLECULE_CLI.command('load', rest => {
   onSuggest: cliFileSuggestor,
 });
 
+MOLECULE_CLI.command('tmpversion', async () => {
+  await correctVersions()
+
+})
 
 
-MOLECULE_CLI.command('push', async() => {
+MOLECULE_CLI.command('push', async rest => {
+  rest = rest.trim();
+  let logged = ''
+  if(! rest) {
+    logger.warn("No log file to write insertion recap")
+  }
+  else {
+    logged = "# MAD molecules batch insertion"
+  }
+
   if (!CONNECTED_USER_CLI) {
     return 'Please connect before using this command by using user connect';
   }
   else {
     if (BATCH_MOLECULES) {
       try {
-        await CreateMoleculeFromJson(BATCH_MOLECULES);
-        logger.info('push done');
+        const recapInsertion = await CreateMoleculeFromJson(BATCH_MOLECULES);
+        logger.info(`${recapInsertion.inserted.length} molecules inserted`);
+        if (logged !== '') logged += "\n## Inserted \n" + recapInsertion.inserted.join("\n")
+        logger.warn(`Molecules not inserted :`)
+        if (logged !== '') logged += "\n## Not inserted\n"
+        for(const reason in recapInsertion.not_inserted){
+          console.log('##', reason)
+          if (logged !== '') logged += `\n### ${reason}\n`
+          if(logged === '') console.log(recapInsertion.not_inserted[reason].join("\n"))
+          else {
+            console.log(recapInsertion.not_inserted[reason].length)
+            logged += recapInsertion.not_inserted[reason].join("\n")
+          }
+        }
+
+        if(logged !== '') fs.writeFileSync(rest, logged)
+        
         //logger.debug(Excel.text);
         //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
       } catch (e) {
@@ -204,6 +253,20 @@ MOLECULE_CLI.command('top', rest => {
     } catch (e) {
       logger.warn(e.data);
     }
+  }
+}, {
+  onSuggest: cliFileSuggestor,
+})
+
+MOLECULE_CLI.command('itp', path =>  {
+  path = path.trim()
+  if (!fs.existsSync(path)){
+    return 'Path does not exist'
+  }
+  try {
+    completeItpFiles(path, true)
+  } catch(e) {
+    logger.error('Error while complete itp')
   }
 }, {
   onSuggest: cliFileSuggestor,

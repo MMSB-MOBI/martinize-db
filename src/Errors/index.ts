@@ -42,6 +42,7 @@ export enum ErrorType {
   InvalidMartinizeVersion,
   InvalidForceField,
   MoleculeNotFound,
+  ConsistencyVersionTree,
 
   /** When user updates his informations */
   InvalidUsername,
@@ -102,6 +103,8 @@ const ErrorsToText = {
   [ErrorType.JobNotProvided] : [400, "Job not provided to server"], 
   [ErrorType.HistoryFilesNotFound] : [404, "Job result files not found on distant file system", "HistoryFileNotFound"], 
   [ErrorType.JobNotFound] : [404, "Job doesn't exist in database", "JobNotFound"], 
+  [ErrorType.ConsistencyVersionTree] : [400, "Several tree version for this molecule", "ConsistencyVersionTree"]
+  
 };
 
 export default new class Errors {

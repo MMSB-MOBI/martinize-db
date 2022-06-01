@@ -10,6 +10,8 @@ import logger from '../../logger';
 import { resolve } from 'path';
 import { CONNECTED_USER_CLI } from '../../cli/user_cli';
 import { Excel } from '../../cli/molecule_cli';
+import { info } from 'console';
+import { create } from 'domain';
 
 
 
@@ -35,7 +37,7 @@ export interface InfosJson {
   /* Name of the molecule */
   name: string,
   alias: string,
-  category: keyof typeof GoTerms[],
+  category: string[],
   create_way: string,
   directory: string,
   top: {version: string, infos: SimuFile}[],
@@ -65,7 +67,7 @@ export interface SimuRequest{
     alias: string,
     smiles: string,
     version: string,
-    category: keyof typeof GoTerms[],
+    category: string[],
     command_line: string,
     comments: string,
     create_way: string,
@@ -82,19 +84,38 @@ export interface SimuRequest{
   };
 }
 
+interface InsertionRecap {
+  inserted : string[],
+  not_inserted : {[reason: string]: string[]}
+}
+
 
 /**
  * Read a bacth of molecule objects contained in a Json object and send their infos to the database to insert them sequentially
  * @param batch - a list of molecules informations
  */
-export const CreateMoleculeFromJson = async (batch : InfosJson[]) => {
+export const CreateMoleculeFromJson = async (batch : InfosJson[]) : Promise< InsertionRecap > => {
 
-  await batch.reduce(async (memo, i) => {
-    await memo;
-    logger.info('Inserting '+i.name);
-    await CreateMoleculeFromJsonAux(i);
-
-  }, Promise.resolve());
+  const recap : InsertionRecap = {'inserted': [], 'not_inserted' : {'other': []}}
+  for (const info of batch) {
+    logger.info(`Try to insert ${info.name}`)
+    try {
+      await CreateMoleculeFromJsonAux(info)
+      console.log("Inserted")
+      recap.inserted.push(info.directory)
+    } catch(e) {
+      console.log("Not inserted")
+      if(e.data && e.data.message){
+        if(!(e.data.message in recap.not_inserted)) recap.not_inserted[e.data.message] = []
+        recap.not_inserted[e.data.message].push(info.directory)
+      }
+      else {
+        recap.not_inserted['other'].push(info.directory)
+      }
+      
+    }
+  }
+  return new Promise((res, rej) => res(recap))
 }
 
 
@@ -112,13 +133,7 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
 
       let ver : VersionItp = infos.versions[i];
 
-      let martiniVer = '';
-      if (ver.force_field == 'v2.0' || ver.force_field == 'v2.1' || ver.force_field == 'v2.2') {
-        martiniVer = 'martini22';
-      }
-      else if (ver.force_field == 'v3' || ver.force_field == 'v304') {
-        martiniVer = 'martini304';
-      }
+      const martiniVer = ver.force_field;
 
       let req : SimuRequest = {
         full_user: {
@@ -153,47 +168,14 @@ const CreateMoleculeFromJsonAux = async (infos : InfosJson) => {
       }
 
       // If there are no top file correspnding to the itp
-      if (!infos.top[i].infos.originalname.match(ver.number)){
+      if (infos.versions[i].number !== infos.top[i].version){
         return Errors.throw(ErrorType.MissingTopFiles);
       }
 
-      // If the molecule version is the first one, we check if the molecule is already in the database
-      if (ver.number == '01') {
-        const checker = new MoleculeChecker(req);
-        try {
-          await checker.checkName(req.body.name, '');
-        } catch (e) {
-          if (e.code === ErrorType.NameAlreadyExists) {
-            logger.warn("There is already a molecule by the name "+infos.name+" in the database.");
-            break;
-          }
-          else {
-            return e;
-          }
-        }
-      }
-
-      // Check and insert the molecule in the database and if it is the first version, keep its id to define the parent id of the other versions
-      try {
-        const checker = new MoleculeChecker(req);
-        let molecule = await checker.check();
-        if (ver.number == '01') {
-          parentMol = molecule.id;
-        }
-        let response = await Database.molecule.save(molecule as Molecule);
-        Excel.text += infos.name+',,,,X\n';
-      } catch (e) {
-          if (e.code !== ErrorType.NameAlreadyExists) {
-            logger.warn("Error with the "+ver.number+" version of \""+infos.name+"\" : "+ e.data.message);
-            if (e.code == ErrorType.InvalidMoleculeFiles) {
-              Excel.text += infos.name+',,X,,\n';
-            }
-            if (req.body.force_field == '') {
-              Excel.text += infos.name+',,,X,\n';
-            }
-            break;
-          };
-      }
+      const checker = new MoleculeChecker(req);
+      await checker.checkName(req.body.name, '');
+      const molecule = await checker.check()
+      await Database.molecule.save(molecule as Molecule);
 
     };
     return new Promise((resolve, reject) => {resolve(true)});
