@@ -30,7 +30,8 @@ polymer.get('/hello', async (req, res) => {
 
 polymer.get('/data', async (req, res) => {
     let avaibleData: any = {}
-    let listfile = glob.sync(POLYPLYPATHDATA + "/polyply_1.0/polyply/data/*/*.+(itp|ff)").map(f => { return f })
+    let listfile = glob.sync(POLYPLYPATHDATA + "/polyplydata/*/*.+(itp|ff)").map(f => { return f })
+    console.log(listfile )
      
     for (let file of listfile) {
         let forcefield = file.split('/')[ file.split('/').length - 2 ]
