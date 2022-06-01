@@ -12,4 +12,4 @@ export const MAX_PDB_FILE_SIZE = 100 * 1024 * 1024;
 
 export const NAME_REGEX = /^[a-z0-9_ :()\.\/\\-]+$/i;
 export const ALIAS_REGEX = /^[a-z0-9_+ \.-]+$/i;
-export const VERSION_REGEX = /^[0-9]+.[0-9]+$/i;
+export const VERSION_REGEX = /^([0-9]+.)*[0-9]+$/i;
