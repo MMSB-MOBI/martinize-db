@@ -1,11 +1,12 @@
+ if [ ! -z "$polyplyenv" ]
+    then
+        source $polyplyenv
+    fi
 
 if [ $action == "itp" ]
 
 then
-    if [ ! -z "$polyplyenv" ]
-    then
-        source $polyplyenv
-    fi
+   
     
     cp input/json.inp monjson.json
     ITPOUT="polymere.itp"
@@ -23,7 +24,6 @@ fi
 if [ $action == "gro" ]
 
 then
-    source $polyplyenv
     
     ITPOUT="polymere.itp"
     GROOUT="out.gro"

@@ -15,6 +15,7 @@ export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 export interface JobInputs {
   exportVar?: { [key: string]: string },
   inputs: { [key: string]: any }
+  modules? : string[]
 };
 
 export default new class ShellManager {
@@ -236,7 +237,6 @@ export default new class ShellManager {
 
       jobCreatePdbWithConect.on('completed', (stdout: Stream, stderr: Stream) => {
         logger.debug(`jobCreatePdbWithConect completed`);
-
         if (save_std_name) {
           (async () => {
             await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout');

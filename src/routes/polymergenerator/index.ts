@@ -8,7 +8,7 @@ import * as JobManager from 'ms-jobmanager';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import TmpDirHelper from '../../TmpDirHelper';
 import * as fs from 'fs';
-import {POLYPLYPATHDATA} from "../../constants";
+import {POLYPLYPATHDATA, POLYPLY_VENV} from "../../constants";
 
 interface ErrorToClient {
     disjoint: boolean,
@@ -187,9 +187,9 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         const jsonInStr = JSON.stringify(dataFromClient.polymer)
         const name = dataFromClient['name']
         const density = dataFromClient['density']
-        const jobOpt1: JobInputs = {
+        const jobOpt1: JobInputs = ShellManager.mode === "child" ? {
             "exportVar": {
-                "polyplyenv": POLYPLYPATHDATA + "/polyply_1.0/venv/bin/activate",
+                "polyplyenv": POLYPLY_VENV,
                 "ff": ff,
                 "density": density,
                 "name": name,
@@ -200,6 +200,19 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                 "json": jsonInStr,
                 "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
             }
+        } : {
+            "exportVar": {
+                "ff": ff,
+                "density": density,
+                "name": name,
+                //"file": additionalfile,
+                "action": "itp"
+            },
+            "inputs": {
+                "json": jsonInStr,
+                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+            },
+            "modules" : ["polyply"]
         }
 
         const tmp_dir = await TmpDirHelper.get();
@@ -209,9 +222,9 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         try {
 
             //Run gen itp 
-            await ShellManager.run('polyply', jobOpt1, tmp_dir, ShellManager.mode = "jm",);
+            await ShellManager.run('polyply', jobOpt1, tmp_dir, "create_itp", undefined, 'jm');
 
-            let result = fs.readFileSync(tmp_dir + "/jm.stdout").toString();
+            let result = fs.readFileSync(tmp_dir + "/create_itp.stdout").toString();
 
             console.log(checkResult(result))
             if (checkResult(result)) {
@@ -224,7 +237,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                 console.log("yes on passe au gro")
                 const itp = result.split('STOP')[0]
                 socket.emit("itp", itp)
-                socket.on("continue", () => {
+                socket.on("continue", async () => {
                     //Liste les fichier itp du champs de force 
                     //Tres belle ligne (1h de travail)
                     //let bordelitp = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return "#include " + f + "\r" }).join('')
@@ -240,9 +253,9 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             ; name  number${stupidline}
             ${name} 1 ${stupidline}`
 
-                    const jobOpt2: JobInputs = {
+                    const jobOpt2: JobInputs = ShellManager.mode === "child" ?  {
                         "exportVar": {
-                            "polyplyenv": POLYPLYPATHDATA + "/polyply_1.0/venv/bin/activate",
+                            "polyplyenv": POLYPLY_VENV,
                             "density": density,
                             "name": name,
                             "top": topfilestr,
@@ -252,10 +265,22 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                             "itp": itp,
                             "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
                         }
+                    } : {
+                        "exportVar": {
+                            "density": density,
+                            "name": name,
+                            "top": topfilestr,
+                            "action": "gro"
+                        },
+                        "inputs": {
+                            "itp": itp,
+                            "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                        },
+                        "modules" : ["polyply"]
                     }
                     try {
-                        ShellManager.run('polyply', jobOpt2, tmp_dir, ShellManager.mode = "jm",);
-                        let groJob = fs.readFileSync(tmp_dir + "/jm.stdout").toString();
+                        await ShellManager.run('polyply', jobOpt2, tmp_dir, "create_gro", undefined, 'jm');
+                        let groJob = fs.readFileSync(tmp_dir + "/create_gro.stdout").toString();
                         socket.emit("gro", groJob)
                     }
                     catch (e) {
