@@ -123,10 +123,10 @@ polymer.get("/fastaconversion", (req, res) => {
     res.send(fasta);
 })
 
-const PORT = process.env.PORT || 4123;
+//const PORT = process.env.PORT || 4123;
 
-const server = require('http').createServer(polymer)
-const io = SocketIo(server, { path: '/socket' });
+//const server = require('http').createServer(polymer)
+//const io = SocketIo(server, { path: '/socket' });
 
 // server.listen(PORT, () => {
 //     console.log(`Server listening on ${PORT}`);
@@ -243,38 +243,41 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                     //let bordelitp = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return "#include " + f + "\r" }).join('')
                    
                     //super stupid variable pour avoir un retour a la ligne
-                    const stupidline = '\r'
-                    const topfilestr = `#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"${stupidline}
-            #include "polymere.itp"${stupidline}
-            [ system ]${stupidline}
-            ; name${stupidline}
-            mylovelypolymer${stupidline}
-            [ molecules ]${stupidline}
-            ; name  number${stupidline}
-            ${name} 1 ${stupidline}`
+                    const stupidline = '\n'
+                    const topfilestr = `#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
+            #include "polymere.itp"
+            [ system ]
+            ; name
+            mylovelypolymer
+            [ molecules ]
+            ; name  number
+            ${name} 1`
+            
+            //const topFile = tmp_dir + "/system.top"
+            //fs.writeFileSync(topFile, topfilestr)
 
                     const jobOpt2: JobInputs = ShellManager.mode === "child" ?  {
                         "exportVar": {
                             "polyplyenv": POLYPLY_VENV,
                             "density": density,
                             "name": name,
-                            "top": topfilestr,
                             "action": "gro"
                         },
                         "inputs": {
                             "itp": itp,
                             "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                            "top" : topfilestr
                         }
                     } : {
                         "exportVar": {
                             "density": density,
                             "name": name,
-                            "top": topfilestr,
                             "action": "gro"
                         },
                         "inputs": {
                             "itp": itp,
                             "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                            "top" : topfilestr
                         },
                         "modules" : ["polyply"]
                     }

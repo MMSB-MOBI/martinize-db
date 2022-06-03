@@ -1,3 +1,9 @@
+ if [ ! -z "$SLURM_SUBMIT_DIR" ]
+    then
+        cd $SLURM_SUBMIT_DIR
+    fi
+
+
  if [ ! -z "$polyplyenv" ]
     then
         source $polyplyenv
@@ -6,8 +12,6 @@
 if [ $action == "itp" ]
 
 then
-   
-    
     cp input/json.inp monjson.json
     ITPOUT="polymere.itp"
     GROOUT="out.gro"
@@ -29,9 +33,10 @@ then
     GROOUT="out.gro"
     
     cat $itp > polymere.itp
-    echo $top > syst.top
+    cat $top > system.top
+
     
-    polyply gen_coords -p syst.top -o $GROOUT -name $name -dens $density > polyply2.out 2> polyply2.err
+    polyply gen_coords -p system.top -o $GROOUT -name $name -dens $density > polyply2.out 2> polyply2.err
     
     [ -f $GROOUT ] && cat $GROOUT
 fi
