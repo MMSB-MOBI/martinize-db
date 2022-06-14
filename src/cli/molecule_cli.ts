@@ -211,18 +211,31 @@ MOLECULE_CLI.command('push', async rest => {
     if (BATCH_MOLECULES) {
       try {
         const recapInsertion = await CreateMoleculeFromJson(BATCH_MOLECULES);
-        logger.info(`${recapInsertion.inserted.length} molecules inserted`);
-        if (logged !== '') logged += "\n## Inserted \n" + recapInsertion.inserted.join("\n")
-        logger.warn(`Molecules not inserted :`)
-        if (logged !== '') logged += "\n## Not inserted\n"
-        for(const reason in recapInsertion.not_inserted){
-          console.log('##', reason)
-          if (logged !== '') logged += `\n### ${reason}\n`
-          if(logged === '') console.log(recapInsertion.not_inserted[reason].join("\n"))
-          else {
-            console.log(recapInsertion.not_inserted[reason].length)
-            logged += recapInsertion.not_inserted[reason].join("\n")
+        const nbMol = Object.keys(recapInsertion.inserted).length
+        logger.info(`${nbMol} molecules inserted`);
+        if(logged !== '' && nbMol > 0){
+          logged += '\n## Inserted \n'
+          for(const inserted in recapInsertion.inserted){
+            logged += inserted + "\t" + recapInsertion.inserted[inserted].name + "\t" + recapInsertion.inserted[inserted].versions.map(v => v.force_field + ";" + v.number + ";" + v.directory).join("\t") + "\n"
           }
+        }
+       
+        logger.warn(`Molecules not inserted :`)
+        if (logged !== '') logged += "\n## Not inserted"
+        for(const reason in recapInsertion.not_inserted){
+          const nbMol = Object.keys(recapInsertion.not_inserted[reason]).length
+          if (nbMol > 0){
+            console.log('##', reason, nbMol)
+            if (logged !== '') logged += `\n### ${reason}\n`
+            for(const alias in recapInsertion.not_inserted[reason]){
+              const mol = recapInsertion.not_inserted[reason][alias]
+              if(logged === '') console.log(alias + "\t" + mol.name + '\t' + mol.versions.map(v => v.force_field + ";" + v.number + ";" + v.directory).join("\t"))
+              else {
+                logged += alias + "\t" + mol.name + '\t' + mol.versions.map(v => v.force_field + ";" + v.number + ";" + v.directory).join("\t") + "\n"
+              }
+            }
+          }
+          
         }
 
         if(logged !== '') fs.writeFileSync(rest, logged)
@@ -230,6 +243,7 @@ MOLECULE_CLI.command('push', async rest => {
         //logger.debug(Excel.text);
         //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
       } catch (e) {
+        console.error(e)
         logger.warn(e.data !== undefined ? e.data.message : e);
       }
     } else {

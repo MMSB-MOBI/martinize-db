@@ -52,6 +52,11 @@ export default class MoleculeDatabase extends AbstractDatabase<Molecule> {
     return super.delete(element);
   }
 
+  async getVersionsFromAlias(alias: string) {
+    const mols = await this.find({ limit: 999999, selector: { alias } });
+    return mols
+  }
+
   async stats(){
     SearchWorker.clearCache();
     const mols = await this.all()

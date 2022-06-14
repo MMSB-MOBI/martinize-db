@@ -34,7 +34,6 @@ export class MoleculeChecker {
    * Check a molecule about to be edited in {Molecule} database
    */
   public async checkEdition() {
-    console.log("check edition")
     const molecule = await this.checker(false, true, this.req.body.fromVersion ? true : false) as Molecule;
 
     molecule.last_update = new Date().toISOString();
@@ -62,7 +61,6 @@ export class MoleculeChecker {
   }
 
   protected async checker(stashed: boolean, edition: boolean, fromVersion: boolean) {
-    console.log("checker")
     let actual_version: BaseMolecule | undefined = undefined;
 
     
@@ -84,8 +82,6 @@ export class MoleculeChecker {
       }
     }
     const molecule = await this.constructBaseMoleculeFromRequest(fromVersion, actual_version);
-    console.log("MOL", molecule); 
-
     // Must set the following fields: files, created_at, hash
 
     // Test if files are attached to the request
@@ -217,7 +213,6 @@ export class MoleculeChecker {
    * MISSING : files, created_at, hash, <last_update>, <approved_by>
    */
   protected async constructBaseMoleculeFromRequest(fromVersion: boolean, actual_version?: BaseMolecule) : Promise<Partial<BaseMolecule>> {
-    console.log("constructBaseMolecule")
     const nullOrString = (str?: string | null) => {
       if (!str || str === undefined || str === null || str === 'null') {
         return null;
@@ -339,8 +334,6 @@ export class MoleculeChecker {
     }
 
     const mols = await Database.molecule.find({ limit: 99999, selector });
-    console.log("checkName", name, force_field)
-    console.log(mols)
 
     for (const mol of mols) {
       if (mol.tree_id !== tree_id) {
@@ -423,18 +416,13 @@ export class MoleculeChecker {
   }
 
   protected checkForceField(v: string, settings: SettingsJson) {
-    console.log("check force field", v)
     if (!settings.force_fields.includes(v)) {
-      console.log("invalid ff")
       return Errors.throw(ErrorType.InvalidForceField);
     }
   }
 
   protected async versionExistsInTreeIdAndFf(tree_id: string, version: string, current_id: string, force_field: string) {
-    logger.info("CHECK VERSION")
-    console.log(version, current_id, force_field)
     const versions = await Database.molecule.find({ limit: 20, selector: { tree_id, version, force_field } });
-    console.log(versions)
     for (const v of versions) {
       if (v.id !== current_id) {
         return true;
