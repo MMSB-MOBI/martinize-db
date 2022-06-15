@@ -44,7 +44,7 @@ EditMoleculeRouter.post('/', Uploader.fields([
 
     //Validate file names and length
     //TO DO : factorize this, it's also used in create.ts
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    /*const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
     if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
     const validatedPdb = plainToInstance(FileDto, files.pdb[0])
@@ -60,11 +60,13 @@ EditMoleculeRouter.post('/', Uploader.fields([
     } catch(e) {
       res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
       return; 
-    }
+    }*/
 
     if (!req.full_user || req.full_user.role !== "admin") {
       return Errors.throw(ErrorType.Forbidden);
     }
+
+    req.body.category = typeof req.body.category === 'string' ? [req.body.category] : req.body.category
 
     try {
       const checker = new MoleculeChecker(req);

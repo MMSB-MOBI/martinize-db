@@ -184,17 +184,40 @@ export function withRegex(text: string, is_regex: boolean, flags = "i", strict_m
 
 export async function deleteMolecule(id: string, user: User, stashed = false, checked_attached = true) {
   // Delete a stashed molecule
+  
+  const getChilds = async (id: string, stashed = false) : Promise<BaseMolecule[]> => {
+    const db = stashed ? Database.stashed : Database.molecule
+    const molDoc = await db.get(id)
+    const tree = await db.moleculeTreeOf(molDoc.tree_id)
+    if(tree) {
+      const childs = tree.getChilds(molDoc)
+      return childs
+    }
+    
+    return []
+  }
+
+  const dels = []
   if (stashed) {
     if (user.role !== "admin") {
       return Errors.throw(ErrorType.Forbidden);
     }
 
     try {
-      const mol = await Database.stashed.get(id);
+      const mol = await Database.stashed.get(id)
+      const childMols = await getChilds(mol.id, true)
 
       // Delete attached ZIP
       await MoleculeOrganizer.remove(mol.files);
-      await Database.stashed.delete(mol);
+      const delResp = await Database.stashed.delete(mol);
+      dels.push(delResp.id)
+      for (const child of childMols){
+        const molDoc = await Database.stashed.get(child.id)
+        await MoleculeOrganizer.remove(child.files); 
+        const delResp = await Database.stashed.delete(molDoc);
+        dels.push(delResp.id)
+      }
+
     } catch (e) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
@@ -204,12 +227,26 @@ export async function deleteMolecule(id: string, user: User, stashed = false, ch
   // Delete a published molecule
   try {
     const mol = await Database.molecule.get(id);
-
+    const childMols = await getChilds(mol.id)
     if (user.role !== "admin" && user.id !== mol.owner) {
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    if (checked_attached) {
+    await MoleculeOrganizer.remove(mol.files)
+
+    const delResp = await Database.molecule.delete(mol)
+    dels.push(delResp.id)
+
+    for (const mol of childMols){
+      const molDoc = await Database.molecule.get(mol.id)
+      await MoleculeOrganizer.remove(mol.files)
+      const delResp = await Database.molecule.delete(molDoc)
+      dels.push(delResp.id)
+    }
+
+    return dels
+
+    /*if (checked_attached) {
       // Recherche les sous-versions attachées à cette molecule
       const versions_attached = await Database.molecule.find({
         limit: 99999,
@@ -244,7 +281,7 @@ export async function deleteMolecule(id: string, user: User, stashed = false, ch
 
     // Delete attached ZIP
     await MoleculeOrganizer.remove(mol.files);
-    await Database.molecule.delete(mol);
+    await Database.molecule.delete(mol); */
   } catch (e) {
     return Errors.throw(ErrorType.ElementNotFound);
   }

@@ -1,6 +1,6 @@
 import { Molecule } from "./entities";
 import AbstractDatabase from "./AbstractDatabase";
-import MoleculeVersionTree from "./MoleculeVersionTree";
+import CompleteMoleculeVersionTree from "./MoleculeVersionTree";
 import nano = require("nano");
 import SearchWorker from "../search_worker";
 
@@ -14,7 +14,7 @@ export default class MoleculeDatabase extends AbstractDatabase<Molecule> {
     const mols = await this.find({ limit: 999999, selector: { tree_id } });
 
     if (mols.length) {
-      return new MoleculeVersionTree(mols);
+      return new CompleteMoleculeVersionTree(mols);
     }
   }
 
