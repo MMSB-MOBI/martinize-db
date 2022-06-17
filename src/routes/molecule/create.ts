@@ -49,7 +49,6 @@ CreateMoleculeRouter.post('/', Uploader.fields([
 ]), (req, res) => {
   (async () => {  //console.log("HERE>>");console.log(req.files);
 
-    console.log("files", req.files); 
     //Validate file names and length
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
     if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
