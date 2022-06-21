@@ -82,16 +82,16 @@ MOLECULE_CLI.command('get', async rest => {
 
 MOLECULE_CLI.command('stats', async () => {
   const {byCategories, byForceField, all} = await Database.molecule.stats()
-  const molCount = `# Number of molecules : ${all.length}`
+  const molCount = `# Number of molecules : ${Object.keys(all).length}`
   const categories = `# ${Object.keys(byCategories).length} categories :`
   let categoriesPrint = ''
   for (const cat in byCategories){
-    categoriesPrint += `${decodeCategory(cat)} : ${byCategories[cat].length}\n`
+    categoriesPrint += `${decodeCategory(cat)} : ${byCategories[cat]}\n`
   }
   const ffHeader = `# ${Object.keys(byForceField).length} force fields :`
   let ffPrint = ''
   for (const ff in byForceField){
-    ffPrint += `${ff} : ${byForceField[ff].length}\n`
+    ffPrint += `${ff} : ${byForceField[ff]}\n`
   }
   return(`${molCount}\n\n${categories}\n${categoriesPrint}\n${ffHeader}\n${ffPrint}`)
 })

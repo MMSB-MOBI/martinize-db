@@ -177,7 +177,7 @@ export const parser_files = (path: string) => {
             
 
             //Check if already in batch
-
+            
             const alreadyInBatch = batch.find(mol => mol.alias === itpInfos.alias)
             const version : VersionItp = {
                 directory : itpDir, 
@@ -222,7 +222,7 @@ export const parser_files = (path: string) => {
     if(exceptionsOccurs){
         logger.warn("THESE MOLECULES CAN'T BE LOADED")
         for (const why in exceptions) {
-            logger.warn(`# ${why}`)
+            logger.warn(`# ${why} ${exceptions[why].length}`)
             console.log(exceptions[why].join("\n"))
         }
     }
