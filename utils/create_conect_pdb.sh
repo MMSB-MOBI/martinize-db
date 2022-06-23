@@ -95,7 +95,7 @@ else
 fi
 
 # Create the computed topology .tpr
-gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" 1> 2.grompp.stdout 2> grompp.stderr
+gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" 1> 2.grompp.stdout 2> 2.grompp.stderr
 
 if [ $4 == "--remove-water" ]
 then
