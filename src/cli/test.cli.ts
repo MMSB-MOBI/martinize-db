@@ -305,7 +305,7 @@ TEST_CLI.command('dry-run', async () => {
     input: pdb_dir + '/test.pdb',
     ff: 'martini304',
     position: 'backbone',
-    use_go_virtual_sites: true,
+    use_go: true,
   });
 
   // Insert in INSANE
