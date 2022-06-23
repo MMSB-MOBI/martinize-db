@@ -130,7 +130,7 @@ function createRunner(settings: any, parameters: any, pdb_path? : string) {
     }
 
     if (parameters.use_go === "true") {
-      runner.use_go_virtual_sites = true;
+      runner.use_go = true;
     }
     if (parameters.sc_fix === "true") {
       runner.side_chain_fix = true;
