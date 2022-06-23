@@ -11,10 +11,12 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     elnedyn22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     elnedyn: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     martini22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
-    martini22_simple: ['martini_v2.2.itp'], 
+    simple_martini22: ['martini_v2.2.itp'], 
     martini22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
-    martini22p_simple: ['martini_v2.2P.itp'],
+    simple_martini22p: ['martini_v2.2P.itp'],
     martini23p: ['martini_v2.3P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    martini23_CNP: ['martini_v2.3_CNP.itp', 'martini_v2.0_ions.itp'],
+    simple_martini23_CNP : ['martini_v2.3_CNP.itp']
   };
 
   static readonly FORCE_FIELD_TO_MARTINI_VERSION: { [ff: string]: string } = {
@@ -23,10 +25,11 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     elnedyn22: '2_2',
     elnedyn: '2_2',
     martini22: '2_2',
-    martini22_simple : '2.2', 
+    simple_martini22 : '2_2', 
     martini22p: '2_2',
-    martini22p_simple : '2.2',
-    martini23p: '2_3',
+    simple_martini22p : '2_2',
+    martini23p: '2_2',
+    martini23_CNP : '2_2'
   };
 
   static getFilesForForceField(name: string) {

@@ -11,7 +11,8 @@
     "elnedyn22p",
     "martini22",
     "martini22p",
-    "martini3001"
+    "martini3001",
+    "martini23_CNP"
   ],
   "force_fields_info":{
     "elnedyn":{"polarizable": false},
@@ -19,7 +20,8 @@
     "elnedyn22p":{"polarizable": true},
     "martini22":{"polarizable": false},
     "martini22p":{"polarizable": true},
-    "martini3001":{"polarizable": false}
+    "martini3001":{"polarizable": false},
+    "martini23_CNP" : {"polarizable": false}
   },
   "category_tree": {
     "MC:0001": {
@@ -70,6 +72,11 @@
     "MC:0010" : {
       "name" : "Surfactants",
       "dir" : "surfactants",
+      "children" : {}
+    },
+    "MC:0011" : {
+      "name" : "Synthetic nanoparticles",
+      "dir" : "Synthetic nanoparticles",
       "children" : {}
     } 
   }
