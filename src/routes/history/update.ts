@@ -1,10 +1,8 @@
 import { Router } from 'express'
-import { Job } from '../../Entities/entities'
 import Uploader from '../Uploader';
-import multer from 'multer';
 import HistoryOrganizer from '../../HistoryOrganizer';
-import { sendError, errorCatcher } from '../../helpers';
-import Errors, { ApiError, ErrorType } from "../../Errors";
+import { errorCatcher } from '../../helpers';
+import Errors, { ErrorType } from "../../Errors";
 
 const UpdateHistoryRouter = Router(); 
 
@@ -13,8 +11,9 @@ UpdateHistoryRouter.post('/', Uploader.array('files',99), (req, res) => {
         const jobId = req.body.jobId as string; 
         const files = req.files as Express.Multer.File[]    
         const molIdxs = req.body.molIdxs as number[]; 
+        const editionComment = req.body.editionComment as string; 
 
-        if (!jobId || !files || !molIdxs ){
+        if (!jobId || !files || !molIdxs){
             return Errors.throw(ErrorType.MissingParameters);
         }
         
@@ -24,8 +23,8 @@ UpdateHistoryRouter.post('/', Uploader.array('files',99), (req, res) => {
             organizedFileNames[value].push(files[index].originalname)
         }
         
-        await HistoryOrganizer.updateJobInFileSystem(jobId, files)
-        await HistoryOrganizer.updateJobForSavedBonds(jobId, organizedFileNames)
+        const newId = await HistoryOrganizer.updateJobInFileSystem(jobId, files)
+        await HistoryOrganizer.updateJobAndCreateANewOne(jobId, newId, organizedFileNames, editionComment)
 
         res.json({jobId: 'updated'}); 
 

@@ -31,8 +31,7 @@ export default class JobDatabase extends AbstractDatabase<Job> {
         }
         return jobsDetails.filter(job => job !== null); 
     }
-
-
+    
     async updateManuallySavedBonds(id: string, newItpFiles: string[][]) {
         const updateFnc = (doc : Job) => {
 

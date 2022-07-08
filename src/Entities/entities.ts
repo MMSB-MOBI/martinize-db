@@ -129,6 +129,7 @@ export interface JobBase extends BaseCouchDocument {
   settings : JobSettings; 
   radius : {[atom_name : string] : number}
   manual_bonds_edition?: boolean; 
+  comment?: string; 
 }
 
 export interface Job extends JobBase { 

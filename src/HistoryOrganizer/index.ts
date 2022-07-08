@@ -4,9 +4,11 @@ import fs, { promises as FsPromise } from 'fs';
 import path, { resolve } from 'path';
 import { Database } from '../Entities/CouchHelper';
 import { Job } from '../Entities/entities'
-import { getFormattedFile } from "../helpers"; 
+import { generateSnowflake, getFormattedFile } from "../helpers"; 
 import { isCouchNotFound, notFoundOnFileSystem } from '../Errors';
 import { JobFilesNames, JobReadedFiles } from '../types'
+import { dateFormatter } from '../helpers'
+
 
 function getUserJobObject(jobsDoc:Job[]){
     let obj : {[userId: string]: string[]} = {}
@@ -41,15 +43,58 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         if (!fs.existsSync(jobDir)){
             throw new Error("Job directory doesn't exist")
         }
-        logger.debug(`move new itp files to job directory ${jobId}`)
-        return await Promise.all(itp_files.map(async(file) => {
-            await FsPromise.rename(file.path, jobDir + "/" + file.originalname)
+        const newUuid = generateSnowflake()
+        const newDir = HISTORY_ROOT_DIR + "/" + newUuid; 
+        fs.mkdirSync(newDir)
+        const files = await FsPromise.readdir(jobDir)
+        logger.debug(`copy ${jobId} to ${newUuid}`)
+        await Promise.all(files.map(async(currentFile) => {
+            await FsPromise.copyFile(jobDir + "/" + currentFile, newDir + "/" + currentFile)
         }))
+        logger.debug(`move new itp files to new job directory ${newUuid}`)
+        await Promise.all(itp_files.map(async(file) => {
+            await FsPromise.rename(file.path, newDir + "/" + file.originalname)
+        }))
+
+        return newUuid
 
     }
 
     async updateJobForSavedBonds(jobId: string, itp_files_names: string[][]){
         return await Database.job.updateManuallySavedBonds(jobId, itp_files_names); 
+    }
+
+    async updateJobAndCreateANewOne(jobId: string, newId: string, newItpFiles : string[][], comment?: string) {
+        const updateFnc = (doc : Job) => {
+
+            for (const [idx, mol_files] of newItpFiles.entries()){
+
+                if (doc.files.itp_files.length <= idx){
+                    doc.files.itp_files.push(mol_files)
+                }
+                else {
+                    const newMolFiles = mol_files.filter(itp => ! doc.files.itp_files[idx].includes(itp))
+                    doc.files.itp_files[idx] = [...doc.files.itp_files[idx], ...newMolFiles]
+                }
+            }
+            
+            if(doc.manual_bonds_edition) return doc
+            doc.manual_bonds_edition = true 
+            return doc
+        }
+
+        const originalJob = await Database.job.get(jobId); 
+        const newDoc = updateFnc(originalJob)
+        delete newDoc._id
+        delete newDoc._rev
+        newDoc.id = newId
+        newDoc.jobId = newId
+        newDoc.comment = comment
+        newDoc.date = dateFormatter("Y-m-d H:i:s")
+        console.log("newDoc", newDoc)
+       
+        this.saveToCouch(newDoc)
+
     }
 
     async deleteFromFileSystem(jobId: string){
@@ -113,7 +158,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         }
     }
 
-    async _saveToCouch(job: any){
+    async saveToCouch(job: any){
         const jobDoc = {id : job.jobId, ...job}
         await Database.job.addToJob(jobDoc)
         await Database.history.addToHistory(job.userId, job.jobId)
@@ -122,7 +167,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
     async saveToHistory(job : any, files: string[]){
         return new Promise((res, rej) => {
             this._saveToFileSystem(job.jobId, files).then(() => {
-                this._saveToCouch(job).then(() => res(job.jobId)).catch(e => {
+                this.saveToCouch(job).then(() => res(job.jobId)).catch(e => {
                     this.deleteFromFileSystem(job.jobId)
                     rej(e)
                 })
