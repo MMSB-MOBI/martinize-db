@@ -29,11 +29,6 @@
       "dir" : "sugars",
       "children": {}
     },
-    "MC:0002": {
-      "name": "Proteins",
-      "dir" : "proteins",
-      "children": {}
-    },
     "MC:0003": {
       "name": "Polymers",
       "dir" : "polymers",
@@ -62,11 +57,6 @@
     "MC:0008" : {
       "name" : "Solvents", 
       "dir" : "solvents",
-      "children" : {}
-    }, 
-    "MC:0009" : {
-      "name" : "Sterols", 
-      "dir" : "sterols",
       "children" : {}
     }, 
     "MC:0010" : {
