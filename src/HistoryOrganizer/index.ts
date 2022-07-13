@@ -102,8 +102,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
         newDoc.id = newId
         newDoc.jobId = newId
         newDoc.comment = comment
-        newDoc.date = dateFormatter("Y-m-d H:i:s")
-        console.log("newDoc", newDoc)
+        newDoc.date = dateFormatter("Y-m-d H:i")
        
         this.saveToCouch(newDoc)
 
