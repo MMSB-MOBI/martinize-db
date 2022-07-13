@@ -12,6 +12,7 @@ UpdateHistoryRouter.post('/', Uploader.array('files',99), (req, res) => {
         const files = req.files as Express.Multer.File[]    
         const molIdxs = req.body.molIdxs as number[]; 
         const editionComment = req.body.editionComment as string; 
+        const newProject = req.body.newProject as boolean; 
 
         if (!jobId || !files || !molIdxs){
             return Errors.throw(ErrorType.MissingParameters);
@@ -22,9 +23,18 @@ UpdateHistoryRouter.post('/', Uploader.array('files',99), (req, res) => {
             if(!organizedFileNames[value]) organizedFileNames[value] = []
             organizedFileNames[value].push(files[index].originalname)
         }
+
+        if(newProject){
+            const newId = await HistoryOrganizer.updateJobInFileSystem(jobId, files)
+            await HistoryOrganizer.updateJobAndCreateANewOne(jobId, newId, organizedFileNames, editionComment)
+        } 
+        else {
+            await HistoryOrganizer.replaceJobInFileSystem(jobId, files)
+            await HistoryOrganizer.updateJobForSavedBonds(jobId, organizedFileNames)
+
+        }
         
-        const newId = await HistoryOrganizer.updateJobInFileSystem(jobId, files)
-        await HistoryOrganizer.updateJobAndCreateANewOne(jobId, newId, organizedFileNames, editionComment)
+        
 
         res.json({jobId: 'updated'}); 
 

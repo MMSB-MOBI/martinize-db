@@ -60,6 +60,18 @@ export const HistoryOrganizer = new class HistoryOrganizer{
 
     }
 
+    async replaceJobInFileSystem(jobId: string, itp_files:Express.Multer.File[]) {
+        const jobDir = HISTORY_ROOT_DIR + "/" + jobId; 
+        if (!fs.existsSync(jobDir)){
+            throw new Error("Job directory doesn't exist")
+        }
+        logger.debug(`move new itp files to job directory ${jobId}`)
+        return await Promise.all(itp_files.map(async(file) => {
+            await FsPromise.rename(file.path, jobDir + "/" + file.originalname)
+        }))
+
+    }
+
     async updateJobForSavedBonds(jobId: string, itp_files_names: string[][]){
         return await Database.job.updateManuallySavedBonds(jobId, itp_files_names); 
     }
