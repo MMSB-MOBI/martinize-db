@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import { POLYPLYPATHDATA, POLYPLY_VENV } from "../../constants";
 import checkError from './errorParser';
 import { Readable } from 'stream';
-//import {jobFS} from 'ms-jobmanager';
+import jobFS from "ms-jobmanager";
 
 interface Blob {
     readonly size: number;
@@ -117,14 +117,17 @@ polymer.get("/fastaconversion", (req, res) => {
     res.send(fasta);
 })
 
+
+const str_to_stream = (str: string) => {
+    const ma_stream: Readable = new Readable();
+    ma_stream.push(str);
+    ma_stream.push(null)
+    return ma_stream
+}
+
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     const WORKDIR = "/data3/rmarin/projet_polyply/job"
     console.log("je suis dans SocketIoPolymerizer")
-
-    // JobManager.start({ 'port': 6001, 'TCPip': "localhost" })
-    //     .then(() => {
-    //         console.log("JobManager start")
-
 
     socket.on("runpolyply", async (dataFromClient: any) => {
 
@@ -143,29 +146,20 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             additionalfile = dataFromClient['customITP'].join("\n")
         }
 
-        // Stream 
-        const json_stream: Readable = new Readable();
-        json_stream.push(JSON.stringify(dataFromClient.polymer));
-        json_stream.push(null)
-
         const exportVar = {
             polyplyenv: POLYPLY_VENV,
             ff: ff,
             density: density,
             name: name,
             action: "itp",
-            customfile: additionalfile,
         }
 
-        const inputs = {
+        let inputs = {
+            'monfichier.itp': str_to_stream(additionalfile),
             "martiniForceField.itp": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-            "polymer.json": json_stream,
+            "polymer.json": str_to_stream(JSON.stringify(dataFromClient.polymer)),
         }
 
-        //Need to add module quand exectuer sur child instead of jobmanager
-        // },
-        //     "modules": ["polyply"]
-        //         }
 
         let result: string = ""
         try {
@@ -187,7 +181,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             // Handle error and throw the right error
             console.error("ShellManager.run crash");
         }
-
 
         const itp = result.split("STOP\n")[0]
         const error = result.split("STOP\n")[1]
@@ -216,18 +209,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                 //const topFile = tmp_dir + "/system.top"
                 //fs.writeFileSync(topFile, topfilestr)
 
-
-                // Stream itp 
-                const itp_stream: Readable = new Readable();
-                itp_stream.push(itp);
-                itp_stream.push(null)
-
-
-                const top_stream: Readable = new Readable();
-                top_stream.push(topfilestr);
-                top_stream.push(null)
-
-
                 const exportVar = {
                     polyplyenv: POLYPLY_VENV,
                     density: density,
@@ -236,34 +217,49 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                 }
 
                 const inputs = {
-                    "itp": itp_stream,
+                    "polymere.itp": str_to_stream(itp),
                     "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-                    "top": top_stream
+                    "system.top": str_to_stream(topfilestr)
                 }
 
                 try {
                     console.log(ShellManager.mode)
+                    let resultatGro = " "
                     if (ShellManager.mode === "child") {
                         console.log("### Running polyply with CHILD")
                         await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
-                        result = fs.readFileSync(tmp_dir + "/create_itp.stdout").toString();
-                        socket.emit("gro", result)
+                        resultatGro = fs.readFileSync(tmp_dir + "/create_gro.stdout").toString();
+
                     }
                     else {
                         console.log("### Running polyply")
-                        const { jobFS, stdout } = await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
-                        socket.emit("gro", stdout);
+                        const { stdout } = await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
+                        resultatGro = stdout
                     }
-                    
+
+
+                    const gro = resultatGro.split("STOP\n")[0]
+                    const error = resultatGro.split("STOP\n")[1]
+
+                    console.log("error", error)
+
+                    const errorParsed = checkError(error)
+                    console.log( "###################")
+                    console.log(errorParsed )
+                    if (errorParsed.ok == true) {
+                        socket.emit("gro", gro);
+                    }
+                    else {
+                        console.log("oups", errorParsed)
+                        socket.emit("oups", errorParsed)
+                    }
                 }
                 catch (e) {
-                    console.log( 'ERROR WITH GRO')
+                    console.log('ERROR WITH GRO')
                     console.log(e)
                     // Handle error and throw the right error
                     console.error("ShellManager.run crash");
                 }
-
-
             })
         }
         else {

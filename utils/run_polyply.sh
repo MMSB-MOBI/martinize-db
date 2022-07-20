@@ -10,16 +10,13 @@ fi
 
 polyply -V > version
 
+ITPOUT="polymere.itp"
+GROOUT="out.gro"
+
 if [ $action == "itp" ]
 
 then
-    ITPOUT="polymere.itp"
-    GROOUT="out.gro"
-
-    #cp $file monfichier.itp
-
-    #polyply gen_params -f monfichier.itp -lib $ff -o $ITPOUT -seqf monjson.json -name $name > polyply.out 2> polyply.err
-    polyply gen_params -lib $ff -o $ITPOUT -seqf input/*.json -name $name > polyply.out 2> polyply.err
+    polyply gen_params -f input/monfichier.itp -lib $ff -o $ITPOUT -seqf input/polymer.json -name $name > polyply.out 2> polyply.err
     
     [ -f $ITPOUT ] && cat $ITPOUT
     echo "STOP"
@@ -29,14 +26,14 @@ fi
 if [ $action == "gro" ]
 
 then
-    
-    ITPOUT="polymere.itp"
-    GROOUT="out.gro"
-    
-    cat input/itp > polymere.itp
-    cat input/top > system.top
+    cat input/polymere.itp > polymere.itp
+    cat input/system.top > system.top
     
     polyply gen_coords -p system.top -o $GROOUT -name $name -dens $density > polyply2.out 2> polyply2.err
     
+
     [ -f $GROOUT ] && cat $GROOUT
+    echo "STOP"
+    [ -f polyply2.err ] && cat polyply2.err
+
 fi

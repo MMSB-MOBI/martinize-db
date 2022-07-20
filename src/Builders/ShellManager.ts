@@ -220,22 +220,12 @@ export default new class ShellManager {
       const { stdout, jobFS } = await jmClient.pushFS(jobOpt)
       console.log(working_directory + '/' + save_std_name)
 
-
-      // ##############################################
-      // A retablir absolument pour les autres scripts le border de dumpfile pour ne pas causer de bug 
-
-      // Chercher une regex dans jobFS list 
-      //       '4dc2a08e-5600-4a4d-b767-39841693269e_coreScript.sh',
-      // [1]   '4dc2a08e-5600-4a4d-b767-39841693269e.batch',
-      // [1]   '4dc2a08e-5600-4a4d-b767-39841693269e.err',
-      // [1]   '4dc2a08e-5600-4a4d-b767-39841693269e.out',
-
-      //stdout, working_directory + '/' + save_std_name + '.stdout');
       const jobfilelist : string[] = await jobFS.list()
 
+      //extract id of 
       let idJM = jobfilelist.map( (x) => {if(x.endsWith("_coreScript.sh")) return x} )[0]?.replace("_coreScript.sh","")
       console.log( "#JOBFS#",idJM)
-      // Grosse regex pour retrouver 
+
       const stdout_fname = idJM+".out" // grace à la recherche dans list
       const stream_fname = idJM+".err"
       const stream_stdout: Readable = await jobFS.readToStream(stdout_fname);

@@ -8,6 +8,7 @@ interface ErrorToClient {
     disjoint: boolean,
     errorlinks: any[],
     OSError: string[],
+    PythonError: string[]
 }
 
 
@@ -15,10 +16,26 @@ export default checkError;
 
 function checkError(output: string) {
     //Init dico error
-    let dicErreur: ErrorToClient = { ok: true, disjoint: false, errorlinks: [] , OSError: []}
-
+    let dicErreur: ErrorToClient = { ok: true, disjoint: false, errorlinks: [] , OSError: [],PythonError: []}
+    let pythonerror : boolean = false
+    let oserror : boolean = false
     //Parse every line 
     for (let l of output.split('\n')) {
+        if (pythonerror === true){
+            dicErreur.PythonError.push( l)
+        }
+
+        if (oserror === true){
+            dicErreur.OSError.push(l)
+        }
+
+        if ((l.includes('Traceback (most recent call last):'))) {
+            console.log("error disconnected parts", l)
+            dicErreur.disjoint = true
+            pythonerror = true
+        }
+
+
         if ((l.includes('disconnected parts. ')) || (l.includes('disjoint parts'))) {
             console.log("error disconnected parts", l)
             dicErreur.disjoint = true
@@ -52,6 +69,7 @@ function checkError(output: string) {
         if (l.includes('OSError:')){
             dicErreur.ok = false
             dicErreur.OSError.push(l)
+            oserror = true
         } 
 
     }
