@@ -2,36 +2,30 @@ import { Router } from 'express';
 import glob from 'glob';
 import ItpFile from 'itp-parser';
 import SocketIo from 'socket.io';
-//import * as jobmanagerClient from 'ms-jobmanager';
-// import { PromiseManager } from '/data3/rmarin/projet_polyply/msjob-aspromise';
-import * as JobManager from 'ms-jobmanager';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import TmpDirHelper from '../../TmpDirHelper';
 import * as fs from 'fs';
 import { POLYPLYPATHDATA, POLYPLY_VENV } from "../../constants";
+import checkError from './errorParser';
+import { Readable } from 'stream';
+//import {jobFS} from 'ms-jobmanager';
 
-interface ErrorToClient {
-    disjoint: boolean,
-    errorlinks: any[]
+interface Blob {
+    readonly size: number;
+    readonly type: string;
+    arrayBuffer(): Promise<ArrayBuffer>;
+    slice(start?: number, end?: number, contentType?: string): Blob;
+    stream(): NodeJS.ReadableStream;
+    text(): Promise<string>;
 }
 
-//const PATHDATA = "/data3/rmarin/projet_polyply/PolymerGeneratorServerDev/data/"
+
 const polymer = Router();
-
-//Build a dictionnary with all molecule avaible and a dictionnary with linking rules
-// Settings file "settings.json" at project root
-//const jobmanagerClient = new PromiseManager("localhost", 6001)
-
-
-polymer.get('/hello', async (req, res) => {
-    console.log("hello")
-    res.json("hello")
-})
 
 polymer.get('/data', async (req, res) => {
     let avaibleData: any = {}
     let listfile = glob.sync(POLYPLYPATHDATA + "/polyplydata/*/*.+(itp|ff)").map(f => { return f })
-    console.log(listfile)
+    // console.log(listfile)
 
     for (let file of listfile) {
         let forcefield = file.split('/')[file.split('/').length - 2]
@@ -134,52 +128,59 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
     socket.on("runpolyply", async (dataFromClient: any) => {
 
-        //const data = { polymer: jsonpolymer, density: density, name: name }
+        const tmp_dir = await TmpDirHelper.get();
+        console.log("Run polyply gen itp in ", tmp_dir)
 
-        //console.log(dataFromClient)
         //Get forcefield 
         const ff = dataFromClient['polymer']['forcefield']
-        let ok = true
-        //-f martini_v3.0.0_phospholipids_v1.itp
-        //const additionalfile = PATHDATA + ff + "/martini_v3.0.0_phospholipids_v1.itp"
-        const jsonInStr = JSON.stringify(dataFromClient.polymer)
+
         const name = dataFromClient['name']
+
         const density = dataFromClient['density']
-        const jobOpt1: JobInputs = ShellManager.mode === "child" ? {
-            "exportVar": {
-                "polyplyenv": POLYPLY_VENV,
-                "ff": ff,
-                "density": density,
-                "name": name,
-                //"file": additionalfile,
-                "action": "itp"
-            },
-            "inputs": {
-                "json": jsonInStr,
-                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-            }
-        } : {
-            "exportVar": {
-                "ff": ff,
-                "density": density,
-                "name": name,
-                //"file": additionalfile,
-                "action": "itp"
-            },
-            "inputs": {
-                "json": jsonInStr,
-                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-            },
-            "modules": ["polyply"]
+
+        let additionalfile = ""
+        if (dataFromClient['customITP'] !== undefined) {
+            additionalfile = dataFromClient['customITP'].join("\n")
         }
 
-        const tmp_dir = await TmpDirHelper.get();
+        // Stream 
+        const json_stream: Readable = new Readable();
+        json_stream.push(JSON.stringify(dataFromClient.polymer));
+        json_stream.push(null)
 
-        console.log("Run polyply gen itp in ", tmp_dir)
-        console.log("POLYPLYPATHDATA", POLYPLYPATHDATA)
+        const exportVar = {
+            polyplyenv: POLYPLY_VENV,
+            ff: ff,
+            density: density,
+            name: name,
+            action: "itp",
+            customfile: additionalfile,
+        }
+
+        const inputs = {
+            "martiniForceField.itp": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+            "polymer.json": json_stream,
+        }
+
+        //Need to add module quand exectuer sur child instead of jobmanager
+        // },
+        //     "modules": ["polyply"]
+        //         }
+
+        let result: string = ""
         try {
-            //Run gen itp 
-            await ShellManager.run('polyply', jobOpt1, tmp_dir, "create_itp", undefined, 'jm');
+            console.log(ShellManager.mode)
+            if (ShellManager.mode === "child") {
+                console.log("### Running polyply with CHILD")
+                await ShellManager.run('polyply', { exportVar, inputs/* , "modules": ["polyply"]*/ }, tmp_dir, "create_itp", undefined);
+                result = fs.readFileSync(tmp_dir + "/create_itp.stdout").toString();
+            }
+            else {
+                console.log("### Running polyply")
+                const { jobFS, stdout } = await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_itp", undefined);
+
+                result = stdout
+            }
         }
         catch (e) {
             console.log(e)
@@ -187,58 +188,14 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             console.error("ShellManager.run crash");
         }
 
-        let result = fs.readFileSync(tmp_dir + "/create_itp.stdout").toString();
+
         const itp = result.split("STOP\n")[0]
         const error = result.split("STOP\n")[1]
 
         console.log("error", error)
 
-        //Get OS error
-        let oserror = []
-        let OSErrorBoolean = false
-        let dicErreur: ErrorToClient = { disjoint: false, errorlinks: [] }
-
-        for (let l of error.split('/n')) {
-
-            if (l.startsWith(' Molecule  consistes of two disconnected parts. ')) {
-                console.log("error",l)
-                dicErreur.disjoint = true
-                ok = false
-            }
-
-            if (l.startsWith('WARNING - general - Your molecule consists of disjoint parts.Perhaps links were not applied correctly.')) {
-                console.log("error", l)
-                dicErreur.disjoint = true
-                ok = false
-            }
-
-            if (l.startsWith('WARNING - general - Missing link between"')) {
-                console.log("error", l)
-                ok = false
-                let splitline = l.split(' ')
-                let resname1 = splitline[9]
-                let idname1 = parseInt(splitline[8]) - 1
-                let resname2 = splitline[13]
-                let idname2 = parseInt(splitline[12]) - 1
-                dicErreur.errorlinks.push([resname1, idname1, resname2, idname2])
-
-            }
-
-            if (OSErrorBoolean) {
-                ok = false
-                oserror.push(l)
-            }
-
-            if (l.startsWith('OSError:')) OSErrorBoolean = true
-
-        }
-
-        if (ok == false) {
-            console.log( "OUPS")
-            socket.emit("oups", dicErreur)
-        }
-
-        if (ok) {
+        const errorParsed = checkError(error)
+        if (errorParsed.ok == true) {
             //Then on fait la requete pour le gro
             console.log("yes on passe au gro")
             socket.emit("itp", itp)
@@ -247,7 +204,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                 //Tres belle ligne (1h de travail)
                 //let bordelitp = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return "#include " + f + "\r" }).join('')
                 //super stupid variable pour avoir un retour a la ligne
-                const stupidline = '\n'
                 const topfilestr = `#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
          #include "polymere.itp"
          [ system ]
@@ -260,42 +216,59 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                 //const topFile = tmp_dir + "/system.top"
                 //fs.writeFileSync(topFile, topfilestr)
 
-                const jobOpt2: JobInputs = ShellManager.mode === "child" ? {
-                    "exportVar": {
-                        "polyplyenv": POLYPLY_VENV,
-                        "density": density,
-                        "name": name,
-                        "action": "gro"
-                    },
-                    "inputs": {
-                        "itp": itp,
-                        "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-                        "top": topfilestr
-                    }
-                } : {
-                    "exportVar": {
-                        "density": density,
-                        "name": name,
-                        "action": "gro"
-                    },
-                    "inputs": {
-                        "itp": itp,
-                        "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-                        "top": topfilestr
-                    },
-                    "modules": ["polyply"]
+
+                // Stream itp 
+                const itp_stream: Readable = new Readable();
+                itp_stream.push(itp);
+                itp_stream.push(null)
+
+
+                const top_stream: Readable = new Readable();
+                top_stream.push(topfilestr);
+                top_stream.push(null)
+
+
+                const exportVar = {
+                    polyplyenv: POLYPLY_VENV,
+                    density: density,
+                    name: name,
+                    action: "gro"
                 }
+
+                const inputs = {
+                    "itp": itp_stream,
+                    "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                    "top": top_stream
+                }
+
                 try {
-                    await ShellManager.run('polyply', jobOpt2, tmp_dir, "create_gro", undefined, 'jm');
-                    let groJob = fs.readFileSync(tmp_dir + "/create_gro.stdout").toString();
-                    socket.emit("gro", groJob)
+                    console.log(ShellManager.mode)
+                    if (ShellManager.mode === "child") {
+                        console.log("### Running polyply with CHILD")
+                        await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
+                        result = fs.readFileSync(tmp_dir + "/create_itp.stdout").toString();
+                        socket.emit("gro", result)
+                    }
+                    else {
+                        console.log("### Running polyply")
+                        const { jobFS, stdout } = await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
+                        socket.emit("gro", stdout);
+                    }
+                    
                 }
                 catch (e) {
+                    console.log( 'ERROR WITH GRO')
                     console.log(e)
                     // Handle error and throw the right error
                     console.error("ShellManager.run crash");
                 }
+
+
             })
+        }
+        else {
+            console.log("oups", errorParsed)
+            socket.emit("oups", errorParsed)
         }
 
     })

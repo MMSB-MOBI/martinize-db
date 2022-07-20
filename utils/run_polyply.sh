@@ -1,24 +1,25 @@
- if [ ! -z "$SLURM_SUBMIT_DIR" ]
-    then
-        cd $SLURM_SUBMIT_DIR
-    fi
+if [ ! -z "$SLURM_SUBMIT_DIR" ]
+then
+    cd $SLURM_SUBMIT_DIR
+fi
 
+if [ ! -z "$polyplyenv" ]
+then
+    source $polyplyenv
+fi
 
- if [ ! -z "$polyplyenv" ]
-    then
-        source $polyplyenv
-    fi
+polyply -V > version
 
 if [ $action == "itp" ]
 
 then
-    cp input/json.inp monjson.json
     ITPOUT="polymere.itp"
     GROOUT="out.gro"
-    
-    polyply gen_params -f $file -lib $ff -o $ITPOUT -seqf monjson.json -name $name > polyply.out 2> polyply.err
-    
-    #-f martini_v3.0.0_phospholipids_v1.itp
+
+    #cp $file monfichier.itp
+
+    #polyply gen_params -f monfichier.itp -lib $ff -o $ITPOUT -seqf monjson.json -name $name > polyply.out 2> polyply.err
+    polyply gen_params -lib $ff -o $ITPOUT -seqf input/*.json -name $name > polyply.out 2> polyply.err
     
     [ -f $ITPOUT ] && cat $ITPOUT
     echo "STOP"
@@ -32,9 +33,8 @@ then
     ITPOUT="polymere.itp"
     GROOUT="out.gro"
     
-    cat $itp > polymere.itp
-    cat $top > system.top
-
+    cat input/itp > polymere.itp
+    cat input/top > system.top
     
     polyply gen_coords -p system.top -o $GROOUT -name $name -dens $density > polyply2.out 2> polyply2.err
     

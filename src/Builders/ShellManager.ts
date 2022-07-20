@@ -3,11 +3,13 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
 // @ts-ignore
-import * as JobManager from 'ms-jobmanager';
+import jmClient from 'ms-jobmanager'
 import { inspect } from 'util';
 import logger from '../logger';
-import { Stream } from 'stream';
+import { Readable, Stream } from 'stream';
 import { EventEmitter } from 'events';
+import { dir } from 'console';
+import { rejects } from 'assert';
 
 const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', 'polyply'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
@@ -15,7 +17,7 @@ export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 export interface JobInputs {
   exportVar?: { [key: string]: string },
   inputs: { [key: string]: any }
-  modules? : string[]
+  modules?: string[]
 };
 
 export default new class ShellManager {
@@ -56,7 +58,7 @@ export default new class ShellManager {
     },
     'polyply': {
       venv: POLYPLY_VENV
-     }
+    }
   };
 
   /**
@@ -102,49 +104,32 @@ export default new class ShellManager {
       'jobProfile': SLURM_PROFILES.JOB_PROFILE,
       'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
     },
-    'polyply':{
+    'polyply': {
       'script': POLYPLY_PATH_JM,
       'jobProfile': SLURM_PROFILES.JOB_PROFILE,
       'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
     }
   };
 
-  async start() {
-    return new Promise(async (res, rej) => {
-      if (this.connect) {
-        logger.silly("Job manager already connected")
-        res()
-      }
-      else {
-        JobManager.start({ 'port': JOB_MANAGER_SETTINGS.port, 'TCPip': JOB_MANAGER_SETTINGS.address })
-          .then((disconnectEmitter: EventEmitter) => {
-            logger.silly('JM has been connected')
-            this.connect = true;
-            disconnectEmitter.on("disconnect", () => {
-              logger.warn("JM disconnect")
-              this.connect = false;
-            })
-            console.log("resolve")
-            res()
-
-          }).catch((e: any) => {
-            logger.error("Can't connect to JM")
-            rej(e)
-          })
-
-      }
-    }) as Promise<void>
-  }
-
-
   /**
    * Run a given script {script_name} with args {args} in {working_directory}, and save stdout/stderr to {save_std_name}.std<type>.
    */
-  async run(script_name: SupportedScript, args: string | JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode) {
-    if (mode === 'jm') {
-      return this.runWithJobManager(script_name, args as JobInputs, working_directory, save_std_name, timeout);
+  async run(script_name: SupportedScript, args: string | JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number, mode: JobMethod = this.mode): Promise<void | any> {
+    return new Promise(async (res, rej) => {
+      try {
+        if (mode === 'jm') {
+          const myJob = await this.runWithJobManager(script_name, args as JobInputs, working_directory, save_std_name, timeout);
+          res(myJob)
+        } else {
+          const vide = this.runWithChildProcess(script_name, args as string, working_directory, save_std_name, timeout);
+          res(vide)
+        }
+      }
+      catch (e) {
+        rej(e)
+      }
     }
-    return this.runWithChildProcess(script_name, args as string, working_directory, save_std_name, timeout);
+    )
   }
 
   protected runWithChildProcess(script_name: SupportedScript, args: string, working_directory: string, save_std_name?: string | false, timeout?: number) {
@@ -182,7 +167,7 @@ export default new class ShellManager {
           });
           return;
         }
-        resolve( );
+        resolve();
       });
 
       if (stdout && stderr) {
@@ -204,7 +189,6 @@ export default new class ShellManager {
   protected async runWithJobManager(script_name: SupportedScript, jobData: JobInputs, working_directory: string, save_std_name?: string | false, timeout?: number) {
     const options = this.NAME_TO_ARGS[script_name];
     const jobOpt = { ...options, ...jobData };
-    
     if (save_std_name) jobOpt.exportVar["OUTPUT_PREFIX"] = save_std_name
 
     logger.debug("JM PROCESS");
@@ -225,52 +209,83 @@ export default new class ShellManager {
     logger.silly(`Passing following job to ms-jobmanager: ${inspect(jobOpt)}`);
 
     try {
-      await this.start();
+      jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
     }
     catch (e) {
       throw new JMError(`Error with job manager : ${e}`)
     }
 
+    // return new Promise(async (resolve, reject) => {
+    try {
+      const { stdout, jobFS } = await jmClient.pushFS(jobOpt)
+      console.log(working_directory + '/' + save_std_name)
 
-    return new Promise(async (resolve, reject) => {
-      const jobCreatePdbWithConect = JobManager.push(jobOpt);
 
-      jobCreatePdbWithConect.on('completed', (stdout: Stream, stderr: Stream) => {
-        logger.debug(`jobCreatePdbWithConect completed`);
-        if (save_std_name) {
-          (async () => {
-            await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout');
-            await dumpFile(stderr, working_directory + '/' + save_std_name + '.stderr');
-          })()
-            .then(resolve)
-            .catch(reject);
+      // ##############################################
+      // A retablir absolument pour les autres scripts le border de dumpfile pour ne pas causer de bug 
 
-          return;
-        }
+      // Chercher une regex dans jobFS list 
+      //       '4dc2a08e-5600-4a4d-b767-39841693269e_coreScript.sh',
+      // [1]   '4dc2a08e-5600-4a4d-b767-39841693269e.batch',
+      // [1]   '4dc2a08e-5600-4a4d-b767-39841693269e.err',
+      // [1]   '4dc2a08e-5600-4a4d-b767-39841693269e.out',
 
-        resolve();
-      });
+      //stdout, working_directory + '/' + save_std_name + '.stdout');
+      const jobfilelist : string[] = await jobFS.list()
 
-      jobCreatePdbWithConect.on('error', reject);
-      jobCreatePdbWithConect.on("disconnect_error", () => {
-        reject(new JMError(`Error with job manager : Job manager has been disconnected`))
-      })
-      jobCreatePdbWithConect.on("lostJob", () => {
-        reject(new JMError(`Error with job manager : Job has been lost`))
-      })
-    }) as Promise<void>;
-  }
-
-  get job_manager() {
-    if (this._jm) {
-      return this._jm;
+      let idJM = jobfilelist.map( (x) => {if(x.endsWith("_coreScript.sh")) return x} )[0]?.replace("_coreScript.sh","")
+      console.log( "#JOBFS#",idJM)
+      // Grosse regex pour retrouver 
+      const stdout_fname = idJM+".out" // grace à la recherche dans list
+      const stream_fname = idJM+".err"
+      const stream_stdout: Readable = await jobFS.readToStream(stdout_fname);
+      const stream_stderr: Readable = await jobFS.readToStream(stream_fname);
+      // await dumpFile(stream_stdout, .....)
+      await dumpFile(stream_stdout, working_directory + '/' + save_std_name + '.stdout');
+      await dumpFile(stream_stderr, working_directory + '/' + save_std_name + '.stderr');
+      return { stdout, jobFS }
     }
-    return this._jm = JobManager.start({
-      'port': JOB_MANAGER_SETTINGS.port,
-      'TCPip': JOB_MANAGER_SETTINGS.address
-    })
+    catch (e) {
+      console.log(e)
+      throw (e)
+    }
+
+    // jobCreatePdbWithConect.on('completed', (stdout: Stream, stderr: Stream) => {
+    //   logger.debug(`jobCreatePdbWithConect completed`);
+    //   if (save_std_name) {
+    //     (async () => {
+    //       await dumpFile(stdout, working_directory + '/' + save_std_name + '.stdout');
+    //       await dumpFile(stderr, working_directory + '/' + save_std_name + '.stderr');
+    //     })()
+    //       .then(resolve)
+    //       .catch(reject);
+
+    //     return;
+    //   }
+    //   resolve();
+    // });
+
+    // jobCreatePdbWithConect.on('error', reject);
+    // jobCreatePdbWithConect.on("disconnect_error", () => {
+    //   reject(new JMError(`Error with job manager : Job manager has been disconnected`))
+    // })
+    // jobCreatePdbWithConect.on("lostJob", () => {
+    //   reject(new JMError(`Error with job manager : Job has been lost`))
+    // })
   }
-}();
+
+
+  // ) as Promise<void>;
+
+}
+// Job manager.start now return a promise, this function doesn't seem to be use anywhere 
+// get job_manager() {
+//   if (this._jm) {
+//     return this._jm;
+//   }
+//   return this._jm = JobManager.start(JOB_MANAGER_SETTINGS.address,   JOB_MANAGER_SETTINGS.port)
+// }
+//}();
 
 export class JMError extends Error {
 }
