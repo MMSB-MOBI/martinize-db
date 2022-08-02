@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, POLYPLY_PATH, POLYPLY_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV, POLYPLY_VENV } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, POLYPLY_PATH, POLYPLY_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV, POLYPLY_VENV, CONECT_PDB_PATH_HACK, CONECT_PDB_PATH_JM_HACK } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -11,7 +11,7 @@ import { EventEmitter } from 'events';
 import { dir } from 'console';
 import { rejects } from 'assert';
 
-const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', 'polyply'] as const;
+const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 export interface JobInputs {
@@ -32,6 +32,7 @@ export default new class ShellManager {
    */
   protected readonly NAME_TO_PATH: { [scriptName in SupportedScript]: string } = {
     'conect': CONECT_PDB_PATH,
+    'convert': CONECT_PDB_PATH_HACK,
     'go_virt': CREATE_GO_PATH,
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
@@ -44,6 +45,7 @@ export default new class ShellManager {
    */
   protected readonly VARIABLES_TO_NAME: { [scriptName in SupportedScript]: object } = {
     'conect': {},
+    'convert': {},
     'go_virt': {
       venv: MARTINIZE_VENV
     },
@@ -58,7 +60,8 @@ export default new class ShellManager {
     },
     'polyply': {
       venv: POLYPLY_VENV
-    }
+    },
+
   };
 
   /**
@@ -76,6 +79,12 @@ export default new class ShellManager {
   protected readonly NAME_TO_ARGS: { [scriptName in SupportedScript]: any } = {
     'conect': {
       'script': CONECT_PDB_PATH_JM,
+      'modules': ['gromacs'],
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+    },
+    'convert': {
+      'script': CONECT_PDB_PATH_JM_HACK,
       'modules': ['gromacs'],
       'jobProfile': SLURM_PROFILES.JOB_PROFILE,
       'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
@@ -220,14 +229,17 @@ export default new class ShellManager {
       const { stdout, jobFS } = await jmClient.pushFS(jobOpt)
       console.log(working_directory + '/' + save_std_name)
 
-      const jobfilelist : string[] = await jobFS.list()
+      const jobfilelist: string[] = await jobFS.list()
 
       //extract id of 
-      let idJM = jobfilelist.map( (x) => {if(x.endsWith("_coreScript.sh")) return x} )[0]?.replace("_coreScript.sh","")
-      console.log( "#JOBFS#",idJM)
+      
+      const idJM = jobfilelist.filter(element => {
+        return element.endsWith("_coreScript.sh");
+      })[0]?.replace("_coreScript.sh", "")
+      console.log("#JOBFS#", idJM)
 
-      const stdout_fname = idJM+".out" // grace à la recherche dans list
-      const stream_fname = idJM+".err"
+      const stdout_fname = idJM + ".out" // grace à la recherche dans list
+      const stream_fname = idJM + ".err"
       const stream_stdout: Readable = await jobFS.readToStream(stdout_fname);
       const stream_stderr: Readable = await jobFS.readToStream(stream_fname);
       // await dumpFile(stream_stdout, .....)

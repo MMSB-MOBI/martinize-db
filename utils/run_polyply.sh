@@ -16,7 +16,24 @@ GROOUT="out.gro"
 if [ $action == "itp" ]
 
 then
-    polyply gen_params -f input/monfichier.itp -lib $ff -o $ITPOUT -seqf input/polymer.json -name $name > polyply.out 2> polyply.err
+    
+    if [ -s input/monfichier.itp ]; then
+        
+        cat input/monfichier.itp |
+        awk -v RS=";NEWITP" '{ print $0 > "file_itp" NR"custom.itp" }'
+        
+        for i in $(grep -l 'connexion rule' *itp)
+        
+        do
+            mv $i $i".ff"
+        done
+        
+        polyply gen_params -f *custom.itp* -lib $ff -o $ITPOUT -seqf input/polymer.json -name $name > polyply.out 2> polyply.err
+        
+    else
+        polyply gen_params -lib $ff -o $ITPOUT -seqf input/polymer.json -name $name > polyply.out 2> polyply.err
+    fi
+    
     
     [ -f $ITPOUT ] && cat $ITPOUT
     echo "STOP"
@@ -31,9 +48,8 @@ then
     
     polyply gen_coords -p system.top -o $GROOUT -name $name -dens $density > polyply2.out 2> polyply2.err
     
-
     [ -f $GROOUT ] && cat $GROOUT
     echo "STOP"
     [ -f polyply2.err ] && cat polyply2.err
-
+    
 fi

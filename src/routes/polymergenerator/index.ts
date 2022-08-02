@@ -9,15 +9,8 @@ import { POLYPLYPATHDATA, POLYPLY_VENV } from "../../constants";
 import checkError from './errorParser';
 import { Readable } from 'stream';
 import jobFS from "ms-jobmanager";
+import { FORCE_FIELD_DIR, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
 
-interface Blob {
-    readonly size: number;
-    readonly type: string;
-    arrayBuffer(): Promise<ArrayBuffer>;
-    slice(start?: number, end?: number, contentType?: string): Blob;
-    stream(): NodeJS.ReadableStream;
-    text(): Promise<string>;
-}
 
 
 const polymer = Router();
@@ -44,26 +37,6 @@ polymer.get('/data', async (req, res) => {
         }
     }
 
-    // for (let ff of Object.keys(avaibleData)) {
-    //     let list2 = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return f })
-    //     for (let file of list2) {
-    //         let forcefield = file.split('/')[6]
-
-    //         const itp = await ItpFile.read(file);
-    //         for (let e of itp.getField('moleculetype')) {
-    //             e = e.split('\t')[0]
-    //             if (!e.startsWith(';')) {
-    //                 const mol = e.split(' ')[0]
-    //                 if (Object.keys(avaibleData).includes(forcefield)) {
-    //                     avaibleData[forcefield].push(mol)
-    //                 }
-    //                 else {
-    //                     avaibleData[forcefield] = [mol]
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 
     //remove duplkiicate 
     for (let forcefield of Object.keys(avaibleData)) {
@@ -73,39 +46,6 @@ polymer.get('/data', async (req, res) => {
     res.send(avaibleData);
     console.log("Sending forcefields and residues data")
 });
-
-// polymer.get("/customdata/:forcefield", (req, res) => {
-//     let avaibleData: any = {}
-//     let testdico: any = {}
-//     console.log(req.params)
-//     let ff = req.params.forcefield
-//     const pathPolyplyData =
-//         glob(PATHDATA + ff + "/*.itp", async function (er, files) {
-//             for (let file of files) {
-//                 let forcefield = file.split('/')[7]
-//                 const itp = await ItpFile.read(file);
-//                 for (let e of itp.getField('moleculetype')) {
-//                     e = e.split('\t')[0]
-//                     if (!e.startsWith(';')) {
-//                         const mol = e.split(' ')[0]
-//                         if (Object.keys(avaibleData).includes(forcefield)) {
-//                             avaibleData[forcefield].push(mol)
-//                         }
-//                         else {
-//                             avaibleData[forcefield] = [mol]
-//                         }
-//                         if (Object.keys(testdico).includes(forcefield)) {
-//                             testdico[forcefield].push(mol)
-//                         }
-//                         else {
-//                             testdico[forcefield] = [mol]
-//                         }
-//                     }
-//                 }
-//             }
-//             res.send(avaibleData);
-//         })
-// });
 
 polymer.get("/fastaconversion", (req, res) => {
     const fasta = {
@@ -127,8 +67,6 @@ const str_to_stream = (str: string) => {
 
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     const WORKDIR = "/data3/rmarin/projet_polyply/job"
-    console.log("je suis dans SocketIoPolymerizer")
-
     socket.on("runpolyply", async (dataFromClient: any) => {
 
         const tmp_dir = await TmpDirHelper.get();
@@ -143,7 +81,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
-            additionalfile = dataFromClient['customITP'].join("\n")
+            additionalfile = dataFromClient['customITP'].join(";NEWITP\n")
         }
 
         const exportVar = {
@@ -185,26 +123,22 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         const itp = result.split("STOP\n")[0]
         const error = result.split("STOP\n")[1]
 
-        console.log("error", error)
-
         const errorParsed = checkError(error)
+        console.log(errorParsed)
         if (errorParsed.ok == true) {
             //Then on fait la requete pour le gro
             console.log("yes on passe au gro")
             socket.emit("itp", itp)
             socket.on("continue", async () => {
-                //Liste les fichier itp du champs de force 
-                //Tres belle ligne (1h de travail)
-                //let bordelitp = glob.sync(PATHDATA + ff + "/*.itp").map(f => { return "#include " + f + "\r" }).join('')
-                //super stupid variable pour avoir un retour a la ligne
-                const topfilestr = `#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
-         #include "polymere.itp"
-         [ system ]
-         ; name
-         mylovelypolymer
-         [ molecules ]
-         ; name  number
-         ${name} 1`
+                const topfilestr = `
+#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
+#include "polymere.itp"
+[ system ]
+; name
+mylovelypolymer
+[ molecules ]
+; name  number
+${name} 1`
 
                 //const topFile = tmp_dir + "/system.top"
                 //fs.writeFileSync(topFile, topfilestr)
@@ -229,7 +163,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                         console.log("### Running polyply with CHILD")
                         await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
                         resultatGro = fs.readFileSync(tmp_dir + "/create_gro.stdout").toString();
-
                     }
                     else {
                         console.log("### Running polyply")
@@ -241,13 +174,52 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
                     const gro = resultatGro.split("STOP\n")[0]
                     const error = resultatGro.split("STOP\n")[1]
 
-                    console.log("error", error)
-
                     const errorParsed = checkError(error)
-                    console.log( "###################")
-                    console.log(errorParsed )
+                    console.log("######## Error ITP ###########", errorParsed)
+
                     if (errorParsed.ok == true) {
+                        console.log('socket.emit("gro", gro);')
                         socket.emit("gro", gro);
+
+                        try {
+                            console.log('Lancement du gmx')
+                            const command_line = `"${gro}" "${topfilestr}" "${CONECT_MDP_PATH}" "--remove-water" : ""}  "`;
+
+
+                            const exportVar = {
+                                "basedir": '',
+                                "DEL_WATER_BOOL": "NO",
+                                "MDP_FILE": CONECT_MDP_PATH
+                            }
+
+                            const inputs = {
+                                "polymere.itp": str_to_stream(itp),
+                                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                                "file.gro": str_to_stream(gro),
+                                "file.top": str_to_stream(topfilestr),
+                            }
+
+                            const { jobFS } = await ShellManager.run(
+                                'convert',
+                                ShellManager.mode === 'jm' ? { exportVar, inputs } : command_line,
+                                tmp_dir,
+                                'gromacs',
+                                4000
+                            );
+ 
+                            const fileContent = await jobFS.readToString('output-conect.pdb');
+                            console.log("Bravo monsieur! PDB done") 
+                            socket.emit("pdb", fileContent);
+
+                        }
+                        catch (e) {
+                            console.log('ERROR WITH GMX CONVERSION')
+                            console.log(e)
+                        }
+
+
+
+
                     }
                     else {
                         console.log("oups", errorParsed)

@@ -21,6 +21,8 @@ function checkError(output: string) {
     let oserror : boolean = false
     //Parse every line 
     for (let l of output.split('\n')) {
+        if (l == '') continue
+
         if (pythonerror === true){
             dicErreur.PythonError.push( l)
         }
@@ -31,10 +33,9 @@ function checkError(output: string) {
 
         if ((l.includes('Traceback (most recent call last):'))) {
             console.log("error disconnected parts", l)
-            dicErreur.disjoint = true
+            dicErreur.ok = false
             pythonerror = true
         }
-
 
         if ((l.includes('disconnected parts. ')) || (l.includes('disjoint parts'))) {
             console.log("error disconnected parts", l)
