@@ -5,12 +5,11 @@ import SocketIo from 'socket.io';
 import ShellManager, { JobInputs } from '../../Builders/ShellManager';
 import TmpDirHelper from '../../TmpDirHelper';
 import * as fs from 'fs';
-import { POLYPLYPATHDATA, POLYPLY_VENV } from "../../constants";
+import { MINIMIZEPDB, POLYPLYPATHDATA, POLYPLY_PATH, POLYPLY_VENV } from "../../constants";
 import checkError from './errorParser';
 import { Readable } from 'stream';
-import jobFS from "ms-jobmanager";
-import { FORCE_FIELD_DIR, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
-
+import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
+import jmClient from 'ms-jobmanager'
 
 
 const polymer = Router();
@@ -97,38 +96,30 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             "polymer.json": str_to_stream(JSON.stringify(dataFromClient.polymer)),
         }
 
-
         let result: string = ""
-        try {
-            console.log(ShellManager.mode)
-            if (ShellManager.mode === "child") {
-                console.log("### Running polyply with CHILD")
-                await ShellManager.run('polyply', { exportVar, inputs/* , "modules": ["polyply"]*/ }, tmp_dir, "create_itp", undefined);
-                result = fs.readFileSync(tmp_dir + "/create_itp.stdout").toString();
-            }
-            else {
-                console.log("### Running polyply")
-                const { jobFS, stdout } = await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_itp", undefined);
 
-                result = stdout
-            }
+        try {
+            jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
+            const { stdout, jobFS } = await jmClient.pushFS({ script: POLYPLY_PATH, exportVar, inputs })
+            result = stdout
         }
         catch (e) {
-            console.log(e)
-            // Handle error and throw the right error
-            console.error("ShellManager.run crash");
+            throw new Error(`Error with job manager : ${e}`)
         }
+
 
         const itp = result.split("STOP\n")[0]
         const error = result.split("STOP\n")[1]
 
         const errorParsed = checkError(error)
-        console.log(errorParsed)
+         
         if (errorParsed.ok == true) {
             //Then on fait la requete pour le gro
             console.log("yes on passe au gro")
             socket.emit("itp", itp)
             socket.on("continue", async () => {
+
+
                 const topfilestr = `
 #include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
 #include "${POLYPLYPATHDATA + "/martini_v3.0.0_solvents_v1.itp"}"
@@ -140,10 +131,6 @@ mylovelypolymer
 ; name  number
 ${name} 1
 `
-
-                //const topFile = tmp_dir + "/system.top"
-                //fs.writeFileSync(topFile, topfilestr)
-
                 const exportVar = {
                     polyplyenv: POLYPLY_VENV,
                     box: boxsize,
@@ -160,15 +147,13 @@ ${name} 1
                 try {
                     console.log(ShellManager.mode)
                     let resultatGro = " "
-                    if (ShellManager.mode === "child") {
-                        console.log("### Running polyply with CHILD")
-                        await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
-                        resultatGro = fs.readFileSync(tmp_dir + "/create_gro.stdout").toString();
-                    }
-                    else {
-                        console.log("### Running polyply")
-                        const { stdout } = await ShellManager.run('polyply', { exportVar, inputs /* , "modules": ["polyply"]*/ }, tmp_dir, "create_gro", undefined);
+                    try {
+                        const { stdout, jobFS } = await jmClient.pushFS({ script: POLYPLY_PATH, exportVar, inputs })
+                         
                         resultatGro = stdout
+                    }
+                    catch (e) {
+                        throw new Error(`Error with job manager : ${e}`)
                     }
 
                     const gro = resultatGro.split("STOP\n")[0]
@@ -183,32 +168,24 @@ ${name} 1
                         console.log('socket.emit("gro", gro);')
                         socket.emit("gro", gro);
 
+                        console.log('Lancement du gmx')
+                        
+                        const exportVar = {
+                            "basedir": '',
+                            "DEL_WATER_BOOL": "NO",
+                            "MDP_FILE": CONECT_MDP_PATH
+                        }
+
+                        const inputs = {
+                            "polymere.itp": str_to_stream(itp),
+                            "water.gro": POLYPLYPATHDATA + "/water.gro",
+                            "em.mdp": POLYPLYPATHDATA + "/em.mdp",
+                            "file.gro": str_to_stream(gro),
+                            "file.top": str_to_stream(topfilestr),
+                        }
                         try {
-                            console.log('Lancement du gmx')
-                            const command_line = `"${gro}" "${topfilestr}" "${CONECT_MDP_PATH}" "--remove-water" : ""}  "`;
-
-
-                            const exportVar = {
-                                "basedir": '',
-                                "DEL_WATER_BOOL": "NO",
-                                "MDP_FILE": CONECT_MDP_PATH
-                            }
-
-                            const inputs = {
-                                "polymere.itp": str_to_stream(itp),
-                                "water.gro": POLYPLYPATHDATA + "/water.gro",
-                                "em.mdp": POLYPLYPATHDATA + "/em.mdp",
-                                "file.gro": str_to_stream(gro),
-                                "file.top": str_to_stream(topfilestr),
-                            }
-
-                            const { jobFS } = await ShellManager.run(
-                                'convert',
-                                ShellManager.mode === 'jm' ? { exportVar, inputs } : command_line,
-                                tmp_dir,
-                                'gromacs',
-                                4000
-                            );
+                             
+                            const { stdout, jobFS } = await jmClient.pushFS({ script: MINIMIZEPDB, exportVar, inputs })
 
                             const fileContent = await jobFS.readToString('output-conect.pdb');
                             console.log("Bravo monsieur! PDB done")
@@ -217,11 +194,8 @@ ${name} 1
                         }
                         catch (e) {
                             console.log('ERROR WITH GMX CONVERSION')
-                            console.log(e)
+                            throw new Error(`Error with job manager : ${e}`)
                         }
-
-
-
 
                     }
 

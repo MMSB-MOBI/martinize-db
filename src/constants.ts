@@ -89,9 +89,9 @@ export const CREATE_MAP_RCSU_PATH = path.resolve(__dirname, "../utils/get_map_rc
 export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
 /** Link to script that can run GROMACS */
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
-export const CONECT_PDB_PATH_HACK = path.resolve(__dirname, "../utils/minimize_and_create_pdb.sh");
+export const MINIMIZEPDB = path.resolve(__dirname, "../utils/minimize_and_create_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
-export const CONECT_PDB_PATH_JM_HACK = path.resolve(__dirname, "../utils/minimize_and_create_pdb_coreScript.sh");
+export const MINIMIZEPDBBIS = path.resolve(__dirname, "../utils/minimize_and_create_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
 export const CONECT_MDP_PATH = process.env.CONECT_MDP_PATH ?? path.resolve(__dirname, "../force_fields/run.mdp");
 /** Link to Python 3 binary */
