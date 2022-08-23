@@ -77,7 +77,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
         const name = dataFromClient['name']
 
-        const density = dataFromClient['density']
+        const boxsize = dataFromClient['box']
 
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
@@ -87,7 +87,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         const exportVar = {
             polyplyenv: POLYPLY_VENV,
             ff: ff,
-            density: density,
             name: name,
             action: "itp",
         }
@@ -132,20 +131,22 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             socket.on("continue", async () => {
                 const topfilestr = `
 #include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
+#include "${POLYPLYPATHDATA + "/martini_v3.0.0_solvents_v1.itp"}"
 #include "polymere.itp"
 [ system ]
 ; name
 mylovelypolymer
 [ molecules ]
 ; name  number
-${name} 1`
+${name} 1
+`
 
                 //const topFile = tmp_dir + "/system.top"
                 //fs.writeFileSync(topFile, topfilestr)
 
                 const exportVar = {
                     polyplyenv: POLYPLY_VENV,
-                    density: density,
+                    box: boxsize,
                     name: name,
                     action: "gro"
                 }
@@ -170,14 +171,15 @@ ${name} 1`
                         resultatGro = stdout
                     }
 
-
                     const gro = resultatGro.split("STOP\n")[0]
                     const error = resultatGro.split("STOP\n")[1]
 
                     const errorParsed = checkError(error)
-                    console.log("######## Error ITP ###########", errorParsed)
-
-                    if (errorParsed.ok == true) {
+                    if (errorParsed.ok !== true) {
+                        console.log("######## Error ITP ##########", errorParsed)
+                        socket.emit("oups", errorParsed)
+                    }
+                    else {
                         console.log('socket.emit("gro", gro);')
                         socket.emit("gro", gro);
 
@@ -194,7 +196,8 @@ ${name} 1`
 
                             const inputs = {
                                 "polymere.itp": str_to_stream(itp),
-                                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                                "water.gro": POLYPLYPATHDATA + "/water.gro",
+                                "em.mdp": POLYPLYPATHDATA + "/em.mdp",
                                 "file.gro": str_to_stream(gro),
                                 "file.top": str_to_stream(topfilestr),
                             }
@@ -206,9 +209,9 @@ ${name} 1`
                                 'gromacs',
                                 4000
                             );
- 
+
                             const fileContent = await jobFS.readToString('output-conect.pdb');
-                            console.log("Bravo monsieur! PDB done") 
+                            console.log("Bravo monsieur! PDB done")
                             socket.emit("pdb", fileContent);
 
                         }
@@ -221,10 +224,7 @@ ${name} 1`
 
 
                     }
-                    else {
-                        console.log("oups", errorParsed)
-                        socket.emit("oups", errorParsed)
-                    }
+
                 }
                 catch (e) {
                     console.log('ERROR WITH GRO')

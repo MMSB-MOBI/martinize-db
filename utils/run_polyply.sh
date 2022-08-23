@@ -46,7 +46,7 @@ then
     cat input/polymere.itp > polymere.itp
     cat input/system.top > system.top
     
-    polyply gen_coords -p system.top -o $GROOUT -name $name -dens $density > polyply2.out 2> polyply2.err
+    polyply gen_coords -p system.top -o $GROOUT -name $name -box $box $box $box > polyply2.out 2> polyply2.err
     
     [ -f $GROOUT ] && cat $GROOUT
     echo "STOP"
