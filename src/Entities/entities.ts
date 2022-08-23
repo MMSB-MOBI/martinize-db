@@ -1,9 +1,16 @@
+import { VersionItp } from '../routes/molecule/CreateMoleculeJson';
 import { GoTerms, JobFilesNames, JobSettings, UserRole } from '../types';
 
 export interface BaseCouchDocument {
   _id?: string;
   _rev?: string;
   update_date?: string; 
+}
+
+export interface MoleculeVersion { 
+  version : VersionItp
+  children : MoleculeVersion[]
+  root: boolean;
 }
 
 export interface BaseMolecule extends BaseCouchDocument {
@@ -122,6 +129,7 @@ export interface JobBase extends BaseCouchDocument {
   settings : JobSettings; 
   radius : {[atom_name : string] : number}
   manual_bonds_edition?: boolean; 
+  comment?: string; 
 }
 
 export interface Job extends JobBase { 

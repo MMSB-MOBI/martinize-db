@@ -302,7 +302,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     pdb_file: (Express.Multer.File | SimuFile), 
     top_file: (Express.Multer.File | SimuFile), 
     map_files: (Express.Multer.File | SimuFile)[],
-    force_field: string
+    force_field: string, simple_force_field : boolean = true
   ) : Promise<MoleculeSave> {
     logger.verbose("[MOLECULE-ORGANIZER] Saving upload " + itp_files.map(e => e.originalname).join(', ') + " and " + pdb_file.originalname);
 
@@ -321,10 +321,11 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       maps: maps_path 
     } = await this.createSymlinksInTmpDir(use_tmp_dir, pdb_file, top_file, itp_files, map_files);
 
-    logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ".");
+    logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ". " + force_field);
     // Create the modified TOP and the modified pdb
     try {
-      var { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, force_field);
+      const ffForTop = simple_force_field ? "simple_" + force_field : force_field
+      var { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, ffForTop);
     } catch (e) {
       logger.warn("[MOLECULE-ORGANIZER] Unable to create extended TOP file. Maybe the ITPs are incorrects.");
       

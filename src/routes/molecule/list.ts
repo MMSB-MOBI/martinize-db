@@ -4,6 +4,7 @@ import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 import { User } from '../../Entities/entities';
 import SearchWorker from '../../search_worker';
+import { MAINTENANCE } from '../../constants';
 
 const ListMoleculeRouter = Router();
 
@@ -28,7 +29,11 @@ interface Filters {
 
 ListMoleculeRouter.get('/', (req, res) => {
   (async () => {
-    const query: nano.MangoQuery = { selector: {}, limit: 25, skip: 0 };
+   
+    if(MAINTENANCE.mode) {
+      res.json({'maintenance': true})
+    } else {
+      const query: nano.MangoQuery = { selector: {}, limit: 25, skip: 0 };
 
     const { 
       force_fields, 
@@ -152,6 +157,8 @@ ListMoleculeRouter.get('/', (req, res) => {
     response.molecules = response.molecules.map(e => sanitize(e));
 
     res.json(response);
+    }
+    
   })().catch(errorCatcher(res));
 });
 

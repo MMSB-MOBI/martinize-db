@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, POLYPLY_PATH, POLYPLY_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV, POLYPLY_VENV, CONECT_PDB_PATH_HACK, CONECT_PDB_PATH_JM_HACK } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, POLYPLY_PATH, POLYPLY_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV, POLYPLY_VENV, CONECT_PDB_PATH_HACK, CONECT_PDB_PATH_JM_HACK, CREATE_MAP_RCSU_PATH } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -11,7 +11,7 @@ import { EventEmitter } from 'events';
 import { dir } from 'console';
 import { rejects } from 'assert';
 
-const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply'] as const;
+const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'map_rcsu'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 export interface JobInputs {
@@ -37,8 +37,8 @@ export default new class ShellManager {
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
     'martinize': MARTINIZE_PATH,
-    'polyply': POLYPLY_PATH
-  };
+    'polyply': POLYPLY_PATH,
+    'map_rcsu' : '' };
 
   /**
    * Assign the following variables into child processes env.
@@ -61,7 +61,7 @@ export default new class ShellManager {
     'polyply': {
       venv: POLYPLY_VENV
     },
-
+    'map_rcsu' : {}
   };
 
   /**
@@ -100,6 +100,13 @@ export default new class ShellManager {
       'modules': ['mad-utils'],
       'jobProfile': SLURM_PROFILES.JOB_PROFILE,
       'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+    },
+    'map_rcsu' : {
+      'script' : CREATE_MAP_RCSU_PATH,
+      'modules': ['rcsu'],
+      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
+
     },
     'insane': {
       'script': INSANE_PATH_JM,

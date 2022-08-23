@@ -8,7 +8,7 @@ if (conf.error) {
 
 import express from 'express';
 import commander from 'commander';
-import { VERSION, URLS, DEFAULT_TMP_BASE_DIR } from './constants';
+import { VERSION, URLS, DEFAULT_TMP_BASE_DIR, MAINTENANCE } from './constants';
 import logger, { FORMAT_FILE } from './logger';
 import Winston from 'winston';
 import ApiRouter from './routes';
@@ -47,7 +47,8 @@ commander
   .option('-l, --log-level <logLevel>', 'Log level [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--file-log-level <logLevel>', 'Log level (written to file) [debug|silly|verbose|info|warn|error]', /^(debug|silly|verbose|info|warn|error)$/, 'info')
   .option('--log-file <logFile>', 'File log level')
-  .parse(process.argv);
+  .option('--maintenance', 'maintenance mode with no display of database molecules')
+.parse(process.argv);
 
 const app = express();
 
@@ -139,6 +140,11 @@ if (commander.initDb) {
         process.exit(0);
       }
     })
+}
+
+if (commander.maintenance){
+  logger.info("Maintenance mode")
+  MAINTENANCE.mode = true; 
 }
 
 

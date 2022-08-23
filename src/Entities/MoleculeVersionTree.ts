@@ -1,6 +1,43 @@
 import { BaseMolecule } from "./entities";
 
-export default class MoleculeVersionTree {
+export default class CompleteMoleculeVersionTree {
+  protected _trees: {[ff:string] : MoleculeVersionTree[]} = {}; 
+
+  constructor(molecules: BaseMolecule[]){
+    const molByFf = separateMolByForceField(molecules)
+    for (const ff in molByFf) {
+      this._trees[ff] = []
+      const mols = molByFf[ff]
+      const roots = mols.filter(mol => mol.parent === null)
+      const notRoots = mols.filter(mol => mol.parent !== null)
+      for(const root of roots){
+        const molsToTree = [root].concat(notRoots)
+        const versionTree = new MoleculeVersionTree(molsToTree)
+        this._trees[ff].push(versionTree)
+      }
+    }
+  }
+
+  getChilds(mol: BaseMolecule): BaseMolecule[]{
+    const roots = this._trees[mol.force_field]
+    const predicateFn = (treeMol : BaseMolecule) => {
+      return treeMol.id === mol.id
+    }
+
+    for (const tree of roots){
+      const node = tree.find(predicateFn)
+      if(node) return node.allChildren.map(c => c.content)
+    }
+    return []
+  }
+
+  get trees() {
+    return this._trees
+  }
+
+}
+
+class MoleculeVersionTree {
   protected _root: MoleculeNode<BaseMolecule>;
 
   constructor(molecules: BaseMolecule[]) {
@@ -122,9 +159,33 @@ export class MoleculeNode<T> {
     return this._children;
   }
 
+  get allChildren() {
+    const _recChilds = (node: MoleculeNode<T>) => {
+      all.push(node)
+      for (const child of node.children){
+        _recChilds(child)
+      }
+    }
+    const all: MoleculeNode<T>[] = []
+    for (const child of this.children){
+      _recChilds(child)
+    }
+    return all
+
+  }
+
   get flat() : T[] {
     return [this._content, ...this.children.map(c => c.flat).reduce((acc, val) => { acc.push(...val); return acc; }, [])]
   }
 }
 
-export { MoleculeVersionTree };
+const separateMolByForceField = (molecules: BaseMolecule[]) => {
+  const separated : {[force_field: string]: BaseMolecule[]} = {}
+  for(const mol of molecules){
+    if(!(mol.force_field in separated)) separated[mol.force_field] = []
+    separated[mol.force_field].push(mol)
+  }
+  return separated
+}
+
+export { CompleteMoleculeVersionTree };

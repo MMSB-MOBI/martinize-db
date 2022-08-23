@@ -91,7 +91,7 @@ export interface MartinizeSettings {
   eb?: string[];
 
   /** Use govs */
-  use_go_virtual_sites?: boolean;
+  use_go?: boolean;
 
   /** Set neutral termini */
   neutral_termini?: boolean;
@@ -184,7 +184,7 @@ export const Martinizer = new class Martinizer {
       if (full.eb) {
         command_line += " -eb " + full.eb.toString();
       }
-      if (full.use_go_virtual_sites) {
+      if (full.use_go) {
         command_line += " -govs-include ";
       }
       if (full.neutral_termini) {
@@ -294,20 +294,20 @@ export const Martinizer = new class Martinizer {
 
 
       // If go mode, we should compute map + run a python script to refresh ITPs files.
-      if (settings.use_go_virtual_sites) {
+      if (settings.use_go) {
         let map_filename: string;
         // GET THE MAP FILE FROM A CUSTOM WAY.
         // Use the original pdb file !!!
         // todo change (ccmap create way too much distances, so the shell script takes forever)
         onStep?.(this.STEP_MARTINIZE_GET_CONTACTS);
         try {
-          map_filename = await this.getCcMap(with_ext, dir);
+          map_filename = await this.getCcMapRCSU(with_ext, dir);
         } catch {
           return Errors.throw(ErrorType.MartinizeRunFailed, { 
             error: "Unable to create contact map.",
             type: "contact-map",
-            stdout: dir + '/distances.stdout',
-            stderr: dir + '/distances.stderr',
+            stdout: dir + '/rcsu.stdout',
+            stderr: dir + '/rcsu.stderr',
             dir,
           });
         }
@@ -544,6 +544,40 @@ export const Martinizer = new class Martinizer {
       top,
       itps,
     };
+
+  }
+
+  async getCcMapRCSU(pdb_filename: string, use_tmp_dir?: string) {
+    logger.debug("GET MAP RCSU")
+    console.log(pdb_filename, use_tmp_dir)
+    if (!use_tmp_dir) {
+      use_tmp_dir = await TmpDirHelper.get();
+      logger.debug(`Created tmp directory for rcsu: ${use_tmp_dir}.`);
+    }
+    const outputFile = "output.map"
+    const jobOpt: JobInputs = { 
+      exportVar: {
+        WORKDIR: use_tmp_dir,
+        PDB: path.resolve(pdb_filename),
+        OUTPUT: outputFile, 
+      },
+      inputs: {},
+    };
+
+    try {
+      await ShellManager.run(
+        'map_rcsu', 
+        jobOpt,
+        use_tmp_dir, 
+        'rcsu',
+      );
+    }
+    catch(e) {
+      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
+      throw new Error(e)
+    }
+
+    return outputFile
 
   }
 

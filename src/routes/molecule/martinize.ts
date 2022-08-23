@@ -129,30 +129,30 @@ function createRunner(settings: any, parameters: any, pdb_path?: string) {
     runner.em = numberOrError(parameters.em);
   }
 
-  if (parameters.use_go === "true") {
-    runner.use_go_virtual_sites = true;
-  }
-  if (parameters.sc_fix === "true") {
-    runner.side_chain_fix = true;
-  }
-  if (parameters.cter !== '') {
-    runner.cter = parameters.cter
-  }
-  if (parameters.nter !== '') {
-    runner.nter = parameters.nter
-  }
-  if (parameters.neutral_termini === "true") {
-    runner.neutral_termini = true
-  }
-  if (parameters.cystein_bridge) {
-    runner.cystein_bridge = parameters.cystein_bridge
-  }
-  if (parameters.commandline !== undefined) {
-    runner.commandline = parameters.commandline
-  }
-  if (parameters.builder_mode !== undefined) {
-    runner.builder_mode = parameters.builder_mode;
-  }
+    if (parameters.use_go === "true") {
+      runner.use_go = true;
+    }
+    if (parameters.sc_fix === "true") {
+      runner.side_chain_fix = true;
+    }
+    if (parameters.cter !== '') {
+      runner.cter = parameters.cter
+    }
+    if (parameters.nter !== '') {
+      runner.nter = parameters.nter
+    }
+    if (parameters.neutral_termini === "true") {
+      runner.neutral_termini = true
+    }
+    if (parameters.cystein_bridge) {
+      runner.cystein_bridge = parameters.cystein_bridge
+    }
+    if (parameters.commandline !== undefined) {
+      runner.commandline = parameters.commandline
+    }
+    if(parameters.builder_mode !== undefined){
+      runner.builder_mode = parameters.builder_mode; 
+    }
 
 
   return runner;

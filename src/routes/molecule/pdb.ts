@@ -89,7 +89,7 @@ PdbGetterRouter.get('/:id', (req, res) => {
 
     const itp_streams = await Promise.all(molecule.itp.map(itp_file => getReadableStream(itp_file.name, zip)))
 
-    console.log(itp_streams)
+    //console.log(itp_streams)
 
     //const itp_streams = await Promise.all( new Promise(()))   
     // Generate the needed radius

@@ -19,7 +19,7 @@ export enum ErrorType {
 
   /** CLIENT ERRORS: Bad Request */
   Format = 301,
-  MissingParameters,
+  MissingParameters, 
   UsernameExists,
   EmailExists,
   InvalidMethod,
@@ -27,8 +27,6 @@ export enum ErrorType {
   FileTooLarge,
   InvalidMoleculeFiles,
   MissingFiles,
-  IncorrectItpName,
-  MissingTopFiles,
 
   /** When add molecule errors */
   UnknownParent,
@@ -42,22 +40,23 @@ export enum ErrorType {
   InvalidMartinizeVersion,
   InvalidForceField,
   MoleculeNotFound,
-  ConsistencyVersionTree,
 
   /** When user updates his informations */
   InvalidUsername,
   InvalidEmail,
 
+  IncorrectItpName,
+  MissingTopFiles,
+  ConsistencyVersionTree,
+  HistoryNotFound,
+  HistoryFilesNotFound, 
+
   /** MARTINIZE Errors */
   MartinizeRunFailed = 401,
 
   /** JM Error */
-  JMError,
-
-  HistoryNotFound,
-  HistoryFilesNotFound, 
+  JMError = 501,
   JobNotFound, 
-
   UserNotProvided,
   JobNotProvided
 }

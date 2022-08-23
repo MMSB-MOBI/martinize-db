@@ -84,6 +84,7 @@ export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create
 /** Link to script that can start ccmap */
 export const CREATE_MAP_PATH = path.resolve(__dirname, "../utils/get_map.sh");
 export const CREATE_MAP_PATH_JM = path.resolve(__dirname, "../utils/get_map_coreScript.sh");
+export const CREATE_MAP_RCSU_PATH = path.resolve(__dirname, "../utils/get_map_rcsu.sh"); 
 /** Associated python script to ccmap */
 export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
 /** Link to script that can run GROMACS */
@@ -145,3 +146,5 @@ export const SLURM_PROFILES = {
 export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"
 
 export const SEND_COMPLETION_MAIL = process.env.SEND_COMPLETION_MAIL === 'false' ? false : true; 
+
+export const MAINTENANCE = {mode : false}; 
