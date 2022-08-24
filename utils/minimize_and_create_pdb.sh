@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#GROMACS_LOADER="source /usr/local/gromacs/bin/GMXRC"
-GROMACS_LOADER="module load gromacs/2020.5"
-
 function index_creation(){
     echo "Index creation"
     gmx make_ndx -f "$gro_box" -o "$index_ndx" 1> makendx_dup.stdout 2> makendx_dup.stderr
@@ -41,7 +38,6 @@ function index_creation(){
     gmx make_ndx -f "$gro_box" -o "$index_ndx" < $index_cmd > make_ndx.stdout 2>make_ndx.stderr
 }
 
-$GROMACS_LOADER
 echo "BIP BIP, je suis l'ordinateur et je minimize and create pdb"
 
 cp input/* .
@@ -68,7 +64,7 @@ echo ">>$gro $top $mdp<<"
 #ajouter input em.mdp, water.gro et solvent
 
 # Add solvent to run the minimization
-gmx solvate -cp $gro -cs water.gro -o init.gro -radius 0.21 > solvate.stdout 2> solvate.stderr
+gmx solvate -cp $gro -cs water.gro -o init.gro -radius 0.21 > 1solvate.stdout 2> 1solvate.stderr
 
 #besoind le modifier le top
 # #include "/home/rmarin/Downloads/martini_v3.0.0_solvents_v1.itp"
@@ -87,16 +83,16 @@ fi
 
 cp input/em.mdp .
 
-gmx grompp -p $top -c init.gro -f em.mdp -o em.tpr -po em.mdout.mdp -maxwarn 10 > minimization.stdout 2> minimization.stderr
+gmx grompp -p $top -c init.gro -f em.mdp -o em.tpr -po em.mdout.mdp -maxwarn 10 > 2minimization.stdout 2> 2minimization.stderr
 #### IF ERROR NEED TO RAISE AN ISSUE ABOUT THE BOX LENGHT
 
-gmx mdrun -deffnm em -v > runminimization.stdout 2> runminimization.stderr
+gmx mdrun -deffnm em -v > 3runminimization.stdout 2> 3runminimization.stderr
 
 gro_box="init.gro"
 #Center the molecule
-echo "1" "0" | gmx trjconv -f em.gro -s em.tpr -pbc mol -center -o truc.gro > center.stdout 2> center.stderr
+echo "1" "0" | gmx trjconv -f em.gro -s em.tpr -pbc mol -center -o truc.gro > 4center.stdout 2> 4center.stderr
 
-echo "q" | gmx make_ndx -f truc.gro -o blah.ndx > make_ndx.stdout 2> make_ndx.stderr
+echo "q" | gmx make_ndx -f truc.gro -o blah.ndx > 5make_ndx.stdout 2> 5make_ndx.stderr
 
-echo "1" | gmx editconf -f truc.gro -n blah.ndx -o "$output_conect" > editconf.stdout 2> editconf.stderr
+echo "1" | gmx editconf -f truc.gro -n blah.ndx -o "$output_conect" > 6editconf.stdout 2> 6editconf.stderr
 

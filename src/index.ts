@@ -27,7 +27,7 @@ import TEST_CLI from './cli/test.cli';
 import { SocketIoMartinizer } from './routes/molecule/martinize';
 import { SocketIoPolymerizer } from './routes/polymergenerator';
 import http from 'http';
-import ShellManager from './Builders/ShellManager';
+import JMSurcouche from './Builders/JMSurcouche';
 import fs from 'fs';
 import { Socket } from 'socket.io';
 import SocketIo from 'socket.io';
@@ -37,9 +37,8 @@ commander
   .option('-c, --couchdb-url <url>', 'Couch DB URL', String, process.env.COUCHDB_HOST || URLS.COUCH)
   .option('--server-url <url>', 'Server URL', String, process.env.SERVER_URL || URLS.SERVER)
   .option('-p, --port <port>', 'Emit port', Number, 4123)
-  .option('--job-manager', 'Force using job manager as shell runner')
+  .option('--server', 'Run in web service infrastructure')
   .option('--os-tmp', 'Use automatic OSes temporary directory manager instead of ' + DEFAULT_TMP_BASE_DIR + ' base directory')
-  .option('--child-process', 'Force using child process as shell runner')
   .option('--wipe-init')
   .option('--init-db')
   .option('--quit-after-init')
@@ -63,16 +62,9 @@ if (commander.logLevel) {
 }
 
 
-// Shell handler mode
-if (commander.jobManager && commander.childProcess) {
-  logger.log("fatal", "You can't specify job manager AND child process as shell executor. Please select one of those.");
-  process.exit(2);
-}
-else if (commander.jobManager) {
-  ShellManager.mode = 'jm';
-}
-else if (commander.childProcess) {
-  ShellManager.mode = 'child';
+// Running mode
+if (commander.server) {
+  JMSurcouche.mode = 'server';
 }
 
 if (commander.osTmp) {
@@ -86,7 +78,7 @@ if (!commander.keepCache) {
   TmpDirHelper.program_clean();
 }
 
-logger.silly(`Using ${ShellManager.mode === 'jm' ? 'job manager' : 'child processes'} as shell executor.`);
+logger.silly(`Using ${JMSurcouche.mode} as running mode.`);
 logger.silly(`Using ${TmpDirHelper.mode === 'os' ? 'os tmp dir manager' : 'custom tmp directory'} as base for creating temporary directories.`);
 
 

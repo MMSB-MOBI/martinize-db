@@ -3,12 +3,10 @@ then
     cd $SLURM_SUBMIT_DIR
 fi
 
-if [ ! -z "$polyplyenv" ]
+if [ ! -z "$venv" ]
 then
-    source $polyplyenv
+    source $venv
 fi
-
-polyply -V > version
 
 ITPOUT="polymere.itp"
 GROOUT="out.gro"

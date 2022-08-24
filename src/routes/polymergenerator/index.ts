@@ -10,6 +10,7 @@ import checkError from './errorParser';
 import { Readable } from 'stream';
 import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
 import jmClient from 'ms-jobmanager'
+import JMSurcouche from '../../Builders/JMSurcouche';
 
 
 const polymer = Router();
@@ -84,7 +85,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         }
 
         const exportVar = {
-            polyplyenv: POLYPLY_VENV,
             ff: ff,
             name: name,
             action: "itp",
@@ -99,11 +99,11 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         let result: string = ""
 
         try {
-            jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
-            const { stdout, jobFS } = await jmClient.pushFS({ script: POLYPLY_PATH, exportVar, inputs })
+            const { stdout, jobFS } = await JMSurcouche.run('polyply', {exportVar, inputs})
             result = stdout
         }
         catch (e) {
+            //Socket emit
             throw new Error(`Error with job manager : ${e}`)
         }
 
@@ -132,7 +132,6 @@ mylovelypolymer
 ${name} 1
 `
                 const exportVar = {
-                    polyplyenv: POLYPLY_VENV,
                     box: boxsize,
                     name: name,
                     action: "gro"
@@ -145,10 +144,9 @@ ${name} 1
                 }
 
                 try {
-                    console.log(ShellManager.mode)
                     let resultatGro = " "
                     try {
-                        const { stdout, jobFS } = await jmClient.pushFS({ script: POLYPLY_PATH, exportVar, inputs })
+                        const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
                          
                         resultatGro = stdout
                     }
@@ -159,6 +157,8 @@ ${name} 1
                     const gro = resultatGro.split("STOP\n")[0]
                     const error = resultatGro.split("STOP\n")[1]
 
+                    /////////CHECK IF GRO IS EMPTY 
+
                     const errorParsed = checkError(error)
                     if (errorParsed.ok !== true) {
                         console.log("######## Error ITP ##########", errorParsed)
@@ -166,6 +166,7 @@ ${name} 1
                     }
                     else {
                         console.log('socket.emit("gro", gro);')
+                        console.log("pouet", gro)
                         socket.emit("gro", gro);
 
                         console.log('Lancement du gmx')
@@ -185,7 +186,7 @@ ${name} 1
                         }
                         try {
                              
-                            const { stdout, jobFS } = await jmClient.pushFS({ script: MINIMIZEPDB, exportVar, inputs })
+                            const { stdout, jobFS } = await JMSurcouche.run('convert', {exportVar, inputs })
 
                             const fileContent = await jobFS.readToString('output-conect.pdb');
                             console.log("Bravo monsieur! PDB done")
