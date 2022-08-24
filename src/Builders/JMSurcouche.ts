@@ -1,4 +1,4 @@
-import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB } from '../constants';
+import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB, SLURM_PROFILES } from '../constants';
 import { ArrayValues } from '../helpers';
 
 const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'map_rcsu'] as const;
@@ -10,7 +10,9 @@ export interface JobInputs {
     exportVar: { [key: string]: string },
     inputs: { [key: string]: any },
     modules? : string[],
-    script? : string
+    script? : string,
+    jobProfile? : string,
+    sysSettingsKey? : string, 
   };
 
 
@@ -65,9 +67,11 @@ export default new class JMSurcouche {
             
         } else {
             args.modules = SERVER_MODULES[what_to_launch]
+            args.jobProfile = SLURM_PROFILES.JOB_PROFILE,
+            args.sysSettingsKey = SLURM_PROFILES.SYS_SETTINGS
         } 
 
-        logger.debug('Launch job : ')
+        logger.debug('Launch job : ' + what_to_launch + 'with mode ' + this.mode)
         
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
 
