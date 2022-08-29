@@ -15,6 +15,8 @@ import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser-forked';
 import JSZip from 'jszip';
 import ShellManager, { JobInputs, JMError } from './ShellManager';
+import JMSurcouche from './JMSurcouche';
+import { pathsToInputs } from './JMSurcouche';
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -756,8 +758,9 @@ export const Martinizer = new class Martinizer {
    * ITP includes should be able to be resolved, use the {base_directory} parameter
    * in order to set the used current directory path.
    */
-  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false, lipids? : any) {
+  async createPdbWithConect(pdb_or_gro_filename: string, top_filename: string, base_directory: string, remove_water: boolean = false, force_field: string = "martini3001",  itps? : string[], lipids? : any) {
     let tmp_original_filename: string | null = null;
+    console.log("FILENAME", pdb_or_gro_filename)
     logger.debug("PDB WITH CONNECT")
     if (pdb_or_gro_filename.endsWith('output-conect.pdb')) {
       // Filename collision between original and will to be created file. Tmp renaming it
@@ -772,44 +775,44 @@ export const Martinizer = new class Martinizer {
 
     const pdb_out = base_directory + "/output-conect.pdb";
     const command_line = `"${tmp_original_filename ?? pdb_or_gro_filename}" "${top_filename}" "${CONECT_MDP_PATH}" ${remove_water ? "--remove-water" : ""} "${groups_to_del}"`;
-
-    const command: JobInputs = { 
+    const force_fields = RadiusDatabase.getCompleteFilesForForceField(force_field)
+    console.log("ff", force_fields)
+    const command = { 
       exportVar: {
-        "basedir" : base_directory,
-        "PDB_OR_GRO_FILE" : `${path.basename(tmp_original_filename ?? pdb_or_gro_filename)}`,
-        "TOP_FILE" : `${path.basename(top_filename)}`,
-        "MDP_FILE" : CONECT_MDP_PATH,
-        "DEL_WATER_BOOL" : remove_water ? "YES" : "NO",
+        //"basedir" : base_directory,
+        //"PDB_OR_GRO_FILE" : `${path.basename(tmp_original_filename ?? pdb_or_gro_filename)}`,
+        //"TOP_FILE" : `${path.basename(top_filename)}`,
+        //"MDP_FILE" : CONECT_MDP_PATH,
+        "DEL_WATER_BOOL" : remove_water ? "YES" : "NO"
       },
-      inputs: {}
+      inputs: {
+        'input.gro' : pdb_or_gro_filename,
+        'input.top' : top_filename, 
+        'run.mdp' : CONECT_MDP_PATH, 
+        ...pathsToInputs(force_fields),
+        ...pathsToInputs(itps as string[])
+      }
     };
 
     try {
-      await ShellManager.run(
-        'conect', 
-        ShellManager.mode === 'jm' ? command : command_line, 
-        base_directory, 
-        'gromacs', 
-        this.MAX_JOB_EXECUTION_TIME
-      );
+      const { stdout, jobFS } = await JMSurcouche.run('conect', command)
+      console.log("JOB FS")
+      const pdb_out = await jobFS.list("output-conect.pdb", true)
+      if (pdb_out.length !== 1) {
+        throw new Error(`PDB could not be created for an unknown reason (or more than 1 output exists). Check the files gromacs.stdout and gromacs.stderr in directory ${base_directory}`);
+      }
+      return pdb_out[0];
+
+    } catch(e) {
+      logger.error("Error while job")
+      console.log(e)
+      throw new Error(`Error while job`);
+      
     }
-    catch(e){
-      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, {error: e.message})
-    }
+
+     
+
     
-
-    if (tmp_original_filename) {
-      // Rename the output to original name
-      await FsPromise.rename(pdb_out, base_directory + '/output-conect.gromacs.pdb');
-      await FsPromise.rename(tmp_original_filename, pdb_or_gro_filename);
-    }
-    const exists = await FsPromise.access(pdb_out, fs.constants.F_OK).then(() => true).catch(() => false);
-
-    if (!exists) {
-      throw new Error(`PDB could not be created for an unknown reason. Check the files gromacs.stdout and gromacs.stderr in directory ${base_directory}`);
-    }
-
-    return pdb_out;
   }
 
 

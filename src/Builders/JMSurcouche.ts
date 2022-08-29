@@ -5,6 +5,7 @@ const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'ma
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 import jmClient from 'ms-jobmanager'
 import logger from '../logger';
+import path from 'path';
 
 export interface JobInputs {
     exportVar: { [key: string]: string },
@@ -42,7 +43,7 @@ const SERVER_MODULES :  {[scriptName in SupportedScript] : string[]} = {
 }
 
 const LOCAL_CONFIG : {[scriptName in SupportedScript] : {venv?:string, modules?: string[]}} = {
-    'conect': {},
+    'conect': {modules : ['gromacs/2020.5']},
     'convert': {modules : ['gromacs/2020.5']},
     'go_virt': {venv : MARTINIZE_VENV},
     'ccmap': {venv : MARTINIZE_VENV},
@@ -79,4 +80,12 @@ export default new class JMSurcouche {
 
     }
 }
+
+export const pathsToInputs = (paths : string[]) : {[fileName : string ] : string} => {
+    const inputs: {[fileName : string ] : string} = {}
+    for (const p of paths) {
+        inputs[path.basename(p)] = p
+    }
+    return inputs
+} 
 

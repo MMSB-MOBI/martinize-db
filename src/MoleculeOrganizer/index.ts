@@ -13,8 +13,6 @@ import Errors, { ErrorType } from '../Errors';
 import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 import { SimuFile } from '../routes/molecule/CreateMoleculeJson';
 
-
-
 export const MoleculeOrganizer = new class MoleculeOrganizer {
 
   
@@ -340,7 +338,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
     try {
-      var full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir, false);
+      var full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir, false, force_field, itps_path);
     } catch (e) {
       logger.warn("[MOLECULE-ORGANIZER] Unable to create full PDB with GROMACS. Provided files might be incorrects.");
 
