@@ -7,8 +7,8 @@ interface ErrorToClient {
     ok: boolean,
     disjoint: boolean,
     errorlinks: any[],
-    OSError: string[],
-    PythonError: string[]
+    message: string[],
+    itp? : string,
 }
 
 
@@ -16,19 +16,19 @@ export default checkError;
 
 function checkError(output: string) {
     //Init dico error
-    let dicErreur: ErrorToClient = { ok: true, disjoint: false, errorlinks: [] , OSError: [],PythonError: []}
-    let pythonerror : boolean = false
-    let oserror : boolean = false
+    let dicErreur: ErrorToClient = { ok: true, disjoint: false, message: [], errorlinks: [] }
+    let pythonerror: boolean = false
+    let oserror: boolean = false
     //Parse every line 
     for (let l of output.split('\n')) {
         if (l == '') continue
 
-        if (pythonerror === true){
-            dicErreur.PythonError.push( l)
+        if (pythonerror === true) {
+            dicErreur.message.push(l)
         }
 
-        if (oserror === true){
-            dicErreur.OSError.push(l)
+        if (oserror === true) {
+            dicErreur.message.push(l)
         }
 
         if ((l.includes('Traceback (most recent call last):'))) {
@@ -45,7 +45,7 @@ function checkError(output: string) {
 
         if ((l.includes('unrecognized arguments'))) {
             console.log("unrecognized arguments", l)
-            dicErreur.OSError.push( l)
+            dicErreur.message.push(l)
             dicErreur.ok = false
         }
 
@@ -64,14 +64,14 @@ function checkError(output: string) {
             let resname2 = splitline[13]
             let idname2 = parseInt(splitline[12]) - 1
             dicErreur.errorlinks.push([resname1, idname1, resname2, idname2])
-            console.log( splitline)
+            console.log(splitline)
         }
-        
-        if (l.includes('OSError:')){
+
+        if (l.includes('OSError:')) {
             dicErreur.ok = false
-            dicErreur.OSError.push(l)
+            dicErreur.message.push(l)
             oserror = true
-        } 
+        }
 
     }
     return dicErreur

@@ -2,14 +2,10 @@ import { Router } from 'express';
 import glob from 'glob';
 import ItpFile from 'itp-parser';
 import SocketIo from 'socket.io';
-import ShellManager, { JobInputs } from '../../Builders/ShellManager';
-import TmpDirHelper from '../../TmpDirHelper';
-import * as fs from 'fs';
-import { MINIMIZEPDB, POLYPLYPATHDATA, POLYPLY_PATH, POLYPLY_VENV } from "../../constants";
+import {  POLYPLYPATHDATA } from "../../constants";
 import checkError from './errorParser';
 import { Readable } from 'stream';
-import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
-import jmClient from 'ms-jobmanager'
+import {  CONECT_MDP_PATH} from '../../constants';
 import JMSurcouche from '../../Builders/JMSurcouche';
 
 
@@ -66,22 +62,21 @@ const str_to_stream = (str: string) => {
 }
 
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
-    const WORKDIR = "/data3/rmarin/projet_polyply/job"
     socket.on("runpolyply", async (dataFromClient: any) => {
-
-        const tmp_dir = await TmpDirHelper.get();
-        console.log("Run polyply gen itp in ", tmp_dir)
+        console.log("Run polyply gen itp")
 
         //Get forcefield 
         const ff = dataFromClient['polymer']['forcefield']
-
         const name = dataFromClient['name']
-
         const boxsize = dataFromClient['box']
+        const numberpolymer = dataFromClient['number']
 
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
-            additionalfile = dataFromClient['customITP'].join(";NEWITP\n")
+            for (let itpname of Object.keys(dataFromClient['customITP'])) {
+                additionalfile = additionalfile + dataFromClient['customITP'][itpname]
+                additionalfile = additionalfile + ";NEWITP\n"
+            }
         }
 
         const exportVar = {
@@ -99,7 +94,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         let result: string = ""
 
         try {
-            const { stdout, jobFS } = await JMSurcouche.run('polyply', {exportVar, inputs})
+            const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             result = stdout
         }
         catch (e) {
@@ -107,20 +102,25 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             throw new Error(`Error with job manager : ${e}`)
         }
 
-
         const itp = result.split("STOP\n")[0]
         const error = result.split("STOP\n")[1]
 
         const errorParsed = checkError(error)
-         
-        if (errorParsed.ok == true) {
+
+        if (errorParsed.ok !== true) {
+            console.log("######## Error ITP ##########", errorParsed)
+            errorParsed['itp']  = itp
+            socket.emit("oups", errorParsed)
+        }
+        else {
             //Then on fait la requete pour le gro
-            console.log("yes on passe au gro")
+            console.log("Let's GrOOOO")
             socket.emit("itp", itp)
-            socket.on("continue", async () => {
+        }
 
+        socket.on("continue", async ( itp ) => {
 
-                const topfilestr = `
+            const topfilestr = `
 #include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
 #include "${POLYPLYPATHDATA + "/martini_v3.0.0_solvents_v1.itp"}"
 #include "polymere.itp"
@@ -129,91 +129,74 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 mylovelypolymer
 [ molecules ]
 ; name  number
-${name} 1
+${name} ${numberpolymer}
 `
+            const exportVar = {
+                box: boxsize,
+                name: name,
+                action: "gro"
+            }
+
+            const inputs = {
+                "polymere.itp": str_to_stream(itp),
+                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                "system.top": str_to_stream(topfilestr)
+            }
+
+
+            let resultatGro = ""
+            try {
+                const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
+                resultatGro = stdout
+            }
+            catch (e) {
+                throw new Error(`Error with job manager : ${e}`)
+            }
+
+            const gro = resultatGro.split("STOP\n")[0]
+            const error = resultatGro.split("STOP\n")[1]
+
+            /////////CHECK IF GRO IS EMPTY 
+
+            const errorParsed = checkError(error)
+            if (errorParsed.ok !== true) {
+                console.log("######## Error GRO ##########", errorParsed)
+                socket.emit("oups", errorParsed)
+            }
+            else {
+                socket.emit("gro", gro);
+                console.log('Minimize GRO to PDB')
+
                 const exportVar = {
-                    box: boxsize,
-                    name: name,
-                    action: "gro"
+                    "basedir": '',
+                    "DEL_WATER_BOOL": "NO",
+                    "MDP_FILE": CONECT_MDP_PATH
                 }
 
                 const inputs = {
                     "polymere.itp": str_to_stream(itp),
-                    "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
-                    "system.top": str_to_stream(topfilestr)
+                    "water.gro": POLYPLYPATHDATA + "/water.gro",
+                    "em.mdp": POLYPLYPATHDATA + "/em.mdp",
+                    "file.gro": str_to_stream(gro),
+                    "file.top": str_to_stream(topfilestr),
                 }
-
                 try {
-                    let resultatGro = " "
-                    try {
-                        const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
-                         
-                        resultatGro = stdout
-                    }
-                    catch (e) {
-                        throw new Error(`Error with job manager : ${e}`)
-                    }
 
-                    const gro = resultatGro.split("STOP\n")[0]
-                    const error = resultatGro.split("STOP\n")[1]
-
-                    /////////CHECK IF GRO IS EMPTY 
-
-                    const errorParsed = checkError(error)
-                    if (errorParsed.ok !== true) {
-                        console.log("######## Error ITP ##########", errorParsed)
-                        socket.emit("oups", errorParsed)
-                    }
-                    else {
-                        console.log('socket.emit("gro", gro);')
-                        console.log("pouet", gro)
-                        socket.emit("gro", gro);
-
-                        console.log('Lancement du gmx')
-                        
-                        const exportVar = {
-                            "basedir": '',
-                            "DEL_WATER_BOOL": "NO",
-                            "MDP_FILE": CONECT_MDP_PATH
-                        }
-
-                        const inputs = {
-                            "polymere.itp": str_to_stream(itp),
-                            "water.gro": POLYPLYPATHDATA + "/water.gro",
-                            "em.mdp": POLYPLYPATHDATA + "/em.mdp",
-                            "file.gro": str_to_stream(gro),
-                            "file.top": str_to_stream(topfilestr),
-                        }
-                        try {
-                             
-                            const { stdout, jobFS } = await JMSurcouche.run('convert', {exportVar, inputs })
-
-                            const fileContent = await jobFS.readToString('output-conect.pdb');
-                            console.log("Bravo monsieur! PDB done")
-                            socket.emit("pdb", fileContent);
-
-                        }
-                        catch (e) {
-                            console.log('ERROR WITH GMX CONVERSION')
-                            throw new Error(`Error with job manager : ${e}`)
-                        }
-
-                    }
+                    const { stdout, jobFS } = await JMSurcouche.run('convert', { exportVar, inputs })
+                    const fileContent = await jobFS.readToString('output-conect.pdb');
+                    console.log("Good job Sir! PDB done")
+                    socket.emit("top", topfilestr);
+                    socket.emit("pdb", fileContent);
 
                 }
                 catch (e) {
-                    console.log('ERROR WITH GRO')
-                    console.log(e)
-                    // Handle error and throw the right error
-                    console.error("ShellManager.run crash");
+                    console.log('ERROR WITH GMX CONVERSION')
+                    socket.emit("oups", { ok: false , message : 'ERROR WITH GMX CONVERSION' ,errorlinks : [] })
+                    throw new Error(`Error with job manager : ${e}`)
                 }
-            })
-        }
-        else {
-            console.log("oups", errorParsed)
-            socket.emit("oups", errorParsed)
-        }
 
+            }
+        })
     })
 }
 

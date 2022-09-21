@@ -67,7 +67,7 @@ export default new class JMSurcouche {
             args.modules = SERVER_MODULES[what_to_launch]
         } 
 
-        logger.debug('Launch job : ')
+        logger.debug('Launch job : '+what_to_launch)
         
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
 

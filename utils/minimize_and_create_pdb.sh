@@ -46,7 +46,6 @@ gro="input/file.gro"
 top="input/file.top"
 mdp="$MDP_FILE"
 gro_box="__box__.gro"
-tpr_run="__run__.tpr"
 index_ndx="__index__.ndx"
 tmp_stdin="tmp"
 output_conect="output-conect.pdb"
@@ -54,13 +53,13 @@ output_conect_no_water="output-conect-no-w.pdb"
 index_cmd="index_cmd.txt"
 output_no_water="output-no-w.pdb"
 output="output.pdb"
-
+output_conect_temp="outputtemp.pdb"
 
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
 
 echo ">>$gro $top $mdp<<"
-
+ 
 #ajouter input em.mdp, water.gro et solvent
 
 # Add solvent to run the minimization
@@ -90,9 +89,12 @@ gmx mdrun -deffnm em -v > 3runminimization.stdout 2> 3runminimization.stderr
 
 gro_box="init.gro"
 #Center the molecule
-echo "1" "0" | gmx trjconv -f em.gro -s em.tpr -pbc mol -center -o truc.gro > 4center.stdout 2> 4center.stderr
+echo "1" "0" | gmx trjconv -f em.gro -s em.tpr -pbc mol -conect -center -o "$output_conect_temp" > 4center.stdout 2> 4center.stderr
 
-echo "q" | gmx make_ndx -f truc.gro -o blah.ndx > 5make_ndx.stdout 2> 5make_ndx.stderr
+echo -e "del 0-29\n! a W\nq\n" | gmx make_ndx -f "$output_conect_temp" -o blah.ndx > 5make_ndx.stdout 2> 5make_ndx.stderr
 
-echo "1" | gmx editconf -f truc.gro -n blah.ndx -o "$output_conect" > 6editconf.stdout 2> 6editconf.stderr
+gmx editconf -f em.gro -n blah.ndx -o noW.gro  > TRUC1make_ndx.stdout 2> TYRUC1make_ndx.stderr
 
+gmx grompp -f em.mdp -c noW.gro -p file.top -n blah.ndx -o pdb.tpr -maxwarn 1 > TRUCmake_ndx.stdout 2> TYRUCmake_ndx.stderr
+
+gmx editconf -f pdb.tpr -conect -n blah.ndx -o "$output_conect" > 6editconf.stdout 2> 6editconf.stderr

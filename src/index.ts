@@ -182,7 +182,7 @@ const HTTP_SERVER = http.createServer(app);
 const io = SocketIo(HTTP_SERVER);
 
 io.on('connection', (socket: Socket) => {
-  console.log( "connection")
+  console.log( "Well connected")
   SocketIoMartinizer(socket);
   SocketIoPolymerizer(socket);
 })

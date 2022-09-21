@@ -242,8 +242,6 @@ async function sendMailMartinizeEnd(userId: string, jobId: string) {
 }
 
 export async function SocketIoMartinizer(socket: SocketIo.Socket) {
-  //socket.emit('martinizeVersion', version);
-  console.log( "je suis dans SocketIoMartinizer" )
   socket.on('martinize', async (file: Buffer, run_id: string, settings: ClientSettings) => {
     function sendFile(path: string, infos: { id?: string, name: string, type: string, mol_idx?: number }) {
       return new Promise(async (resolve, reject) => {
