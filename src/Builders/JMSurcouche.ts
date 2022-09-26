@@ -1,7 +1,7 @@
-import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB } from '../constants';
+import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, RUN_POLYPLY_PATH, INIT_POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB } from '../constants';
 import { ArrayValues } from '../helpers';
 
-const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'map_rcsu'] as const;
+const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'get_residue_avaible', 'map_rcsu'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 import jmClient from 'ms-jobmanager'
 import logger from '../logger';
@@ -9,26 +9,27 @@ import logger from '../logger';
 export interface JobInputs {
     exportVar: { [key: string]: string },
     inputs: { [key: string]: any },
-    modules? : string[],
-    script? : string
-  };
+    modules?: string[],
+    script?: string
+};
 
 
 type RunMode = 'server' | 'local';
 const DEFAULT_RUN_MODE = 'local'
 
-const SCRIPTS : {[scriptName in SupportedScript] : string} = {
+const SCRIPTS: { [scriptName in SupportedScript]: string } = {
     'conect': CONECT_PDB_PATH,
     'convert': MINIMIZEPDB,
     'go_virt': CREATE_GO_PATH,
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
     'martinize': MARTINIZE_PATH,
-    'polyply': POLYPLY_PATH,
-    'map_rcsu' : '' 
+    'polyply': RUN_POLYPLY_PATH,
+    'get_residue_avaible': INIT_POLYPLY_PATH,
+    'map_rcsu': ''
 };
 
-const SERVER_MODULES :  {[scriptName in SupportedScript] : string[]} = {
+const SERVER_MODULES: { [scriptName in SupportedScript]: string[] } = {
     'conect': ['gromacs'],
     'convert': ['gromacs'],
     'go_virt': ['mad-utils'],
@@ -36,39 +37,41 @@ const SERVER_MODULES :  {[scriptName in SupportedScript] : string[]} = {
     'insane': ['insane'],
     'martinize': ['martinize2'],
     'polyply': ['polyply'],
-    'map_rcsu' : ['rcsu']
+    'get_residue_avaible': ['polyply'],
+    'map_rcsu': ['rcsu']
 }
 
-const LOCAL_CONFIG : {[scriptName in SupportedScript] : {venv?:string, modules?: string[]}} = {
+const LOCAL_CONFIG: { [scriptName in SupportedScript]: { venv?: string, modules?: string[] } } = {
     'conect': {},
-    'convert': {modules : ['gromacs/2020.5']},
-    'go_virt': {venv : MARTINIZE_VENV},
-    'ccmap': {venv : MARTINIZE_VENV},
-    'insane': {venv : INSANE_VENV},
-    'martinize': {venv : MARTINIZE_VENV},
-    'polyply': {venv : POLYPLY_VENV},
-    'map_rcsu' : {}
+    'convert': { modules: ['gromacs/2020.5'] },
+    'go_virt': { venv: MARTINIZE_VENV },
+    'ccmap': { venv: MARTINIZE_VENV },
+    'insane': { venv: INSANE_VENV },
+    'martinize': { venv: MARTINIZE_VENV },
+    'polyply': { venv: POLYPLY_VENV },
+    'get_residue_avaible': { venv: POLYPLY_VENV },
+    'map_rcsu': {}
 }
 
 export default new class JMSurcouche {
     public mode: RunMode = DEFAULT_RUN_MODE;
 
-    async run (what_to_launch: SupportedScript, args : JobInputs) {
+    async run(what_to_launch: SupportedScript, args: JobInputs) {
 
         args.script = SCRIPTS[what_to_launch]
-        
-        if (this.mode === 'local'){
+
+        if (this.mode === 'local') {
             const venv = LOCAL_CONFIG[what_to_launch].venv
             const modules = LOCAL_CONFIG[what_to_launch].modules
-            if (venv) args.exportVar = {...args.exportVar, venv}
+            if (venv) args.exportVar = { ...args.exportVar, venv }
             if (modules) args.modules = modules
-            
+
         } else {
             args.modules = SERVER_MODULES[what_to_launch]
-        } 
+        }
 
-        logger.debug('Launch job : '+what_to_launch)
-        
+        logger.debug('Launch job : ' + what_to_launch)
+
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
 
         return await jmClient.pushFS(args)

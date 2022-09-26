@@ -2,48 +2,48 @@ import { Router } from 'express';
 import glob from 'glob';
 import ItpFile from 'itp-parser';
 import SocketIo from 'socket.io';
-import {  POLYPLYPATHDATA } from "../../constants";
+import { POLYPLYPATHDATA } from "../../constants";
 import checkError from './errorParser';
 import { Readable } from 'stream';
-import {  CONECT_MDP_PATH} from '../../constants';
+import { CONECT_MDP_PATH } from '../../constants';
 import JMSurcouche from '../../Builders/JMSurcouche';
 
 
-const polymer = Router();
+const router = Router();
 
-polymer.get('/data', async (req, res) => {
-    let avaibleData: any = {}
-    let listfile = glob.sync(POLYPLYPATHDATA + "/polyplydata/*/*.+(itp|ff)").map(f => { return f })
-    // console.log(listfile)
+//replacer cette fonction par un module ppour renvoyer les residues disoi 
 
-    for (let file of listfile) {
-        let forcefield = file.split('/')[file.split('/').length - 2]
 
-        const itp = await ItpFile.read(file);
-        for (let e of itp.getField('moleculetype')) {
-            if (!e.startsWith(';')) {
-                const mol = e.split(' ')[0]
-                if (Object.keys(avaibleData).includes(forcefield)) {
-                    avaibleData[forcefield].push(mol)
-                }
-                else {
-                    avaibleData[forcefield] = [mol]
-                }
-            }
+let polyplyData: any = {}
+
+const f = async () => {
+    console.log("init residue avaible")
+    const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: {}, inputs: {} })
+    return stdout
+
+}; (async () => {
+    const res = await f()
+    let tempff = ''
+
+    for (let line of res.split("\n")) {
+
+        if (line.startsWith("FORCEFIELD :")) {
+            tempff = line.replace("FORCEFIELD :", "")
+            polyplyData[tempff] = []
         }
+        else polyplyData[tempff].push(line)
     }
+    console.log(polyplyData)
+})()
 
-
-    //remove duplkiicate 
-    for (let forcefield of Object.keys(avaibleData)) {
-        avaibleData[forcefield] = [...new Set(avaibleData[forcefield])];
-    }
-
-    res.send(avaibleData);
+router.get('/data', async (req, res) => {
     console.log("Sending forcefields and residues data")
+    //Select only martini forcefield
+    let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
+    res.send(MARTINIpolyplyData);
 });
 
-polymer.get("/fastaconversion", (req, res) => {
+router.get("/fastaconversion", (req, res) => {
     const fasta = {
         'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
         'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N',
@@ -79,6 +79,13 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             }
         }
 
+        let ffpath = ''
+        if (ff == "martini2") {
+            ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.3P.itp"
+        }
+        else ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v3.0.0.itp"
+
+
         const exportVar = {
             ff: ff,
             name: name,
@@ -87,7 +94,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
         let inputs = {
             'monfichier.itp': str_to_stream(additionalfile),
-            "martiniForceField.itp": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+            "martiniForceField.itp": ffpath,
             "polymer.json": str_to_stream(JSON.stringify(dataFromClient.polymer)),
         }
 
@@ -109,7 +116,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
         if (errorParsed.ok !== true) {
             console.log("######## Error ITP ##########", errorParsed)
-            errorParsed['itp']  = itp
+            errorParsed['itp'] = itp
             socket.emit("oups", errorParsed)
         }
         else {
@@ -118,11 +125,11 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             socket.emit("itp", itp)
         }
 
-        socket.on("continue", async ( itp ) => {
+        socket.on("continue", async (itp) => {
 
             const topfilestr = `
-#include "${POLYPLYPATHDATA + "/martini_v3.0.0.itp"}"
-#include "${POLYPLYPATHDATA + "/martini_v3.0.0_solvents_v1.itp"}"
+#include "${ffpath}"
+#include "${POLYPLYPATHDATA + '/' + ff + "/martini_v3.0.0_solvents_v1.itp"}" 
 #include "polymere.itp"
 [ system ]
 ; name
@@ -139,7 +146,7 @@ ${name} ${numberpolymer}
 
             const inputs = {
                 "polymere.itp": str_to_stream(itp),
-                "martiniForceField": POLYPLYPATHDATA + "/martini_v3.0.0.itp",
+                "martiniForceField": ffpath,
                 "system.top": str_to_stream(topfilestr)
             }
 
@@ -191,7 +198,7 @@ ${name} ${numberpolymer}
                 }
                 catch (e) {
                     console.log('ERROR WITH GMX CONVERSION')
-                    socket.emit("oups", { ok: false , message : 'ERROR WITH GMX CONVERSION' ,errorlinks : [] })
+                    socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
                     throw new Error(`Error with job manager : ${e}`)
                 }
 
@@ -200,4 +207,4 @@ ${name} ${numberpolymer}
     })
 }
 
-export default polymer;
+export default router;
