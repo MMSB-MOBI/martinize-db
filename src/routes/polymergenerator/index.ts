@@ -7,10 +7,10 @@ import TmpDirHelper from '../../TmpDirHelper';
 import * as fs from 'fs';
 import { MINIMIZEPDB, POLYPLYPATHDATA, POLYPLY_PATH, POLYPLY_VENV } from "../../constants";
 import checkError from './errorParser';
-import { Readable } from 'stream';
 import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
 import jmClient from 'ms-jobmanager'
 import JMSurcouche from '../../Builders/JMSurcouche';
+import { str_to_stream } from '../../Builders/JMSurcouche';
 
 
 const polymer = Router();
@@ -58,12 +58,6 @@ polymer.get("/fastaconversion", (req, res) => {
 })
 
 
-const str_to_stream = (str: string) => {
-    const ma_stream: Readable = new Readable();
-    ma_stream.push(str);
-    ma_stream.push(null)
-    return ma_stream
-}
 
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     const WORKDIR = "/data3/rmarin/projet_polyply/job"

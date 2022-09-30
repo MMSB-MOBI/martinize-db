@@ -258,7 +258,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       });
   
       res.json({
-        water: await getFormattedFile(water),
+        water: await getFormattedFile(water.pdb),
         no_water: await getFormattedFile(no_water),
         top: await getFormattedFile(top),
         itps: await Promise.all(itps.map(i => getFormattedFile(i))),

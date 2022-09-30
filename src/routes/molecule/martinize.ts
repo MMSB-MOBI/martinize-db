@@ -68,95 +68,95 @@ MartinizerRouter.use((req, res, next) => {
   next();
 });
 
-function numberOrError(num: any) {
-  const pos = Number(num);
-  if (isNaN(pos) || pos < 0) {
-    return Errors.throw(ErrorType.Format);
-  }
-  return pos;
-}
+// function numberOrError(num: any) {
+//   const pos = Number(num);
+//   if (isNaN(pos) || pos < 0) {
+//     return Errors.throw(ErrorType.Format);
+//   }
+//   return pos;
+// }
 
-function createRunner(settings: any, parameters: any, pdb_path?: string) {
-  let inp = '';
-  if (pdb_path) {
-    inp = pdb_path;
-  } else {
-    inp = 'input'
-  }
-  const runner = {
-    input: inp,
-  } as Partial<MartinizeSettings>;
+// function createRunner(settings: any, parameters: any, pdb_path?: string) {
+//   let inp = '';
+//   if (pdb_path) {
+//     inp = pdb_path;
+//   } else {
+//     inp = 'input'
+//   }
+//   const runner = {
+//     input: inp,
+//   } as Partial<MartinizeSettings>;
 
-  // Read all the settings
-  if (parameters.ff) {
-    if (settings.force_fields.includes(parameters.ff)) {
-      runner.ff = parameters.ff;
-    }
-    else {
-      return Errors.throw(ErrorType.InvalidForceField);
-    }
-  }
-  if (parameters.position) {
-    if (Martinizer.isMartinizePosition(parameters.position)) {
-      runner.position = parameters.position;
-    }
-    else {
-      return Errors.throw(ErrorType.Format);
-    }
-  }
-  if (parameters.posref_fc) {
-    runner.posref_fc = numberOrError(parameters.posref_fc);
-  }
-  if (parameters.elastic === "true") {
-    runner.elastic = true;
-  }
-  if (parameters.ef) {
-    runner.ef = numberOrError(parameters.ef);
-  }
-  if (parameters.el) {
-    runner.el = numberOrError(parameters.el);
-  }
-  if (parameters.eu) {
-    runner.eu = numberOrError(parameters.eu);
-  }
-  if (parameters.ea) {
-    runner.ea = numberOrError(parameters.ea);
-  }
-  if (parameters.ep) {
-    runner.ep = numberOrError(parameters.ep);
-  }
-  if (parameters.em) {
-    runner.em = numberOrError(parameters.em);
-  }
+//   // Read all the settings
+//   if (parameters.ff) {
+//     if (settings.force_fields.includes(parameters.ff)) {
+//       runner.ff = parameters.ff;
+//     }
+//     else {
+//       return Errors.throw(ErrorType.InvalidForceField);
+//     }
+//   }
+//   if (parameters.position) {
+//     if (Martinizer.isMartinizePosition(parameters.position)) {
+//       runner.position = parameters.position;
+//     }
+//     else {
+//       return Errors.throw(ErrorType.Format);
+//     }
+//   }
+//   if (parameters.posref_fc) {
+//     runner.posref_fc = numberOrError(parameters.posref_fc);
+//   }
+//   if (parameters.elastic === "true") {
+//     runner.elastic = true;
+//   }
+//   if (parameters.ef) {
+//     runner.ef = numberOrError(parameters.ef);
+//   }
+//   if (parameters.el) {
+//     runner.el = numberOrError(parameters.el);
+//   }
+//   if (parameters.eu) {
+//     runner.eu = numberOrError(parameters.eu);
+//   }
+//   if (parameters.ea) {
+//     runner.ea = numberOrError(parameters.ea);
+//   }
+//   if (parameters.ep) {
+//     runner.ep = numberOrError(parameters.ep);
+//   }
+//   if (parameters.em) {
+//     runner.em = numberOrError(parameters.em);
+//   }
 
-    if (parameters.use_go === "true") {
-      runner.use_go = true;
-    }
-    if (parameters.sc_fix === "true") {
-      runner.side_chain_fix = true;
-    }
-    if (parameters.cter !== '') {
-      runner.cter = parameters.cter
-    }
-    if (parameters.nter !== '') {
-      runner.nter = parameters.nter
-    }
-    if (parameters.neutral_termini === "true") {
-      runner.neutral_termini = true
-    }
-    if (parameters.cystein_bridge) {
-      runner.cystein_bridge = parameters.cystein_bridge
-    }
-    if (parameters.commandline !== undefined) {
-      runner.commandline = parameters.commandline
-    }
-    if(parameters.builder_mode !== undefined){
-      runner.builder_mode = parameters.builder_mode; 
-    }
+//     if (parameters.use_go === "true") {
+//       runner.use_go = true;
+//     }
+//     if (parameters.sc_fix === "true") {
+//       runner.side_chain_fix = "true";
+//     }
+//     if (parameters.cter !== '') {
+//       runner.cter = parameters.cter
+//     }
+//     if (parameters.nter !== '') {
+//       runner.nter = parameters.nter
+//     }
+//     if (parameters.neutral_termini === "true") {
+//       runner.neutral_termini = true
+//     }
+//     if (parameters.cystein_bridge) {
+//       runner.cystein_bridge = parameters.cystein_bridge
+//     }
+//     if (parameters.commandline !== undefined) {
+//       runner.commandline = parameters.commandline
+//     }
+//     if(parameters.builder_mode !== undefined){
+//       runner.builder_mode = parameters.builder_mode; 
+//     }
 
 
-  return runner;
-}
+//   return runner;
+// }
 
 /*async function handleHistory(user_id:string, job_id: string){
   logger.debug("handleHistory")
@@ -198,15 +198,15 @@ async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: strin
   }, parameters);
 
   try {
-    const { pdb, itps, top, warns, dir, elastic_bonds } = await Martinizer.run(martinizeSettings, onStep, path);
+    const { pdb, itps, top, warns, jobId, elastic_bonds } = await Martinizer.run(martinizeSettings, onStep, path);
 
     return {
       pdb,
       itps,
       top,
-      elastic_bonds,
       warns,
-      dir,
+      jobId,
+      elastic_bonds
     };
   } catch (e) {
     if (e instanceof ApiError) {
@@ -243,7 +243,7 @@ async function sendMailMartinizeEnd(userId: string, jobId: string) {
 
 export async function SocketIoMartinizer(socket: SocketIo.Socket) {
   //socket.emit('martinizeVersion', version);
-  console.log( "je suis dans SocketIoMartinizer" )
+  console.log("je suis dans SocketIoMartinizer")
   socket.on('martinize', async (file: Buffer, run_id: string, settings: ClientSettings) => {
     function sendFile(path: string, infos: { id?: string, name: string, type: string, mol_idx?: number }) {
       return new Promise(async (resolve, reject) => {
@@ -298,7 +298,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
 
       await FsPromise.writeFile(INPUT, file);
 
-      const { pdb, itps, top, elastic_bonds, warns, dir } = await martinizeRun(
+      const { pdb, itps, top, warns, jobId, elastic_bonds } = await martinizeRun(
         validatedParams,
         INPUT,
         (step, ...data) => {
@@ -310,6 +310,8 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
         },
         tmp_dir
       );
+
+      console.log(pdb)
 
       await sendFile(top, {
         name: path.basename(top),
@@ -346,7 +348,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
 
 
       const job: MartinizeJobToSave = {
-        jobId: path.basename(dir),
+        jobId: jobId,
         userId: validatedParams.user_id,
         type: "martinize",
         date: dateFormatter("Y-m-d H:i"),

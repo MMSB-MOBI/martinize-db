@@ -50,7 +50,7 @@ then
   exit 1
 fi
 
-pdb="input/input.gro"
+pdb="input/$INPUT_NAME"
 top="input/input.top"
 mdp="input/run.mdp"
 gro_box="__box__.gro"
@@ -65,6 +65,8 @@ output="output.pdb"
 
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
+
+cp input/input.top input.top #Qu'est-ce qui pourrait mal se passer ?
 
 echo ">>$pdb $top $mdp<<"
 

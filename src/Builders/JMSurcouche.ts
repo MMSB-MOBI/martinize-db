@@ -6,6 +6,8 @@ export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 import jmClient from 'ms-jobmanager'
 import logger from '../logger';
 import path from 'path';
+import { Readable } from 'stream';
+import { ErrorType } from '../Errors';
 
 export interface JobInputs {
     exportVar: { [key: string]: string },
@@ -88,4 +90,11 @@ export const pathsToInputs = (paths : string[]) : {[fileName : string ] : string
     }
     return inputs
 } 
+
+export const str_to_stream = (str: string) => {
+    const ma_stream: Readable = new Readable();
+    ma_stream.push(str);
+    ma_stream.push(null)
+    return ma_stream
+}
 

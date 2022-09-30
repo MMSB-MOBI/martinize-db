@@ -15,7 +15,7 @@ const SupportedScripts = ['insane', 'conect', 'go_virt', 'ccmap', 'martinize', '
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 
 export interface JobInputs {
-  exportVar?: { [key: string]: string },
+  exportVar: { [key: string]: string },
   inputs: { [key: string]: any }
   modules?: string[]
 };
