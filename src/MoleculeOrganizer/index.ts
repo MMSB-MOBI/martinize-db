@@ -328,6 +328,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       full_top = await Martinizer.createTopFileToString(top_path, itps_path, ffForTop);
       console.log("Return full top", full_top)
     } catch (e) {
+      console.error(e)
       logger.warn("[MOLECULE-ORGANIZER] Unable to create extended TOP file. Maybe the ITPs are incorrects.");
       
       return Errors.throw(ErrorType.InvalidMoleculeFiles, {

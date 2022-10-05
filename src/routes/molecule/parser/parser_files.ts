@@ -113,18 +113,26 @@ export const completeItpFiles = (path: string, erase = false) => {
             const molecules = getDirInside(ffPath)
             for (const mol of molecules){
                 const molPath = `${ffPath}/${mol}`
-                const files = fs.readdirSync(molPath)
-                const itp = files.filter((f: string) => f.endsWith('.itp'))
-                if (itp.length !== 1){
-                    console.error('ERR : not 1 itp')
-                    exceptions['itpNumber'].push(molPath)
-                    continue
+                const versions = getDirInside(molPath)
+                console.log(molPath, versions)
+                for (const version of versions){
+                    const molVersionPath = `${molPath}/${version}`
+                    const files = fs.readdirSync(molVersionPath)
+                    const itp = files.filter((f: string) => f.endsWith('.itp'))
+                    if (itp.length !== 1){
+                        console.error('ERR : not 1 itp')
+                        exceptions['itpNumber'].push(molPath)
+                        continue
+                    }
+                    const itp_file = itp[0]
+                    const itpPath = `${molVersionPath}/${itp_file}`
+                    //console.log('itp', itp, 'gro', gro)
+                    const outItp = erase ? `${itpPath}.ori` : `${itpPath}.new`
+                    createItpx(itpPath, outItp, cat, ff, version, erase)
+
                 }
-                const itp_file = itp[0]
-                const itpPath = `${molPath}/${itp_file}`
-                //console.log('itp', itp, 'gro', gro)
-                const outItp = erase ? `${itpPath}.ori` : `${itpPath}.new`
-                createItpx(itpPath, outItp, cat, ff, '1.0', erase)
+                
+                
             }
         }
            

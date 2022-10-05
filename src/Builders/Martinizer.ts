@@ -449,7 +449,9 @@ export const Martinizer = new class Martinizer {
    * 
    * Returns new TOP filename and all the used ITPs to generate top.
    */
-  async createTopFile(current_directory: string, original_top_path: string | undefined, itps_path: string[] | undefined, force_field: string, top_name: string = "full.top") {
+  async createTopFile(current_directory: string, original_top_path: string | undefined, itps_path: string[] |undefined, force_field: string, top_name: string = "full.top") {
+    logger.debug("Martinizer.ts createTopFile")
+    logger.debug('force field ' + force_field)
     let itps_ff = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
 
     if (!itps_ff) {
