@@ -325,8 +325,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     // Create the modified TOP and the modified pdb
     try {
       const ffForTop = simple_force_field ? "simple_" + force_field : force_field
+      logger.debug("[MOLECULE-ORGANIZER] used force field " + ffForTop)
       var { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, ffForTop);
     } catch (e) {
+      console.error(e)
       logger.warn("[MOLECULE-ORGANIZER] Unable to create extended TOP file. Maybe the ITPs are incorrects.");
       
       return Errors.throw(ErrorType.InvalidMoleculeFiles, {
