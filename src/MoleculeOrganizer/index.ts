@@ -352,6 +352,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       });
     }
 
+    // @ts-ignore
     logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(conectOutput.pdb) + ".");
     console.log(conectOutput);
 
@@ -371,7 +372,9 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     } = await this.zipFromPaths(
       itps_path,
       maps_path,
+      // @ts-ignore
       conectOutput.pdb,
+      // @ts-ignore
       conectOutput.top,
       top_name,
       zip_name
@@ -387,6 +390,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const infos: MoleculeSaveInfo = {
       pdb: {
         size: pdb_length,
+        // @ts-ignore
         name: path.basename(conectOutput.pdb)
       },
       top: {

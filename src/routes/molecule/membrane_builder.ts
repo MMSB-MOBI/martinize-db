@@ -258,6 +258,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       });
   
       res.json({
+        // @ts-ignore
         water: await getFormattedFile(water.pdb),
         no_water: await getFormattedFile(no_water),
         top: await getFormattedFile(top),
