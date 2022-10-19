@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function index_creation(){
     echo "Index creation"
     gmx make_ndx -f "$gro_box" -o "$index_ndx" 1> makendx_dup.stdout 2> makendx_dup.stderr
@@ -44,7 +46,6 @@ gro="input/file.gro"
 top="input/file.top"
 mdp="$MDP_FILE"
 gro_box="__box__.gro"
-tpr_run="__run__.tpr"
 index_ndx="__index__.ndx"
 tmp_stdin="tmp"
 output_conect="output-conect.pdb"
@@ -52,17 +53,17 @@ output_conect_no_water="output-conect-no-w.pdb"
 index_cmd="index_cmd.txt"
 output_no_water="output-no-w.pdb"
 output="output.pdb"
-
+output_conect_temp="outputtemp.pdb"
 
 # Requires: pdb in argument $1, filled top in argument $2, in the right folder
 # Requires: a .mdp file in $3
 
 echo ">>$gro $top $mdp<<"
-
+ 
 #ajouter input em.mdp, water.gro et solvent
 
 # Add solvent to run the minimization
-gmx solvate -cp $gro -cs water.gro -o init.gro -radius 0.21 > solvate.stdout 2> solvate.stderr
+gmx solvate -cp $gro -cs water.gro -o init.gro -radius 0.21 > 1solvate.stdout 2> 1solvate.stderr
 
 #besoind le modifier le top
 # #include "/home/rmarin/Downloads/martini_v3.0.0_solvents_v1.itp"
@@ -81,15 +82,19 @@ fi
 
 cp input/em.mdp .
 
-gmx grompp -p $top -c init.gro -f em.mdp -o em.tpr -po em.mdout.mdp -maxwarn 10 > minimization.stdout 2> minimization.stderr
+gmx grompp -p $top -c init.gro -f em.mdp -o em.tpr -po em.mdout.mdp -maxwarn 10 > 2minimization.stdout 2> 2minimization.stderr
 #### IF ERROR NEED TO RAISE AN ISSUE ABOUT THE BOX LENGHT
 
-gmx mdrun -deffnm em -v > runminimization.stdout 2> runminimization.stderr
+gmx mdrun -deffnm em -v > 3runminimization.stdout 2> 3runminimization.stderr
 
 gro_box="init.gro"
 #Center the molecule
-echo "1" "0" | gmx trjconv -f em.gro -s em.tpr -pbc mol -center -o truc.gro > center.stdout 2> center.stderr
+echo "1" "0" | gmx trjconv -f em.gro -s em.tpr -pbc mol -conect -center -o "$output_conect_temp" > 4center.stdout 2> 4center.stderr
 
-echo "q" | gmx make_ndx -f truc.gro -o blah.ndx > make_ndx.stdout 2> make_ndx.stderr
+echo -e "del 0-29\n! a W\nq\n" | gmx make_ndx -f "$output_conect_temp" -o blah.ndx > 5make_ndx.stdout 2> 5make_ndx.stderr
 
-echo "1" | gmx editconf -f truc.gro -n blah.ndx -o "$output_conect" > editconf.stdout 2> editconf.stderr
+gmx editconf -f em.gro -n blah.ndx -o noW.gro  > TRUC1make_ndx.stdout 2> TYRUC1make_ndx.stderr
+
+gmx grompp -f em.mdp -c noW.gro -p file.top -n blah.ndx -o pdb.tpr -maxwarn 1 > TRUCmake_ndx.stdout 2> TYRUCmake_ndx.stderr
+
+gmx editconf -f pdb.tpr -conect -n blah.ndx -o "$output_conect" > 6editconf.stdout 2> 6editconf.stderr

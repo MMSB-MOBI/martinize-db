@@ -218,6 +218,7 @@ export const HistoryOrganizer = new class HistoryOrganizer{
                     itp_files : await Promise.all(files.itp_files.map(async mol_itp => await Promise.all(mol_itp.map(i => getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${i}`))))), 
                     warnings: await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.warnings}`),
                 }
+                console.log( readedFiles)
                 res(readedFiles)
             } catch(e) {
                 if (notFoundOnFileSystem(e)){

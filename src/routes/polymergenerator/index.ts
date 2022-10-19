@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import glob from 'glob';
 import ItpFile from 'itp-parser';
 import SocketIo from 'socket.io';
 import { POLYPLYPATHDATA } from "../../constants";
@@ -11,11 +10,7 @@ import JMSurcouche from '../../Builders/JMSurcouche';
 
 const router = Router();
 
-//replacer cette fonction par un module ppour renvoyer les residues disoi 
-
-
 let polyplyData: any = {}
-
 const f = async () => {
     console.log("init residue avaible")
     const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: {}, inputs: {} })
@@ -33,7 +28,7 @@ const f = async () => {
         }
         else polyplyData[tempff].push(line)
     }
-    console.log(polyplyData)
+
 })()
 
 router.get('/data', async (req, res) => {
@@ -129,7 +124,6 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
             const topfilestr = `
 #include "${ffpath}"
-#include "${POLYPLYPATHDATA + '/' + ff + "/martini_v3.0.0_solvents_v1.itp"}" 
 #include "polymere.itp"
 [ system ]
 ; name
@@ -176,13 +170,13 @@ ${name} ${numberpolymer}
 
                 const exportVar = {
                     "basedir": '',
-                    "DEL_WATER_BOOL": "NO",
+
                     "MDP_FILE": CONECT_MDP_PATH
                 }
 
                 const inputs = {
                     "polymere.itp": str_to_stream(itp),
-                    "water.gro": POLYPLYPATHDATA + "/water.gro",
+
                     "em.mdp": POLYPLYPATHDATA + "/em.mdp",
                     "file.gro": str_to_stream(gro),
                     "file.top": str_to_stream(topfilestr),
@@ -197,9 +191,9 @@ ${name} ${numberpolymer}
 
                 }
                 catch (e) {
-                    console.log('ERROR WITH GMX CONVERSION')
-                    socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
-                    throw new Error(`Error with job manager : ${e}`)
+                    console.log('ERROR WITH GMX CONVERSION', e)
+                    // socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
+                    // throw new Error(`Error with job manager : ${e}`)
                 }
 
             }
