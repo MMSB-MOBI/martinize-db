@@ -15,7 +15,6 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     simple_martini22: ['martini_v2.2.itp'], 
     martini22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     simple_martini22p: ['martini_v2.2P.itp'],
-    martini23p: ['martini_v2.3P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     martini23_CNP: ['martini_v2.3_CNP.itp', 'martini_v2.0_ions.itp'],
     simple_martini23_CNP : ['martini_v2.3_CNP.itp']
   };

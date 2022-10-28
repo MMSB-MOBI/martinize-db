@@ -15,13 +15,13 @@
     "martini23_CNP"
   ],
   "force_fields_info":{
-    "elnedyn":{"polarizable": false},
-    "elnedyn22":{"polarizable": false},
-    "elnedyn22p":{"polarizable": true},
-    "martini22":{"polarizable": false},
-    "martini22p":{"polarizable": true},
-    "martini3001":{"polarizable": false},
-    "martini23_CNP" : {"polarizable": false}
+    "elnedyn":{"polarizable": false, "type": "protein"},
+    "elnedyn22":{"polarizable": false, "type": "protein"},
+    "elnedyn22p":{"polarizable": true, "type": "protein"},
+    "martini22":{"polarizable": false, "type": "supported"},
+    "martini22p":{"polarizable": true, "type": "supported"},
+    "martini3001":{"polarizable": false, "type": "supported"},
+    "martini23_CNP" : {"polarizable": false, "type": "modified"}
   },
   "category_tree": {
     "MC:0001": {
