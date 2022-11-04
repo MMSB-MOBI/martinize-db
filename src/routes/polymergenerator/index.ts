@@ -181,20 +181,20 @@ ${name} ${numberpolymer}
                     "file.gro": str_to_stream(gro),
                     "file.top": str_to_stream(topfilestr),
                 }
-                try {
+                // try {
 
-                    const { stdout, jobFS } = await JMSurcouche.run('convert', { exportVar, inputs })
-                    const fileContent = await jobFS.readToString('output-conect.pdb');
-                    console.log("Good job Sir! PDB done")
-                    socket.emit("top", topfilestr);
-                    socket.emit("pdb", fileContent);
+                const { stdout, jobFS } = await JMSurcouche.run('convert', { exportVar, inputs })
+                const fileContent = await jobFS.readToString('output-conect.pdb');
+                console.log("Good job Sir! PDB done")
+                socket.emit("top", topfilestr);
+                socket.emit("pdb", fileContent);
 
-                }
-                catch (e) {
-                    console.log('ERROR WITH GMX CONVERSION', e)
-                    socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
-                    throw new Error(`Error with job manager : ${e}`)
-                }
+                // }
+                // catch (e) {
+                //     console.log('ERROR WITH GMX CONVERSION', e)
+                //     socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
+                //     throw new Error(`Error with job manager : ${e}`)
+                // }
 
             }
         })

@@ -43,7 +43,7 @@ const SERVER_MODULES: { [scriptName in SupportedScript]: string[] } = {
 
 const LOCAL_CONFIG: { [scriptName in SupportedScript]: { venv?: string, modules?: string[] } } = {
     'conect': {},
-    'convert': { modules: ['gromacs/2020.5'] },
+    'convert': { modules: ['gromacs/2020.7'] },
     'go_virt': { venv: MARTINIZE_VENV },
     'ccmap': { venv: MARTINIZE_VENV },
     'insane': { venv: INSANE_VENV },
