@@ -5,8 +5,9 @@ import readline from 'readline';
 import { FORCE_FIELD_DIR } from "../constants";
 
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
-  static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
+  static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string[] } = {
     martini3001 : ['martini_v3.0.0.itp', 'martini_v3.0.0_ions_v1.itp', 'martini_v3.0.0_solvents_v1.itp'],
+    simple_martini3001: ['martini_v3.0.0.itp'], 
     elnedyn22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     elnedyn22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     elnedyn: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
@@ -43,6 +44,29 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     }
     return files;
   }
+
+  static getCompleteFilesForForceField(name : string) {
+    if (!(name in this.FORCE_FIELD_TO_FILE_NAME)) {
+      return [];
+    }
+
+    const files = this.FORCE_FIELD_TO_FILE_NAME[name];
+
+    return files.map(f => FORCE_FIELD_DIR + "/" + f) 
+  }
+
+  /*static getFilesForForceFieldObj(name : string) : {[file_name : string] : string} {
+    const filesObj : {[file_name : string] : string}  = {}
+    if (!(name in this.FORCE_FIELD_TO_FILE_NAME)) {
+      return {};
+    }
+
+    const files = this.FORCE_FIELD_TO_FILE_NAME[name];
+    for (const f of files){
+      filesObj[f] = FORCE_FIELD_DIR + "/" + f
+    }
+    return filesObj;
+  }*/
 
   /**
    * Create a new set a custom atoms for {force_field}.

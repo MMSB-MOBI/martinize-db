@@ -13,8 +13,6 @@ import Errors, { ErrorType } from '../Errors';
 import { ConsoleTransportOptions } from 'winston/lib/winston/transports';
 import { SimuFile } from '../routes/molecule/CreateMoleculeJson';
 
-
-
 export const MoleculeOrganizer = new class MoleculeOrganizer {
 
 
@@ -324,10 +322,14 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ". " + force_field);
     // Create the modified TOP and the modified pdb
+    let full_top; 
     try {
       const ffForTop = simple_force_field ? "simple_" + force_field : force_field
-      var { top: full_top } = await Martinizer.createTopFile(use_tmp_dir, top_path, itps_path, ffForTop);
+
+      full_top = await Martinizer.createTopFileToString(top_path, itps_path, ffForTop);
+      console.log("Return full top", full_top)
     } catch (e) {
+      console.error(e)
       logger.warn("[MOLECULE-ORGANIZER] Unable to create extended TOP file. Maybe the ITPs are incorrects.");
 
       return Errors.throw(ErrorType.InvalidMoleculeFiles, {
@@ -336,12 +338,12 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       });
     }
 
-    logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created: " + path.basename(full_top));
+    logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created");
 
 
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
     try {
-      var full_pdb = await Martinizer.createPdbWithConect(pdb_path, full_top, use_tmp_dir, false);
+      var conectOutput = await Martinizer.createPdbWithConect(pdb_path, full_top, false, force_field, itps_path);
     } catch (e) {
       logger.warn("[MOLECULE-ORGANIZER] Unable to create full PDB with GROMACS. Provided files might be incorrects.");
 
@@ -351,7 +353,9 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       });
     }
 
-    logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(full_pdb) + ".");
+    // @ts-ignore
+    logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(conectOutput.pdb) + ".");
+    console.log(conectOutput);
 
     // Compressing and saving
     const save_id = generateSnowflake();
@@ -369,8 +373,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     } = await this.zipFromPaths(
       itps_path,
       maps_path,
-      full_pdb,
-      full_top,
+      // @ts-ignore
+      conectOutput.pdb,
+      // @ts-ignore
+      conectOutput.top,
       top_name,
       zip_name
     );
@@ -385,7 +391,8 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const infos: MoleculeSaveInfo = {
       pdb: {
         size: pdb_length,
-        name: path.basename(full_pdb)
+        // @ts-ignore
+        name: path.basename(conectOutput.pdb)
       },
       top: {
         size: top_length,

@@ -1,17 +1,22 @@
-import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, RUN_POLYPLY_PATH, INIT_POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB } from '../constants';
+import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB, SLURM_PROFILES } from '../constants';
 import { ArrayValues } from '../helpers';
 
 const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'get_residue_avaible', 'map_rcsu'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
 import jmClient from 'ms-jobmanager'
 import logger from '../logger';
+import path from 'path';
+import { Readable } from 'stream';
+import { ErrorType } from '../Errors';
 
 export interface JobInputs {
     exportVar: { [key: string]: string },
     inputs: { [key: string]: any },
-    modules?: string[],
-    script?: string
-};
+    modules? : string[],
+    script? : string,
+    jobProfile? : string,
+    sysSettingsKey? : string, 
+  };
 
 
 type RunMode = 'server' | 'local';
@@ -68,14 +73,31 @@ export default new class JMSurcouche {
 
         } else {
             args.modules = SERVER_MODULES[what_to_launch]
-        }
+            args.jobProfile = SLURM_PROFILES.JOB_PROFILE,
+            args.sysSettingsKey = SLURM_PROFILES.SYS_SETTINGS
+        } 
 
-        logger.debug('Launch job : ' + what_to_launch)
-
+        logger.debug('Launch job : ' + what_to_launch + 'with mode ' + this.mode)
+        
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
 
         return await jmClient.pushFS(args)
 
     }
+}
+
+export const pathsToInputs = (paths : string[]) : {[fileName : string ] : string} => {
+    const inputs: {[fileName : string ] : string} = {}
+    for (const p of paths) {
+        inputs[path.basename(p)] = p
+    }
+    return inputs
+} 
+
+export const str_to_stream = (str: string) => {
+    const ma_stream: Readable = new Readable();
+    ma_stream.push(str);
+    ma_stream.push(null)
+    return ma_stream
 }
 
