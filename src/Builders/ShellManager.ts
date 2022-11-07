@@ -1,4 +1,4 @@
-import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM, POLYPLY_PATH, POLYPLY_PATH_JM, CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV, POLYPLY_VENV, CREATE_MAP_RCSU_PATH } from '../constants';
+import { JOB_MANAGER_SETTINGS, INSANE_PATH, INSANE_PATH_JM,  CONECT_PDB_PATH, CONECT_PDB_PATH_JM, CREATE_MAP_PATH, CREATE_MAP_PATH_JM, CREATE_GO_PATH, CREATE_GO_PATH_JM, MARTINIZE_PATH, MARTINIZE_PATH_JM, JobMethod, DEFAULT_JOB_METHOD, SLURM_PROFILES, MARTINIZE_VENV, INSANE_VENV, POLYPLY_VENV, CREATE_MAP_RCSU_PATH, MINIMIZEPDBBIS } from '../constants';
 import { exec } from 'child_process';
 import fs from 'fs';
 import { ArrayValues } from '../helpers';
@@ -36,8 +36,10 @@ export default new class ShellManager {
     'ccmap': CREATE_MAP_PATH,
     'insane': INSANE_PATH,
     'martinize': MARTINIZE_PATH,
-    'polyply': RUN_POLYPLY_PATH,
-    'map_rcsu' : '' };
+    //'polyply': RUN_POLYPLY_PATH,
+    'map_rcsu': '',
+    polyply: ''
+  };
 
   /**
    * Assign the following variables into child processes env.
@@ -73,49 +75,63 @@ export default new class ShellManager {
       'modules': ['gromacs'],
       'jobProfile': SLURM_PROFILES.JOB_PROFILE,
       'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    },
-    'convert': {
-      'script': MINIMIZEPDBBIS,
-      'modules': ['gromacs'],
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    },
-    'go_virt': {
-      'script': CREATE_GO_PATH_JM,
-      'modules': ['mad-utils'],
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    },
-    'ccmap': {
-      'script': CREATE_MAP_PATH_JM,
-      'modules': ['mad-utils'],
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    },
-    'map_rcsu' : {
-      'script' : CREATE_MAP_RCSU_PATH,
-      'modules': ['rcsu'],
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey' : SLURM_PROFILES.SYS_SETTINGS
+      // },
+      // 'convert': {
+      //   'script': MINIMIZEPDBBIS,
+      //   'modules': ['gromacs'],
+      //   'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      //   'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+      // }
+      ,
 
+
+
+
+
+
+
+
+      'go_virt': {
+        'script': CREATE_GO_PATH_JM,
+        'modules': ['mad-utils'],
+        'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+        'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+      },
+      'ccmap': {
+        'script': CREATE_MAP_PATH_JM,
+        'modules': ['mad-utils'],
+        'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+        'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+      },
+      'map_rcsu': {
+        'script': CREATE_MAP_RCSU_PATH,
+        'modules': ['rcsu'],
+        'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+        'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+      },
+      'insane': {
+        'script': INSANE_PATH_JM,
+        'modules': ['insane'],
+        'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+        'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+      },
+      'martinize': {
+        'script': MARTINIZE_PATH_JM,
+        'modules': ['martinize2'],
+        'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+        'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
+      },
+      // 'polyply': {
+      //   'script': RUN_POLYPLY_PATH,
+      //   'jobProfile': SLURM_PROFILES.JOB_PROFILE,
+      //   'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
     },
-    'insane': {
-      'script': INSANE_PATH_JM,
-      'modules': ['insane'],
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    },
-    'martinize': {
-      'script': MARTINIZE_PATH_JM,
-      'modules': ['martinize2'],
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    },
-    'polyply': {
-      'script': RUN_POLYPLY_PATH,
-      'jobProfile': SLURM_PROFILES.JOB_PROFILE,
-      'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
-    }
+    insane: undefined,
+    go_virt: undefined,
+    ccmap: undefined,
+    martinize: undefined,
+    polyply: undefined,
+    map_rcsu: undefined
   };
 
   /**
