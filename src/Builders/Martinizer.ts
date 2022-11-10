@@ -299,9 +299,6 @@ export const Martinizer = new class Martinizer {
         elastic_bonds: undefined,
       };
 
-
-
-
     } catch (e) {
       console.error(e)
       if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
@@ -578,6 +575,7 @@ export const Martinizer = new class Martinizer {
 
     let newTop = ""
 
+    console.log(originalTopStream )
     if (originalTopStream.readable) {
       const topString = originalTopStream.read().toString()
       //console.log("TEST READ STREAM", test.toString())

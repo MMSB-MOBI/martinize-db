@@ -3,28 +3,28 @@ import { IsAlphanumeric, IsBoolean, IsDateString, IsDefined, IsIn, IsNumber, IsN
 import { AvailableForceFields, FORCE_FIELDS, castStringTrueFalseToBoolean } from "../types";
 
 
-const POSITION = ['none', 'all', 'backbone'] as const;
+const POSITION = ['none', 'all', 'backbone'] as const;
 type AvailablePositions = typeof POSITION[number]
 
-const CTER = ["COOH-ter"] as const; 
+const CTER = ["COOH-ter"] as const;
 type AvailableCter = typeof CTER[number]
 
-const NTER = ["NH2-ter"] as const; 
+const NTER = ["NH2-ter"] as const;
 type AvailableNter = typeof NTER[number]
 
-const CYSTEIN_BRIDGE = ['none', 'auto'] as const; 
+const CYSTEIN_BRIDGE = ['none', 'auto'] as const;
 type AvailableCysteinBridge = typeof CYSTEIN_BRIDGE[number]
 
-const BUILDER_MODE = ["classic", "elastic", "go"] as const; 
+const BUILDER_MODE = ["classic", "elastic", "go"] as const;
 type AvailableBuilderMode = typeof BUILDER_MODE[number]
 
-const JOB_TYPE = ["martinize"] as const; 
+const JOB_TYPE = ["martinize", "polyply"] as const;
 type AvailableJobType = typeof JOB_TYPE[number]
 
 class ClientSettings {
     @IsDefined()
     @IsNumberString()
-    user_id!: string; 
+    user_id!: string;
 }
 
 export class ClientSettingsMartinize extends ClientSettings {
@@ -47,7 +47,7 @@ export class ClientSettingsMartinize extends ClientSettings {
     @IsDefined()
     @IsBoolean()
     @Transform(({ value }) => castStringTrueFalseToBoolean(value))
-    sc_fix!:boolean
+    sc_fix!: boolean
 
     @IsDefined()
     @IsIn(CYSTEIN_BRIDGE)
@@ -61,32 +61,32 @@ export class ClientSettingsMartinize extends ClientSettings {
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => Number(value))
-    ef?: number; 
+    ef?: number;
 
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => Number(value))
-    el?: number; 
+    el?: number;
 
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => Number(value))
-    eu?: number; 
+    eu?: number;
 
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => Number(value))
-    ea?: number; 
+    ea?: number;
 
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => Number(value))
-    ep?: number; 
+    ep?: number;
 
     @IsOptional()
     @IsNumber()
     @Transform(({ value }) => Number(value))
-    em?: number; 
+    em?: number;
 
     @IsOptional()
     @IsBoolean()

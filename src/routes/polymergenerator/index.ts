@@ -1,12 +1,16 @@
-import { Router } from 'express';
-import ItpFile from 'itp-parser';
+import { Router } from 'express'; 
 import SocketIo from 'socket.io';
 import { POLYPLYPATHDATA } from "../../constants";
 import checkError from './errorParser';
-import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
-import jmClient from 'ms-jobmanager'
+import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants'; 
 import JMSurcouche from '../../Builders/JMSurcouche';
-import { str_to_stream } from '../../Builders/JMSurcouche';
+import { str_to_stream } from '../../Builders/JMSurcouche'; 
+import HistoryOrganizer from '../../HistoryOrganizer';
+import logger from '../../logger';
+import { PolyplyJobToSave } from '../molecule/molecule.types';
+import { dateFormatter, generateSnowflake } from '../../helpers'; 
+import { ClientSettingsMartinize } from '../molecule/molecule.dto';
+import { NONAME } from 'dns';
 
 
 const router = Router();
@@ -50,16 +54,15 @@ router.get("/fastaconversion", (req, res) => {
 })
 
 
-
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
-    socket.on("runpolyply", async (dataFromClient: any) => {
+    console.log("je suis dans SocketIoPolymerizer ")
+    socket.on("run_itp_generation", async (dataFromClient: any) => {
         console.log("Run polyply gen itp")
 
+        console.log(dataFromClient)
         //Get forcefield 
         const ff = dataFromClient['polymer']['forcefield']
-        const name = dataFromClient['name']
-        const boxsize = dataFromClient['box']
-        const numberpolymer = dataFromClient['number']
+        const name = dataFromClient['name']  
 
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
@@ -110,14 +113,28 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             socket.emit("oups", errorParsed)
         }
         else {
-            //Then on fait la requete pour le gro
-            console.log("Let's GrOOOO")
+            console.log('emit itp')
             socket.emit("itp", itp)
         }
 
-        socket.on("continue", async (itp) => {
+    })
+    socket.on("run_gro_generation", async (data) => {
+        console.log("Let's GrOOOO")
 
-            const topfilestr = `
+        //Get forcefield 
+        const ff = data['polymer']['forcefield']
+        const name = data['name']
+        const boxsize = data['box']
+        const numberpolymer = data['number']
+        const itp = data['itp']
+
+        let ffpath = ''
+        if (ff == "martini2") {
+            ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.3P.itp"
+        }
+        else ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v3.0.0.itp"
+
+        const topfilestr = `
 #include "${ffpath}"
 #include "polymere.itp"
 [ system ]
@@ -127,73 +144,97 @@ mylovelypolymer
 ; name  number
 ${name} ${numberpolymer}
 `
-            const exportVar = {
-                box: boxsize,
-                name: name,
-                action: "gro"
-            }
+        const exportVar = {
+            box: boxsize,
+            name: name,
+            action: "gro"
+        }
 
-            const inputs = {
-                "polymere.itp": str_to_stream(itp),
-                "martiniForceField": ffpath,
-                "system.top": str_to_stream(topfilestr)
-            }
+        const inputs = {
+            "polymere.itp": str_to_stream(itp),
+            "martiniForceField": ffpath,
+            "system.top": str_to_stream(topfilestr)
+        }
 
+        let resultatGro = ""
+        try {
+            //console.log("Jm surcouche GRO ")
+            const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
+            resultatGro = stdout
+        }
+        catch (e) {
+            throw new Error(`Error with job manager : ${e}`)
+        }
 
-            let resultatGro = ""
-            try {
-                const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
-                resultatGro = stdout
-            }
-            catch (e) {
-                throw new Error(`Error with job manager : ${e}`)
-            }
+        const gro = resultatGro.split("STOP\n")[0]
+        const error = resultatGro.split("STOP\n")[1]
 
-            const gro = resultatGro.split("STOP\n")[0]
-            const error = resultatGro.split("STOP\n")[1]
+        /////////CHECK IF GRO IS EMPTY 
 
-            /////////CHECK IF GRO IS EMPTY 
-
-            const errorParsed = checkError(error)
-            if (errorParsed.ok !== true) {
-                console.log("######## Error GRO ##########", errorParsed)
-                socket.emit("oups", errorParsed)
-            }
-            else {
-                socket.emit("gro", gro);
-                console.log('Minimize GRO to PDB')
-
-                const exportVar = {
-                    "basedir": '',
-
-                    "MDP_FILE": CONECT_MDP_PATH
-                }
-
-                const inputs = {
-                    "polymere.itp": str_to_stream(itp),
-
-                    "em.mdp": POLYPLYPATHDATA + "/em.mdp",
-                    "file.gro": str_to_stream(gro),
-                    "file.top": str_to_stream(topfilestr),
-                }
-                // try {
-
-                const { stdout, jobFS } = await JMSurcouche.run('convert', { exportVar, inputs })
-                const fileContent = await jobFS.readToString('output-conect.pdb');
-                console.log("Good job Sir! PDB done")
-                socket.emit("top", topfilestr);
-                socket.emit("pdb", fileContent);
-
-                // }
-                // catch (e) {
-                //     console.log('ERROR WITH GMX CONVERSION', e)
-                //     socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
-                //     throw new Error(`Error with job manager : ${e}`)
-                // }
-
-            }
-        })
+        const errorParsed = checkError(error)
+        if (errorParsed.ok !== true) {
+            console.log("######## Error GRO ##########", errorParsed)
+            socket.emit("oups", errorParsed)
+        }
+        else {
+            console.log("emit go et top")
+            socket.emit("gro_top", { gro: gro, top: topfilestr });
+        }
     })
+    socket.on("run_pdb_generation", async (data) => {
+        console.log('Convert and minimize GRO to PDB')
+        const exportVar = {
+            "basedir": '',
+            "MDP_FILE": CONECT_MDP_PATH
+        }
+        const inputs = {
+            "polymere.itp": str_to_stream(data['itp']),
+            "em.mdp": POLYPLYPATHDATA + "/em.mdp",
+            "file.gro": str_to_stream(data['gro']),
+            "file.top": str_to_stream(data['top']),
+        }
+        try {
+            const { stdout, jobFS } = await JMSurcouche.run('convert', { exportVar, inputs })
+            const fileContent = await jobFS.readToString('output-conect.pdb');
+            console.log("Good job Sir! PDB done")
+            socket.emit("pdb", fileContent);
+        }
+        catch (e) {
+            console.log('ERROR WITH GMX CONVERSION', e)
+            socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
+            throw new Error(`Error with job manager : ${e}`)
+        }
+
+    })
+ 
+    socket.on("add_to_history", async (d) => {
+        console.log("Add to history", d)
+
+        const gro = d["gro"]
+        const pdb = d["pdb"]
+        const top = d["top"]
+        const itp = d["itp"]
+        const name = d["name"]
+
+        
+        const job: PolyplyJobToSave = {
+            jobId: generateSnowflake(),
+            userId: d["userId"],
+            type: "polyply",
+            date: dateFormatter("Y-m-d H:i"),
+            settings: { ff : "martini3001", position : "none", cter :"COOH-ter", nter:"NH2-ter", sc_fix : false, cystein_bridge : "auto", builder_mode : "classic", send_mail : false, user_id :d["userId"] },
+            name:name,
+            
+        }
+        let savedToHistory = false;
+        try {
+            await HistoryOrganizer.saveToHistoryFromPolyply(job ,itp, gro, top, pdb )
+            savedToHistory = true;
+        } catch (e) {
+            logger.warn("error save to history", e)
+        }
+    })
+
 }
 
 export default router;
