@@ -168,16 +168,15 @@ ListMoleculeRouter.get('/', (req, res) => {
         if (err) throw err;
         JSZip.loadAsync(data).then(function (zip) {
           console.log(Object.keys(zip.files))
-          console.log(Object.keys(zip.files).filter((e) => e.endsWith(".itp")))
           const itpname = Object.keys(zip.files).filter((e) => e.endsWith(".itp"))[0]
           if (itpname !== null) {
             zip.file(itpname)!.async("string").then(function (data) {
               // data is a string
               // TODO your code goes here, this is just an example
-              console.log(data);
+              //console.log("blabla", data);
             })
           }
-          else console.log( itpname, "NUUUL" )
+          else console.log(itpname, "NUUUL")
 
         });
       });

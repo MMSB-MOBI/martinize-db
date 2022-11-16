@@ -123,7 +123,7 @@ export interface JobBase extends BaseCouchDocument {
   id: string; 
   jobId: string; 
   userId : string; 
-  type : "martinize" | "insane"; 
+  type : "martinize" | "insane "| "polyply"; 
   date : string; 
   name : string; 
   settings : JobSettings; 

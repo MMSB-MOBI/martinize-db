@@ -467,6 +467,7 @@ export function dateFormatter(schema: string, date = new Date()) : string {
 }
 
 export async function getFormattedFile(file: string) : Promise<ReadedFile> {
+   
   const name = path.basename(file);
   const type = detectType(file.slice(file.indexOf('.') + 1));
 

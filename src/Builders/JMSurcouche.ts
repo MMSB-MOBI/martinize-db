@@ -1,5 +1,5 @@
 import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, RUN_POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB, SLURM_PROFILES, INIT_POLYPLY_PATH, CREATE_MAP_RCSU_PATH } from '../constants';
-import { ArrayValues } from '../helpers';
+import { ArrayValues, generateSnowflake } from '../helpers';
 
 const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'get_residue_avaible', 'map_rcsu'] as const;
 export type SupportedScript = ArrayValues<typeof SupportedScripts>;
@@ -9,8 +9,9 @@ import path from 'path';
 import { Readable } from 'stream';
 import { ErrorType } from '../Errors';
 
+
 export interface JobInputs {
-    exportVar: { [key: string]: string | undefined },
+    exportVar: { [key: string]: string },
     inputs: { [key: string]: any },
     modules? : string[],
     script? : string,
@@ -60,9 +61,9 @@ const LOCAL_CONFIG: { [scriptName in SupportedScript]: { venv?: string, modules?
 
 export default new class JMSurcouche {
     public mode: RunMode = DEFAULT_RUN_MODE;
-
+    public id = "";
     async run(what_to_launch: SupportedScript, args: JobInputs) {
-
+        if (this.id === "") this.id = generateSnowflake()
         args.script = SCRIPTS[what_to_launch]
 
         if (this.mode === 'local') {

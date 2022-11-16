@@ -393,9 +393,6 @@ export const Martinizer = new class Martinizer {
         elastic_bonds: elasticBounds,
       }
 
-
-
-
     } catch (e) {
       console.error(e)
       return Errors.throw(ErrorType.JMError, { error: e.message })
@@ -654,7 +651,7 @@ export const Martinizer = new class Martinizer {
     const jobOpt: JobInputs = {
       exportVar: {
         OUTPUT: outputFile,
-        RCSU_PATH : RCSU_PATH
+        RCSU_PATH : RCSU_PATH ?? ""
       },
       inputs: {
         'input.pdb' : path.resolve(pdb_filename)
