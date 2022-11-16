@@ -121,6 +121,7 @@ export const INSANE_HACK_SCRIPT = {
 export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
 export const INSANE_VENV = process.env.INSANE_VENV ?? path.resolve(__dirname, "../insanevenv/bin/activate")
 
+export const RCSU_PATH = process.env.RCSU_PATH
 
 
 /**

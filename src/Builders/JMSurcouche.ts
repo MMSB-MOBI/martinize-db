@@ -1,4 +1,4 @@
-import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, RUN_POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB, SLURM_PROFILES, INIT_POLYPLY_PATH } from '../constants';
+import { CONECT_PDB_PATH, CREATE_GO_PATH, CREATE_MAP_PATH, INSANE_PATH, MARTINIZE_PATH, MARTINIZE_VENV, RUN_POLYPLY_PATH, INSANE_VENV, POLYPLY_VENV, JOB_MANAGER_SETTINGS, MINIMIZEPDB, SLURM_PROFILES, INIT_POLYPLY_PATH, CREATE_MAP_RCSU_PATH } from '../constants';
 import { ArrayValues } from '../helpers';
 
 const SupportedScripts = ['insane', 'conect', 'convert', 'go_virt', 'ccmap', 'martinize', 'polyply', 'get_residue_avaible', 'map_rcsu'] as const;
@@ -10,7 +10,7 @@ import { Readable } from 'stream';
 import { ErrorType } from '../Errors';
 
 export interface JobInputs {
-    exportVar: { [key: string]: string },
+    exportVar: { [key: string]: string | undefined },
     inputs: { [key: string]: any },
     modules? : string[],
     script? : string,
@@ -31,7 +31,7 @@ const SCRIPTS: { [scriptName in SupportedScript]: string } = {
     'martinize': MARTINIZE_PATH,
     'polyply': RUN_POLYPLY_PATH,
     'get_residue_avaible': INIT_POLYPLY_PATH,
-    'map_rcsu': ''
+    'map_rcsu': CREATE_MAP_RCSU_PATH
 };
 
 const SERVER_MODULES: { [scriptName in SupportedScript]: string[] } = {
@@ -47,7 +47,7 @@ const SERVER_MODULES: { [scriptName in SupportedScript]: string[] } = {
 }
 
 const LOCAL_CONFIG: { [scriptName in SupportedScript]: { venv?: string, modules?: string[] } } = {
-    'conect': {},
+    'conect': { modules: ['gromacs/2020.7'] },
     'convert': { modules: ['gromacs/2020.7'] },
     'go_virt': { venv: MARTINIZE_VENV },
     'ccmap': { venv: MARTINIZE_VENV },
@@ -77,7 +77,7 @@ export default new class JMSurcouche {
             args.sysSettingsKey = SLURM_PROFILES.SYS_SETTINGS
         } 
 
-        logger.debug('Launch job : ' + what_to_launch + 'with mode ' + this.mode)
+        logger.debug('Launch job : ' + what_to_launch + ' with mode ' + this.mode)
         
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
 

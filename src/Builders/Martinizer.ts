@@ -6,7 +6,7 @@ import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
 import zlib from 'zlib';
-import { FORCE_FIELD_DIR, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../constants';
+import { FORCE_FIELD_DIR, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH, RCSU_PATH } from '../constants';
 import RadiusDatabase from '../Entities/RadiusDatabase';
 import Errors, { ErrorType } from '../Errors';
 import { ArrayValues, fileExists } from '../helpers';
@@ -14,10 +14,9 @@ import logger from '../logger';
 import TmpDirHelper from '../TmpDirHelper';
 import { TopFile, ItpFile } from 'itp-parser-forked';
 import JSZip from 'jszip';
-import ShellManager, { JobInputs, JMError } from './ShellManager';
-import JMSurcouche from './JMSurcouche';
+//import ShellManager, { JobInputs, JMError } from './ShellManager';
+import JMSurcouche, {JobInputs} from './JMSurcouche';
 import { pathsToInputs, str_to_stream } from './JMSurcouche';
-import { cpuUsage } from 'process';
 import { Readable } from 'stream';
 
 /**
@@ -140,12 +139,9 @@ export const Martinizer = new class Martinizer {
     }
     */
 
-    const basename = full.input;
-    const with_ext = basename + '.pdb';
-
     // Check dssp ps
     // TODO: DSSP gives bad results... this should not append
-    let command_line = " -f " + with_ext + " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position
+    let command_line = " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position
     if (DSSP_PATH) command_line += " -dssp " + DSSP_PATH
     // let command_line = "martinize2 -f " + with_ext + " -x output.pdb -o system.top -dssp " + DSSP_PATH + " -ff " + full.ff + " -p " + full.position + " ";
 
@@ -207,14 +203,14 @@ export const Martinizer = new class Martinizer {
       command_line += " -nter " + full.nter
     }
 
-    return { command_line: command_line, basename: basename, with_ext: with_ext, full: full }
+    return { command_line: command_line, full: full }
   }
 
   /**
    * Create a martinize run.
    * Returns created path to created PDB, TOP and ITP files.
    */
-  async run(settings: Partial<MartinizeSettings>, onStep?: (step: string, ...data: any[]) => void, path?: string) {
+  async run(settings: Partial<MartinizeSettings>, path: string, onStep?: (step: string, ...data: any[]) => void ) {
 
     const MARTINIZE_WARN = "martinize_warnings.log"
     const OUTPUT_PDB = "output.pdb"
@@ -222,217 +218,194 @@ export const Martinizer = new class Martinizer {
 
     // try-finally to ensure rename even if error happend
 
+    const command_line = this.settingsToCommandline(settings)
+    console.log("COMMAND LINE MARTINIZE", command_line)
+
     // Step: Martinize Init
     onStep?.(this.STEP_MARTINIZE_INIT);
     let jobOpt: JobInputs = {
       exportVar: {
         MARTINIZE_WARN,
-        OUTPUT_PDB,
-        OUTPUT_TOP,
-        DSSP_PATH: DSSP_PATH ?? "",
-        FORCE_FIELD: settings.ff ?? "martini22",
-        POSITION: settings.position ?? "none",
-        CYSTEIN_BRIDGE: settings.cystein_bridge ?? "none",
-        C_TER: settings.cter ?? "[]",
-        N_TER: settings.nter ?? "[]",
-        SIDE_CHAIN_FIX: settings.side_chain_fix ? "true" : ""
+        COMMAND_LINE : command_line.command_line
+
       },
       inputs: {
         "input.pdb": settings.input
       },
     };
 
-    console.log("run", jobOpt)
     try {
       const { stdout, jobFS } = await JMSurcouche.run(
         'martinize', jobOpt
       );
-
+      
+      const pdb_path = path + "/" + OUTPUT_PDB
       const pdbStream = await jobFS.readToStream(OUTPUT_PDB)
-      console.log("output pdb", OUTPUT_PDB)
-      console.log(pdbStream.readableLength);
-      console.log(pdbStream.readable) 
+      await jobFS.copy(OUTPUT_PDB, pdb_path)
 
       if (!pdbStream.readable) {
-        return Errors.throw(ErrorType.MartinizeNoOutput, {error : "Pdb file is empty"})
+        throw new Error('Pdb file is empty after martinize')
       }
 
       const itp_files = await jobFS.list("*.itp")
-      const itpContents : {[name : string] : Readable} = {}
+      let itpContents : {[name : string] : Readable} = {}
+      let itpContentsStr : {[name : string] : string} = {}
       for (const itpName of itp_files){
+        const final_itp_path = path + "/" + itpName
         itpContents[itpName] = await jobFS.readToStream(itpName)
+        itpContentsStr[itpName] = await jobFS.readToString(itpName)
+        await jobFS.copy(itpName, final_itp_path)
       }
+
+      const itp_files_copied = itp_files.map(itpName => path + "/" + itpName)
 
       logger.debug(`[MARTINIZER-RUN] Generated PDB is found, run should be fine.`);
       onStep?.(this.STEP_MARTINIZE_ENDED_FINE);
 
 
+    if (settings.use_go) {
+        let map_filename: string;
+        // GET THE MAP FILE FROM A CUSTOM WAY.
+        // Use the original pdb file !!!
+        // todo change (ccmap create way too much distances, so the shell script takes forever)
+        onStep?.(this.STEP_MARTINIZE_GET_CONTACTS);
+        try {
+          map_filename = await this.getCcMapRCSU(settings.input!, path);
+        } catch(e) {
+          console.log(typeof(e))
+          throw new Error('Unable to create contact map')
+        }
+
+        const itp = await ItpFile.read(itp_files_copied[0])
+        const moltype = itp.name
+
+        const firstResidueNumber: number = parseInt(itp.atoms[0].split(" ").filter(splitElmt => splitElmt !== '')[2])
+
+        const nbAtomsWithoutGO = itp.atoms.filter(atomLine => {
+          const splittedLine = atomLine.split(" ").filter(splitElmt => splitElmt !== "")
+          if (splittedLine[1].includes("molecule")) return false
+          else return true
+        }).length
+
+        logger.debug("[MARTINIZER-RUN] Creating Go virtual bonds");
+        onStep?.(this.STEP_MARTINIZE_GO_SITES);
+
+        try {
+          // Must create the go sites
+          const goArgs = `-s ${pdb_path} -f ${map_filename} --moltype ${moltype} --Natoms ${nbAtomsWithoutGO} --missres ${firstResidueNumber - 1}`
+
+          const jobOptGo: JobInputs = { 
+            exportVar: {
+              GO_ARGS: goArgs,
+              GO_VIRT_SCRIPT: CREATE_GO_PY_SCRIPT_PATH
+            },
+            inputs: {},
+          };
+          
+          
+          const {stdout, jobFS} = await JMSurcouche.run('go_virt', jobOptGo)
+          
+          const new_itps = await jobFS.list('*.itp')
+
+          for (const itpName of new_itps){
+            await jobFS.copy(itpName, path + "/" + itpName)
+            itp_files_copied.push(path + "/" + itpName)
+            itpContents[itpName] = await jobFS.readToStream(itpName)
+            itpContentsStr[itpName] = await jobFS.readToString(itpName)
+          }
+
+          console.log("job end", jobFS.job.id)
+         
+        } catch(e) {
+
+          throw new Error('Unable to create go virtual sites')
+
+        }
+
+    }
+
+
+
       logger.debug("[MARTINIZER-RUN] Creating full TOP file for Martinize built molecule.");
       const topStream = await jobFS.readToStream(OUTPUT_TOP)
       if (!topStream.readable) {
-        return Errors.throw(ErrorType.MartinizeNoOutput, { error: "Top file is empty" })
+        throw new Error('Top file is empty after martinize')
+      }
+      
+      let full_top: string; 
+      try {
+        const top = await this.createTopFileFromStream(topStream, settings.ff!, itp_files )
+        full_top = top
+      } catch {
+        throw new Error("Can't create top file")
+      }
+      
+      let elasticBounds: ElasticOrGoBounds[] | undefined = undefined;
+      let elasticTop: string | undefined = undefined;
+      if (settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn")) {
+        logger.debug('[MARTINIZER-RUN] Compute elastic network')
+        const { elastic_bounds, elastic_itps, itp_without_elastic } = await this.computeElasticNetworkBounds(full_top, Object.values(itpContentsStr), path);
+        for (const itpName of Object.keys(elastic_itps)) {
+          const where = path + "/" + itpName
+          fs.writeFileSync(where, elastic_itps[itpName])
+          itp_files_copied.push(where);
+        }
+        itpContents = {...itpContents, ...itp_without_elastic}
+        elasticBounds = elastic_bounds;
+        //Create top file without elastic bounds to create pdb without elastic in CONECT fields
+        logger.debug('[MARTINIZER-RUN] Creating top file without elastic links')
+        const top_without_elastic = await this.createTopFileFromStream(str_to_stream(full_top), settings.ff ?? 'martini22', Object.keys(itp_without_elastic));
+        elasticTop = top_without_elastic;
       }
 
-      const top = await this.createTopFileFromStream(topStream, settings.ff!, itp_files )
-
-      console.log("resulting top", top)
 
       logger.debug("[MARTINIZER-RUN] Creating PDB with CONECT entries for Martinize built molecule.");
       onStep?.(this.STEP_MARTINIZE_GROMACS);
-      //TAKE ELASTIC TOP IF ELASTIC IS DONE
-      const { pdb: pdb_with_conect, top: full_top } = await this.createPdbWithConectFromStream(pdbStream, "pdb", top, false, settings.ff, itpContents);
+      let pdb_with_conect; 
+      try {
+        //TAKE ELASTIC TOP IF ELASTIC IS DONE
+        const to_use_top = elasticTop ? elasticTop : full_top
+        const { pdb } = await this.createPdbWithConectFromStream(pdbStream, "pdb", to_use_top, false, settings.ff, path, itpContents );
+        pdb_with_conect = pdb
+      }catch {
+        throw new Error('Creation of full pdb with gromacs failed')
+      }
+        
 
       logger.debug("[MARTINIZER-RUN] Run is complete, everything seems to be fine :)");
-      console.log(top)
 
-      const warnString = await jobFS.readToString(MARTINIZE_WARN)
+      const warn_path = path + "/" + MARTINIZE_WARN
+      await jobFS.copy(MARTINIZE_WARN, warn_path)
 
-      const sortedItps = settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn") ? await this.sortItpsFromTop(full_top, itp_files) : [itp_files]
+      const sortedItps = settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn") ? await this.sortItpsFromTop(full_top, itp_files_copied) : [itp_files_copied]
+
+
+      const final_top_path = path + "/full.top"
+      fs.writeFileSync(final_top_path, full_top)
 
       return {
         pdb: pdb_with_conect,
         itps: sortedItps,
-        top: full_top,
-        warns: warnString,
+        top: final_top_path,
+        warns: warn_path,
         jobId: jobFS.job.id,
         //dir: dir,
-        elastic_bonds: undefined,
-      };
+        elastic_bonds: elasticBounds,
+      }
 
 
 
 
     } catch (e) {
       console.error(e)
-      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
-      return Errors.throw(ErrorType.MartinizeRunFailed, {
-        error: "Martinize has failed with an non-zero exit code.",
-        type: "non-zero",
-        //dir,
-      });
+      return Errors.throw(ErrorType.JMError, { error: e.message })
     }
-
-    // Scan for files in result dir
-
-
-
-
-
-
-
-
-
-
-
-
-    // If go mode, we should compute map + run a python script to refresh ITPs files.
-    // if (settings.use_go) {
-    //   let map_filename: string;
-    //   // GET THE MAP FILE FROM A CUSTOM WAY.
-    //   // Use the original pdb file !!!
-    //   // todo change (ccmap create way too much distances, so the shell script takes forever)
-    //   onStep?.(this.STEP_MARTINIZE_GET_CONTACTS);
-    //   try {
-    //     map_filename = await this.getCcMapRCSU(with_ext, dir);
-    //   } catch {
-    //     return Errors.throw(ErrorType.MartinizeRunFailed, {
-    //       error: "Unable to create contact map.",
-    //       type: "contact-map",
-    //       stdout: dir + '/rcsu.stdout',
-    //       stderr: dir + '/rcsu.stderr',
-    //       dir,
-    //     });
-    //   }
-
-    //   const itp = await ItpFile.read(dir + "/molecule_0.itp")
-
-    //   const firstResidueNumber: number = parseInt(itp.atoms[0].split(" ").filter(splitElmt => splitElmt !== '')[2])
-
-    //   const nbAtomsWithoutGO = itp.atoms.filter(atomLine => {
-    //     const splittedLine = atomLine.split(" ").filter(splitElmt => splitElmt !== "")
-    //     if (splittedLine[1].includes("molecule")) return false
-    //     else return true
-    //   }).length
-
-    //   logger.debug("[MARTINIZER-RUN] Creating Go virtual bonds");
-    //   onStep?.(this.STEP_MARTINIZE_GO_SITES);
-
-    //   // Ensure to have the script at the correct place...
-    //   try {
-    //     // Must create the go sites
-    //     const moltype = "molecule_0"
-    //     const goArgs = `-s output.pdb -f ${map_filename} --moltype ${moltype} --Natoms ${nbAtomsWithoutGO} --missres ${firstResidueNumber - 1}`
-
-    //     const jobOptGo: JobInputs = {
-    //       exportVar: {
-    //         WORKDIR: dir,
-    //         GO_ARGS: goArgs
-    //       },
-    //       inputs: {},
-    //     };
-
-    //     const command_line_go = `"${CREATE_GO_PY_SCRIPT_PATH} ${goArgs}"`;
-
-    //     await ShellManager.run(
-    //       'go_virt',
-    //       ShellManager.mode === "jm" ? jobOptGo : command_line_go,
-    //       dir,
-    //       'go-virt-sites',
-    //     );
-    //   } catch (e) {
-    //     if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
-    //     return Errors.throw(ErrorType.MartinizeRunFailed, {
-    //       error: "Unable to create go virtual sites.",
-    //       type: "create-go-virt",
-    //       stdout: dir + '/go-virt-sites.stdout',
-    //       stderr: dir + '/go-virt-sites.stderr',
-    //       dir,
-    //     });
-    //   }
-
-    //   // Ok, ITP file refreshed.
-    // }
-
-
-
-    // let elasticBounds: ElasticOrGoBounds[] | undefined = undefined;
-    // let elasticTop: string | undefined = undefined;
-    // if (settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn")) {
-    //   console.log("elastic bounds", dir)
-    //   const { elastic_bounds, elastic_itps, itp_without_elastic } = await this.computeElasticNetworkBounds(full_top, itp_files, dir);
-    //   for (const itp of elastic_itps) {
-    //     console.log("elastic itp", itp)
-    //     itp_files.push(itp);
-    //   }
-    //   elasticBounds = elastic_bounds;
-    //   //Create top file without elastic bounds to create pdb without elastic in CONECT fields
-    //   const { top } = await this.createTopFile(dir, dir + '/system.top', itp_without_elastic, full.ff, "full_without_elastic.top");
-    //   elasticTop = top;
-    // }
-
-    // // Generate the right PDB file (with conect entries)
-
-
-    // logger.debug("[MARTINIZER-RUN] Sort itps")
-
-    // //const sortedItps = settings.builder_mode === "elastic" || settings.ff?.includes("elnedyn") ? await this.sortItpsFromTop(full_top, itp_files) : [itp_files]
-
-    // logger.debug("[MARTINIZER-RUN] Run is complete, everything seems to be fine :)");
-
-    // return {
-    //   pdb: pdb_with_conect,
-    //   itps: sortedItps,
-    //   top: full_top,
-    //   warns: dir + "/" + martinizeWarnOut,
-    //   dir: dir,
-    //   elastic_bonds: elasticBounds,
-    // };
 
   }
 
-  async sortItpsFromTop(topFile: string, itp_files: string[]) {
+  async sortItpsFromTop(topFile_content: string, itp_files: string[]) {
     const sortedItps: string[][] = []
-    const system = await TopFile.read(topFile);
+    const system = await TopFile.readFromString(topFile_content);
     for (const mol of system.molecules) {
       const name = mol.type;
       const itps = itp_files.filter(itp_filename => itp_filename.includes(name))
@@ -547,7 +520,6 @@ export const Martinizer = new class Martinizer {
   }
 
   async createTopFileFromStream(originalTopStream: Readable, force_field: string, itps_path?: string[]) {
-    console.log("create top from stream")
     const itps_ff = RadiusDatabase.getFilesForForceField(force_field)
 
     if (!itps_ff) {
@@ -574,13 +546,9 @@ export const Martinizer = new class Martinizer {
       includes.push(`#include "${itp}"`);
     }
     
-    console.log("includes", includes)
-
     let newTop = ""
-
     if (originalTopStream.readable) {
       const topString = originalTopStream.read().toString()
-      //console.log("TEST READ STREAM", test.toString())
       let includes_included = false;
 
       // Remove every #include line
@@ -602,7 +570,6 @@ export const Martinizer = new class Martinizer {
       newTop = newTop + includes.join('\n') + '\n'
     }
 
-    console.log("newTop", newTop)
 
     return newTop;
 
@@ -655,7 +622,6 @@ export const Martinizer = new class Martinizer {
 
       // Remove every #include line
       for await (const line of top_read_stream) {
-        console.log("tl", line)
         if (line.startsWith('#include')) {
           if (!includes_included) {
             // Include the hand-crafted includes
@@ -673,50 +639,45 @@ export const Martinizer = new class Martinizer {
       newTop = newTop + includes.join('\n') + '\n'
     }
 
-    console.log("newTop", newTop)
-
     return newTop;
 
   }
 
   async getCcMapRCSU(pdb_filename: string, use_tmp_dir?: string) {
     logger.debug("GET MAP RCSU")
-    console.log(pdb_filename, use_tmp_dir)
     if (!use_tmp_dir) {
       use_tmp_dir = await TmpDirHelper.get();
       logger.debug(`Created tmp directory for rcsu: ${use_tmp_dir}.`);
     }
     const outputFile = "output.map"
+    const finalOutput = use_tmp_dir + "/" + outputFile
     const jobOpt: JobInputs = {
       exportVar: {
-        WORKDIR: use_tmp_dir,
-        PDB: path.resolve(pdb_filename),
         OUTPUT: outputFile,
+        RCSU_PATH : RCSU_PATH
       },
-      inputs: {},
+      inputs: {
+        'input.pdb' : path.resolve(pdb_filename)
+      },
     };
 
-    try {
-      await ShellManager.run(
-        'map_rcsu',
-        jobOpt,
-        use_tmp_dir,
-        'rcsu',
-      );
-    }
-    catch (e) {
-      if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
-      throw new Error(e)
-    }
+    //try {
+      const { stdout, jobFS } = await JMSurcouche.run('map_rcsu', jobOpt)
+      await jobFS.copy(outputFile, finalOutput)
+    // }
+    // catch (e) {
+    //   if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
+    //   throw new Error(e)
+    // }
 
-    return outputFile
+    return finalOutput
 
   }
 
   /**
    * Get a contact map using ccmap python package.
    */
-  async getCcMap(pdb_filename: string, use_tmp_dir?: string) {
+/*   async getCcMap(pdb_filename: string, use_tmp_dir?: string) {
     // Save the map file inside a temporary directory
     if (!use_tmp_dir) {
       use_tmp_dir = await TmpDirHelper.get();
@@ -784,7 +745,7 @@ export const Martinizer = new class Martinizer {
     map_stream.close();
 
     return map_filename;
-  }
+  } */
 
   protected findUrlInRedirect(data: string) {
     // Find the redirect in page
@@ -894,11 +855,8 @@ export const Martinizer = new class Martinizer {
     //   groups_to_del += lipids.length * 2;
     // }
 
-    console.log("CREATE PDB WITH CONECT POUET")
-
     const force_fields = RadiusDatabase.getCompleteFilesForForceField(force_field)
     const pdb_or_gro_name = path.basename(pdb_or_gro_path)
-    console.log(force_fields)
     const command = {
       exportVar: {
         "DEL_WATER_BOOL": remove_water ? "YES" : "NO",
@@ -919,14 +877,12 @@ export const Martinizer = new class Martinizer {
     try {
       //@ts-ignore
       const { stdout, jobFS } = await JMSurcouche.run('conect', command)
-      console.log("JOB end", jobFS.job.id)
       const pdb_stream = await jobFS.readToStream("output-conect.pdb")
       const top_stream = await jobFS.readToStream('input.top')
       if (!pdb_stream.readable) {
         throw new Error(`PDB could not be created for an unknown reason (or more than 1 output exists)`);
       }
 
-      console.log(await jobFS.list())
       if (!top_stream.readable) {
         throw new Error(`Top could not be copied for an unknown reason (or more than 1 top exists)`);
       }
@@ -935,22 +891,25 @@ export const Martinizer = new class Martinizer {
     } catch (e) {
       logger.error("Error while job")
       console.log(e)
-      throw new Error(`Error while job`);
+      throw new Error(`Error while conect pdb job`);
 
     }
 
   }
 
-  async createPdbWithConectFromStream(inputStream : Readable, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", itps?: {[name: string] : Readable}, lipids?: any) {
+  async createPdbWithConectFromStream(inputStream : Readable, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps?: {[name: string] : Readable}) {
     // let groups_to_del = 17;
     // if (lipids) {
     //   groups_to_del += lipids.length * 2;
     // }
 
-    console.log("CREATE PDB WITH CONECT POUET")
 
     const force_fields = RadiusDatabase.getCompleteFilesForForceField(force_field)
     const inputName = "input." + inputType
+
+    const final_pdb = tmp_dir + "/output-conect.pdb"
+    //const final_top = tmp_dir + "/output.top"
+
     const command = {
       exportVar: {
         "DEL_WATER_BOOL": remove_water ? "YES" : "NO",
@@ -973,9 +932,10 @@ export const Martinizer = new class Martinizer {
     try {
       //@ts-ignore
       const { stdout, jobFS } = await JMSurcouche.run('conect', command)
-      console.log("JOB end", jobFS.job.id)
+      console.log("JOB end !!!", jobFS.job.id)
       const pdb_out = await jobFS.list("output-conect.pdb")
       const top_out = await jobFS.list('input.top')
+      
       if (pdb_out.length !== 1) {
         throw new Error(`PDB could not be created for an unknown reason (or more than 1 output exists)`);
       }
@@ -983,12 +943,16 @@ export const Martinizer = new class Martinizer {
       if (top_out.length !== 1) {
         throw new Error(`Top could not be copied for an unknown reason (or more than 1 top exists)`);
       }
-      return { pdb: pdb_out[0], top: top_out[0] };
+
+      await jobFS.copy('output-conect.pdb', final_pdb)
+      //await jobFS.copy('input.top', final_top)
+
+      return { pdb: final_pdb };
 
     } catch (e) {
       logger.error("Error while job")
       console.log(e)
-      throw new Error(`Error while job`);
+      throw new Error(`Error while conect pdb job`);
 
     }
 
@@ -1031,12 +995,13 @@ export const Martinizer = new class Martinizer {
    * TODO: worker thread
    */
   async computeElasticNetworkBounds(top_file: string, itp_files: string[], workdir: string) {
+    //top_file and itp_files : content as string
     logger.verbose("[ELASTIC-BUILD] Constructing elastic network bonds.");
 
     const bounds: ElasticOrGoBounds[] = [];
 
     logger.debug("[ELASTIC-BUILD] Reading TOP+ITP files.");
-    const top = await TopFile.read(top_file, itp_files);
+    const top = await TopFile.readFromString(top_file, itp_files);
 
     logger.debug(`[ELASTIC-BUILD] Available molecules: ${top.molecules
       .map(molecule => `${molecule.type} (${molecule.count} time${molecule.count > 1 ? 's' : ''})`)
@@ -1045,8 +1010,8 @@ export const Martinizer = new class Martinizer {
 
     // Incrementer for designating PDB line
     let i = 0;
-    let elasticItps = [];
-    let withoutElasticItps = [];
+    let elasticItps: {[name:string] : string} = {};
+    let withoutElasticItps: {[name:string] : Readable} = {};
     for (const molecule of top.molecules) {
       logger.debug("[ELASTIC-BUILD] Reading molecule " + molecule.type + ".");
 
@@ -1064,18 +1029,22 @@ export const Martinizer = new class Martinizer {
       elastic_itp.appendField("bonds", elastic_bonds)
 
       fs.writeFileSync(elastic_itp_path, elastic_itp.toString())
-      elasticItps.push(elastic_itp_path)
+      const elastic_itp_string = elastic_itp.toString()
+      elasticItps[elastic_itp_name] = elastic_itp_string
+      //elasticItps.push(elastic_itp_stream)
 
       //Delete elastic bonds from current itp
       const correctedItp = workdir + "/" + molecule.type + "_without_elastic.itp";
       itp.removeSubfield("bonds", "Rubber band");
       fs.writeFileSync(correctedItp, itp.toString()) //Write itp without rubber bands
-      withoutElasticItps.push(correctedItp)
+      const without_elastic_itp_string = itp.toString()
+      withoutElasticItps[molecule.type + "_without_elastic.itp"] = str_to_stream(without_elastic_itp_string)
+      //withoutElasticItps.push(without_elastic_itp_stream)
 
 
       itp.appendInclude(elastic_itp_name, "bonds");
       fs.writeFileSync(workdir + "/" + molecule.type + ".itp", itp.toString()) //Rewrite initial itp with include statement for rubber bands
-
+      // const initial_itp_stream = itp.asReadStream()
 
       for (const band of elastic_bonds) {
         if (!band.startsWith(";")) {
