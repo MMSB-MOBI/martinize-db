@@ -76,12 +76,13 @@ export default new class JMSurcouche {
             args.modules = SERVER_MODULES[what_to_launch]
             args.jobProfile = SLURM_PROFILES.JOB_PROFILE,
             args.sysSettingsKey = SLURM_PROFILES.SYS_SETTINGS
+            
         } 
 
         logger.debug('Launch job : ' + what_to_launch + 'with mode ' + this.mode)
         
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
-
+        console.log( "############################ ", args)
         return await jmClient.pushFS(args)
 
     }

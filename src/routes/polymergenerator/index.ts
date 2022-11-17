@@ -17,11 +17,14 @@ const router = Router();
 
 let polyplyData: any = {}
 const f = async () => {
+    console.log( "JMSurcouche.mode", JMSurcouche.mode)
     console.log("init residue avaible")
     const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: {}, inputs: {} })
     return stdout
 
-}; (async () => {
+} 
+
+const get_truc = async () => {
     const res = await f()
     let tempff = ''
 
@@ -34,9 +37,10 @@ const f = async () => {
         else polyplyData[tempff].push(line)
     }
 
-})()
+}
 
 router.get('/data', async (req, res) => {
+    if ( Object.keys(polyplyData).length === 0 ) get_truc()
     console.log("Sending forcefields and residues data")
     //Select only martini forcefield
     let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
@@ -57,9 +61,8 @@ router.get("/fastaconversion", (req, res) => {
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     console.log("je suis dans SocketIoPolymerizer ")
     socket.on("run_itp_generation", async (dataFromClient: any) => {
-        console.log("Run polyply gen itp")
-
-        console.log(dataFromClient)
+        console.log("Run polyply gen itp", dataFromClient['name'] )
+ 
         //Get forcefield 
         const ff = dataFromClient['polymer']['forcefield']
         const name = dataFromClient['name']  
@@ -86,7 +89,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         }
 
         let inputs = {
-            'monfichier.itp': str_to_stream(additionalfile),
+            "monfichier.itp": str_to_stream(additionalfile),
             "martiniForceField.itp": ffpath,
             "polymer.json": str_to_stream(JSON.stringify(dataFromClient.polymer)),
         }
@@ -158,7 +161,6 @@ ${name} ${numberpolymer}
 
         let resultatGro = ""
         try {
-            //console.log("Jm surcouche GRO ")
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             resultatGro = stdout
         }

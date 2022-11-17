@@ -1,7 +1,18 @@
 #!/bin/bash
+if [ ! -z "$SLURM_SUBMIT_DIR" ]
+then
+    cd $SLURM_SUBMIT_DIR
+fi
+
+if [ ! -z "$venv" ]
+then
+    source $venv
+fi
 
 echo "BIP BIP, je suis l'ordinateur et je minimize and create pdb"
 
+pwd 
+ls  
 cp input/* .
 
 gro="input/file.gro"
