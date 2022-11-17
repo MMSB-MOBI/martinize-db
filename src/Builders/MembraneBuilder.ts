@@ -14,6 +14,7 @@ import JMSurcouche, { JobInputs } from '../Builders/JMSurcouche';
 import ShellManager, { JMError } from './ShellManager';
 import Errors, { ErrorType } from '../Errors';
 import ItpFile from 'itp-parser-forked';
+import { Readable } from 'stream';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
@@ -111,6 +112,13 @@ export const MembraneBuilder = new class MembraneBuilder {
    * - Returns TOP, PDB and ITPs file locations
    */
   async run({ force_field, molecule_pdb, molecule_top, molecule_itps, lipids, upper_leaflet = [], settings = {} }: InsaneRunnerOptions) {
+    logger.debug('INSANE RUN')
+    console.log("ff", force_field)
+    console.log("pdb", molecule_pdb)
+    console.log("top", molecule_top)
+    console.log("itps", molecule_itps)
+    console.log("lipids", lipids)
+    console.log("upper leaflet", upper_leaflet)
     let ff_location = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
     const ff_prefix = RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field];
     if (!ff_location || !ff_prefix) {
@@ -152,6 +160,9 @@ export const MembraneBuilder = new class MembraneBuilder {
         throw new Error("Unsupported lipid.");
       }
     }
+
+    
+    
 
 
     // Get a tmp dir
@@ -219,6 +230,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     logger.debug("[INSANE] Command line: " + command_line);
     logger.debug(`[INSANE] Running INSANE with given settings.`);
+    console.log("molecule_pdb", molecule_pdb)
 
     let jobOpt: JobInputs = {
       "exportVar": {
@@ -226,22 +238,29 @@ export const MembraneBuilder = new class MembraneBuilder {
         "insaneArgs": command_line,
         "insaneHackBefore": INSANE_HACK_SCRIPT.BEFORE,
         "insaneHackAfter": INSANE_HACK_SCRIPT.AFTER,
-        "inputFile": molecule_pdb as string
       },
-      "inputs": {}
+      "inputs": {
+        'input.pdb' : molecule_pdb
+      }
     };
 
     // Start insane
+    let insane_top_content: string; 
+    let gro_results_stream : Readable; 
     try {
 
       // const { stdout, jobFS } = await JMSurcouche.run(
       //   'insane', jobOpt
       // );
       // A CONTINUER !
-
-
-      await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir, "insane");
+      const {stdout, jobFS} = await JMSurcouche.run('insane', jobOpt)
+      insane_top_content = await jobFS.readToString('__insane.top')
+      gro_results_stream = molecule_pdb ? await jobFS.readToStream("system-insane-hack.gro") : await jobFS.readToStream("system.gro")
+      console.log("job end", jobFS.job.id)
+      console.log("list dir", await jobFS.list('*'))
+      //await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir, "insane");
     } catch (e) {
+      console.log(e)
       // Handle error and throw the right error
       console.error("ShellManager.run crash");
       console.error(e.stack);
@@ -265,6 +284,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     //If we have a _rubber_band.itp, don't include it in the top file because it's included in molecule_x.itp. Also need to have a molecule_x.itp without this included itp to compute pdb without elastic bonds in conect fields.
 
     const itps_for_top = molecule_itps?.filter(itp => !itp.includes("_rubber_band"))
+    console.log("itps", itps_for_top)
 
     let itps_without_elastic: string[] = [];
     if (itps_for_top && (itps_for_top?.length != molecule_itps?.length)) { //We have elastic bonds, so filter "#include" statements and write new *_without_elastic.itp
@@ -302,7 +322,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
 
     logger.debug(`[INSANE] Reading built TOP file and INSANE generate TOP file.`);
-    const insane_top = await TopFile.read(workdir + "/__insane.top");
+    const insane_top = await TopFile.readFromString(insane_top_content);
 
     const molecule_full_top = await TopFile.read(full_top);
     const readed_wo_elastic_top = wo_elastic_top ? await TopFile.read(wo_elastic_top) : undefined
@@ -323,60 +343,87 @@ export const MembraneBuilder = new class MembraneBuilder {
     // Compile the top files together
     logger.debug(`[INSANE] Writing prepared TOP file.`);
 
-    const prepared_top = await this.writePreparedTopFile(workdir + "/full.top", insane_top, molecule_full_top);
-    const prepared_top_wo_elastic = readed_wo_elastic_top ? await this.writePreparedTopFile(workdir + "/__prepared-no-elastic.top", insane_top, readed_wo_elastic_top) : undefined
+    const prepared_top = await this.getPreparedTopFile(insane_top, molecule_full_top);
+    const prepared_top_wo_elastic = readed_wo_elastic_top ? await this.getPreparedTopFile(insane_top, readed_wo_elastic_top) : undefined
 
     // Create lipids ITP files in working dir.
     // FF(s) symlink has been created by createTopFile() method.
     // + symlink of the molecule ITPs (needed)
     logger.debug(`[INSANE] Creating files for lipids ITPs.`);
 
-    if (lipids) {
-      /// WITH DATABASE
-      // await this.createLipidItpFiles(workdir, lipids_entities);
-      /// WITH FILES
-      //@ts-ignore
-      await this.createLipidItpSymlinks(workdir, force_field, lipid_param, upper_lipid_param);
-    }
-    if (molecule_itps !== undefined) {
-      for (const itp of new Set(molecule_itps)) {
-        await FsPromise.symlink(itp, workdir + "/" + path.basename(itp));
-      }
-    }
+    
+    
 
-
+    let formattedItps : {[name: string]: string} = {}
     // Ok, all should be ready. Start gromacs!
     logger.debug(`[INSANE] Creating the CONECT-ed PDB with GROMACS.`);
+    let pdbs = {water:'', no_water:''}
     try {
       const to_use_top = prepared_top_wo_elastic ? prepared_top_wo_elastic : prepared_top
-      const to_use_gro = molecule_pdb ? "system-insane-hack.gro" : "system.gro"
-      var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
+
+      
+      
+      if(molecule_itps !== undefined){
+        for (const itp_path of molecule_itps){
+          const name = path.basename(itp_path)
+          //fs.copyFileSync(itp_path, workdir + "/" + name);
+          formattedItps[name] = itp_path
+        }
+      }
+
+      if (lipids) {
+        console.log("LIPIDS", lipids)
+        const lipids_itps = await this.getLipidsItps(force_field, lipids, upper_leaflet);
+        formattedItps = {...formattedItps, ...lipids_itps}
+      }
+
+      
+      
+      console.log("itps", formattedItps)
+      const { pdb : pdb_water, no_water_pdb } = await Martinizer.createPdbWithConectFromStream(gro_results_stream, "gro", to_use_top, true, force_field, workdir, formattedItps)
+
+      pdbs.water = pdb_water
+      if (no_water_pdb){
+        pdbs.no_water = no_water_pdb
+      }
+      
+
+      //var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
     } catch (e) {
       throw new InsaneError('gromacs_crash', workdir, e.stack);
     }
 
     // Build the ITP list without the force field ones
-    const itps_ff = RadiusDatabase.getFilesForForceField(force_field);
+    // const itps_ff = RadiusDatabase.getFilesForForceField(force_field);
 
-    logger.debug(`[INSANE] Building ITP list.`);
-    const itps = [] as string[];
-    for (const file of await FsPromise.readdir(workdir)) {
-      if (itps_ff.includes(file)) {
-        continue;
-      }
-      if (!file.endsWith('.itp')) {
-        continue;
-      }
+    // logger.debug(`[INSANE] Building ITP list.`);
+    // const itps = [] as string[];
+    // for (const file of await FsPromise.readdir(workdir)) {
+    //   if (itps_ff.includes(file)) {
+    //     continue;
+    //   }
+    //   if (!file.endsWith('.itp')) {
+    //     continue;
+    //   }
 
-      itps.push(workdir + "/" + file);
+    //   itps.push(workdir + "/" + file);
+    // }
+
+    //Write top file to final directory
+    const final_top_path = workdir + "/full.top"
+    try {
+      fs.writeFileSync(final_top_path, prepared_top)
+    } catch(e) {
+      throw new Error("Can't write top file")
     }
+    
 
     logger.debug(`[INSANE] Run seems to be ok :)`);
 
     return {
-      itps,
+      itps : Object.values(formattedItps),
       pdbs,
-      top: prepared_top,
+      top: final_top_path,
     };
   }
 
@@ -431,6 +478,18 @@ export const MembraneBuilder = new class MembraneBuilder {
     return filename;
   }
 
+  protected async getPreparedTopFile(insane: TopFile, protein: TopFile){
+    const headlines = protein.headlines;
+    const system = protein.getField('system');
+    const molecules_prot = protein.getField('molecules');
+    const molecules_insane = insane.getField('molecules');
+
+    const top_file = `${headlines.join('\n')}\n\n[system]\n${system.join('\n')}\n\n[molecules]\n${molecules_prot.join('\n')}\n${molecules_insane.filter(e => !e.startsWith('Protein ') && !e.startsWith(';')).join('\n')}\n`
+
+    return top_file
+
+  }
+
   protected async createLipidItpFiles(workdir: string, lipids: Lipid[]) {
     for (const lipid of lipids) {
       await FsPromise.writeFile(workdir + "/" + lipid.name + ".itp", lipid.itp);
@@ -448,6 +507,28 @@ export const MembraneBuilder = new class MembraneBuilder {
       await FsPromise.symlink(lipid_itp_base_dir + lipid + ".itp", workdir + "/" + lipid + ".itp");
     }
   }
+
+  protected async getLipidsItps(force_field: string, lipids: LipidMap, lipids2: LipidMap) {
+    const addLipids = (itps_obj: {[name: string] : string}, lipids : LipidMap) => {
+      for (const lipid of lipids){
+        const name = lipid[0] + ".itp"
+        const itp_path = `${lipid_itp_base_dir}/${name}`
+        itps_obj[name] = itp_path
+      }
+        
+      return itps_obj
+    }
+
+    if (!RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field]) {
+      throw new Error("Lipid ITP directory not found.")
+    }
+    const lipid_itp_base_dir = LIPIDS_ROOT_DIR + RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field];
+    let itps : {[name: string] : string} = {}
+    itps = addLipids(itps, lipids)
+    itps = addLipids(itps, lipids2)
+    return itps
+  }
+
 };
 
 export class InsaneError extends Error {

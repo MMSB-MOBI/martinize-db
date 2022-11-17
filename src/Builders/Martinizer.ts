@@ -860,7 +860,7 @@ export const Martinizer = new class Martinizer {
         "INPUT_NAME": pdb_or_gro_name
       },
       inputs: {
-        ...pathsToInputs([pdb_or_gro_path]),
+         ...pathsToInputs([pdb_or_gro_path]),
         'input.top': str_to_stream(top_content),
         'run.mdp': CONECT_MDP_PATH,
         ...pathsToInputs(force_fields)
@@ -894,7 +894,7 @@ export const Martinizer = new class Martinizer {
 
   }
 
-  async createPdbWithConectFromStream(inputStream : Readable, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps?: {[name: string] : Readable}) {
+  async createPdbWithConectFromStream(inputStream : Readable, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps: {[name: string] : Readable | string}) {
     // let groups_to_del = 17;
     // if (lipids) {
     //   groups_to_del += lipids.length * 2;
@@ -921,7 +921,7 @@ export const Martinizer = new class Martinizer {
     };
 
     if (itps) {
-      command.inputs = { ...command.inputs, ...itps }
+      command.inputs = { ...command.inputs, ...itps}
     }
 
     console.log(command); 
@@ -942,6 +942,11 @@ export const Martinizer = new class Martinizer {
       }
 
       await jobFS.copy('output-conect.pdb', final_pdb)
+      if(remove_water){
+        const final_no_w_pdb = tmp_dir + "/output-conect-no-w.pdb"
+        await jobFS.copy('output-conect-no-w.pdb', final_no_w_pdb)
+        return { pdb: final_pdb, no_water_pdb : final_no_w_pdb };
+      }
       //await jobFS.copy('input.top', final_top)
 
       return { pdb: final_pdb };
