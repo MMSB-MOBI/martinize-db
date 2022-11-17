@@ -5,6 +5,11 @@
 # Place here commands to load the virtual env that contains martinize2
 # path
 
+if [ ! -z "$SLURM_SUBMIT_DIR" ]
+then
+    cd $SLURM_SUBMIT_DIR
+fi
+
 
 if [ ! -z "$venv" ]
 then

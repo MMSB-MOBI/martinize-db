@@ -2,6 +2,12 @@
 
 # This a jobmanager wrappable version of create_conect_pdb.sh
 
+if [ ! -z "$SLURM_SUBMIT_DIR" ]
+then
+    cd $SLURM_SUBMIT_DIR
+fi
+
+
 function to_stderr() {
   >&2 echo $@
 }

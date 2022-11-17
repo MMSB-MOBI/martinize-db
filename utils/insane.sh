@@ -3,6 +3,12 @@
 # Following statements are left untouched, as in a centos-module/slurm
 # execution context the correct python interpreter/venv is already set-up
 # Place here commands to load the virtual env that contains insane
+if [ ! -z "$SLURM_SUBMIT_DIR" ]
+then
+    cd $SLURM_SUBMIT_DIR
+fi
+
+
 if [ ! -z "$venv" ]
 then
   echo "we have venv"
