@@ -7,12 +7,13 @@
 
 if [ ! -z "$venv" ]
 then
+  echo "we are in a venv"
+  echo $venv
   source $venv
 fi
 
 # path
 python_path="python"
 
-echo run $python_path $@ 
-
-$python_path $@
+echo run python $GO_VIRT_SCRIPT $GO_ARGS
+python $GO_VIRT_SCRIPT $GO_ARGS

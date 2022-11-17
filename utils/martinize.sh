@@ -14,17 +14,7 @@ fi
 martinize2_path="martinize2"
 input="input/input.pdb"
 
-cmd_line="$martinize2_path -f $input -x $OUTPUT_PDB -o $OUTPUT_TOP -ff $FORCE_FIELD -p $POSITION -dssp $DSSP_PATH -cys $CYSTEIN_BRIDGE -cter $C_TER -nter $N_TER -maxwarn 99999"
-
-if [ ! -z "$DSSP_PATH" ] 
-then 
-  cmd_line="$cmd_line -dssp $DSSP_PATH"
-fi
-
-if [ ! -z $SIDE_CHAIN_FIX]
-then  
-  cmd_line="$cmd_line -scfix"
-fi
+cmd_line="$martinize2_path -f $input $COMMAND_LINE -maxwarn 9999"
 
 echo $cmd_line
 

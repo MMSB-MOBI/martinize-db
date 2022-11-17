@@ -156,7 +156,6 @@ MembraneBuilderRouter.post('/', Uploader.fields([
         
         // todo test file size !
         const tmp_dir = await TmpDirHelper.get();
-
         // Creating a symlink for pdb/top
         await FsPromise.symlink(files.top[0].path, tmp_dir + "/full.top");
         molecule_entries.molecule_top = tmp_dir + "/full.top";
@@ -256,15 +255,16 @@ MembraneBuilderRouter.post('/', Uploader.fields([
         ...molecule_entries,
         settings: opts,
       });
-  
+
       res.json({
         // @ts-ignore
-        water: await getFormattedFile(water.pdb),
+        water: await getFormattedFile(water),
         no_water: await getFormattedFile(no_water),
         top: await getFormattedFile(top),
         itps: await Promise.all(itps.map(i => getFormattedFile(i))),
       });
     } catch (e) {
+      console.log(e)
       logger.error('[INSANE] Insane run failed.');
       logger.error(e); 
 

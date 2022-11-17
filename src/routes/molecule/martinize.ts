@@ -176,7 +176,7 @@ MartinizerRouter.use((req, res, next) => {
   
 }*/
 
-async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: string, onStep?: (step: string, ...data: any[]) => void, path?: string) {
+async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: string, path: string, onStep?: (step: string, ...data: any[]) => void) {
   //const { ff, position, posref_fc, elastic, ef, el, eu, ea, ep, em, eb, use_go, sc_fix, nter, cter, neutral_termini, commandline, cystein_bridge } = parameters;
 
   /// NON PRIS EN CHARGE (TODO) ///
@@ -198,7 +198,7 @@ async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: strin
   }, parameters);
 
   try {
-    const { pdb, itps, top, warns, jobId, elastic_bonds } = await Martinizer.run(martinizeSettings, onStep, path);
+    const { pdb, itps, top, warns, jobId, elastic_bonds } = await Martinizer.run(martinizeSettings, path, onStep );
 
     return {
       pdb,
@@ -301,6 +301,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
       const { pdb, itps, top, warns, jobId, elastic_bonds } = await martinizeRun(
         validatedParams,
         INPUT,
+        tmp_dir,
         (step, ...data) => {
           socket.emit('martinize step', {
             id: run_id,
@@ -308,10 +309,9 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
             data,
           });
         },
-        tmp_dir
+        
       );
 
-      console.log(pdb)
 
       await sendFile(top, {
         name: path.basename(top),
@@ -421,7 +421,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
   });
 }
 
-MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
+/*MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
   const pdb_file = req.file;
   if (!pdb_file) {
     return Errors.throw(ErrorType.MissingParameters);
@@ -462,7 +462,7 @@ MartinizerRouter.post('/', Uploader.single('pdb'), (req, res) => {
       elastic_bonds,
     });
   })().catch(errorCatcher(res));
-});
+});*/
 
 MartinizerRouter.get('/version', (req, res) => {
   res.json({ version: MARTINIZE_VERSION })
