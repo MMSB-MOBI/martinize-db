@@ -265,7 +265,7 @@ export const MembraneBuilder = new class MembraneBuilder {
       console.error("ShellManager.run crash");
       console.error(e.stack);
       if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
-      throw new InsaneError('insane_crash', workdir, 'error' in e ? e.error.stack : e.stack);
+      throw new InsaneError('insane_crash', 'error' in e ? e.error.stack : e.stack);
     }
 
     // Create the new TOP file
@@ -315,7 +315,7 @@ export const MembraneBuilder = new class MembraneBuilder {
       }
 
     } catch (e) {
-      throw new InsaneError('top_file_crash', workdir, e.stack);
+      throw new InsaneError('top_file_crash', e.stack);
     }
 
 
@@ -390,7 +390,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
       //var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
     } catch (e) {
-      throw new InsaneError('gromacs_crash', workdir, e.stack);
+      throw new InsaneError('gromacs_crash', e.stack);
     }
 
     // Build the ITP list without the force field ones
@@ -534,7 +534,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 export class InsaneError extends Error {
   constructor(
     public message: 'insane_crash' | 'gromacs_crash' | 'top_file_crash',
-    public workdir: string,
+    //public workdir: string,
     public trace: string
   ) { super(message); }
 }

@@ -269,14 +269,13 @@ MembraneBuilderRouter.post('/', Uploader.fields([
       logger.error(e); 
 
       if (e instanceof InsaneError) {
-        const dir = e.workdir;
 
         res
           .status(400)
           .json({
             error: e.message,
             trace: e.trace,
-            zip: await Martinizer.zipDirectoryString(dir)
+            //zip: await Martinizer.zipDirectoryString(dir)
           });
       }
       else {
