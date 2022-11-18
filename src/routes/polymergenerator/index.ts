@@ -1,14 +1,14 @@
-import { Router } from 'express'; 
+import { Router } from 'express';
 import SocketIo from 'socket.io';
 import { POLYPLYPATHDATA } from "../../constants";
 import checkError from './errorParser';
-import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants'; 
+import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
 import JMSurcouche from '../../Builders/JMSurcouche';
-import { str_to_stream } from '../../Builders/JMSurcouche'; 
+import { str_to_stream } from '../../Builders/JMSurcouche';
 import HistoryOrganizer from '../../HistoryOrganizer';
 import logger from '../../logger';
 import { PolyplyJobToSave } from '../molecule/molecule.types';
-import { dateFormatter, generateSnowflake } from '../../helpers'; 
+import { dateFormatter, generateSnowflake } from '../../helpers';
 import { ClientSettingsMartinize } from '../molecule/molecule.dto';
 import { NONAME } from 'dns';
 
@@ -17,12 +17,11 @@ const router = Router();
 
 let polyplyData: any = {}
 const f = async () => {
-    console.log( "JMSurcouche.mode", JMSurcouche.mode)
+    console.log("JMSurcouche.mode", JMSurcouche.mode)
     console.log("init residue avaible")
     const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: {}, inputs: {} })
     return stdout
-
-} 
+}
 
 const get_truc = async () => {
     const res = await f()
@@ -40,12 +39,13 @@ const get_truc = async () => {
 }
 
 router.get('/data', async (req, res) => {
-    if ( Object.keys(polyplyData).length === 0 ) get_truc()
+    if (Object.keys(polyplyData).length === 0) get_truc()
     console.log("Sending forcefields and residues data")
     //Select only martini forcefield
     let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
     res.send(MARTINIpolyplyData);
 });
+
 
 router.get("/fastaconversion", (req, res) => {
     const fasta = {
@@ -60,12 +60,22 @@ router.get("/fastaconversion", (req, res) => {
 
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     console.log("je suis dans SocketIoPolymerizer ")
+    socket.on("get_polyply_data", () => {
+        if (Object.keys(polyplyData).length === 0) get_truc()
+        console.log("Sending forcefields and residues data")
+        //Select only martini forcefield
+        let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
+        socket.emit("polyply_data", MARTINIpolyplyData);
+    }
+    )
+
+
     socket.on("run_itp_generation", async (dataFromClient: any) => {
-        console.log("Run polyply gen itp", dataFromClient['name'] )
- 
+        console.log("Run polyply gen itp", dataFromClient['name'])
+
         //Get forcefield 
         const ff = dataFromClient['polymer']['forcefield']
-        const name = dataFromClient['name']  
+        const name = dataFromClient['name']
 
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
@@ -208,7 +218,7 @@ ${name} ${numberpolymer}
         }
 
     })
- 
+
     socket.on("add_to_history", async (d) => {
         console.log("Add to history", d)
 
@@ -218,22 +228,24 @@ ${name} ${numberpolymer}
         const itp = d["itp"]
         const name = d["name"]
 
-        
+
         const job: PolyplyJobToSave = {
             jobId: generateSnowflake(),
             userId: d["userId"],
             type: "polyply",
             date: dateFormatter("Y-m-d H:i"),
-            settings: { ff : "martini3001", position : "none", cter :"COOH-ter", nter:"NH2-ter", sc_fix : false, cystein_bridge : "auto", builder_mode : "classic", send_mail : false, user_id :d["userId"] },
-            name:name,
-            
+            settings: { ff: "martini3001", position: "none", cter: "COOH-ter", nter: "NH2-ter", sc_fix: false, cystein_bridge: "auto", builder_mode: "classic", send_mail: false, user_id: d["userId"] },
+            name: name,
+
         }
         let savedToHistory = false;
         try {
-            await HistoryOrganizer.saveToHistoryFromPolyply(job ,itp, gro, top, pdb )
+            await HistoryOrganizer.saveToHistoryFromPolyply(job, itp, gro, top, pdb)
             savedToHistory = true;
+            socket.emit("add_to_history_answer", true)
         } catch (e) {
             logger.warn("error save to history", e)
+            socket.emit("add_to_history_answer", false)
         }
     })
 
