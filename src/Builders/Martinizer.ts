@@ -894,7 +894,7 @@ export const Martinizer = new class Martinizer {
 
   }
 
-  async createPdbWithConectFromStream(inputStream : Readable, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps: {[name: string] : Readable | string}) {
+  async createPdbWithConectFromStream(inputStreamOrString : Readable|string, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps: {[name: string] : Readable | string}) {
     // let groups_to_del = 17;
     // if (lipids) {
     //   groups_to_del += lipids.length * 2;
@@ -905,7 +905,6 @@ export const Martinizer = new class Martinizer {
     const inputName = "input." + inputType
 
     const final_pdb = tmp_dir + "/output-conect.pdb"
-    //const final_top = tmp_dir + "/output.top"
 
     const command = {
       exportVar: {
@@ -913,7 +912,7 @@ export const Martinizer = new class Martinizer {
         "INPUT_NAME": inputName
       },
       inputs: {
-        [inputName] : inputStream,
+        [inputName] : inputStreamOrString,
         'input.top': str_to_stream(top_content),
         'run.mdp': CONECT_MDP_PATH,
         ...pathsToInputs(force_fields)

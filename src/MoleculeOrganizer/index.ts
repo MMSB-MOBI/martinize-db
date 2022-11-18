@@ -168,6 +168,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     }
   }
 
+
   async createSymlinksInTmpDir(
     dir: string,
     pdb: Express.Multer.File | SimuFile,
@@ -313,20 +314,21 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Symlinking files into a temporary directory: " + use_tmp_dir + ".");
 
-    const {
-      pdb: pdb_path,
-      top: top_path,
-      itps: itps_path,
-      maps: maps_path
-    } = await this.createSymlinksInTmpDir(use_tmp_dir, pdb_file, top_file, itp_files, map_files);
+    // const {
+    //   pdb: pdb_path,
+    //   top: top_path,
+    //   itps: itps_path,
+    //   maps: maps_path
+    // } = await this.createSymlinksInTmpDir(use_tmp_dir, pdb_file, top_file, itp_files, map_files);
 
     logger.debug("[MOLECULE-ORGANIZER] Creating extended TOP file for " + pdb_file.originalname + ". " + force_field);
     // Create the modified TOP and the modified pdb
     let full_top; 
+    const itps_multer_path = itp_files.map(itp => itp.path)
     try {
       const ffForTop = simple_force_field ? "simple_" + force_field : force_field
 
-      full_top = await Martinizer.createTopFileToString(top_path, itps_path, ffForTop);
+      full_top = await Martinizer.createTopFileToString(top_file.path, itp_files.map(itp => itp.path), ffForTop);
       console.log("Return full top", full_top)
     } catch (e) {
       console.error(e)
@@ -340,10 +342,21 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created");
 
-
+    let conectOutput: {pdb: string }; 
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
     try {
-      var conectOutput = await Martinizer.createPdbWithConect(pdb_path, full_top, false, force_field, itps_path);
+
+      //var conectOutput = await Martinizer.createPdbWithConect(pdb_path, full_top, false, force_field, itps_path);
+
+      const formatted_itp_paths: {[name: string]: string} = {}
+      for (const itpPath of itps_multer_path){
+        formatted_itp_paths[path.basename(itpPath)] = itpPath
+      }
+
+      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, "pdb", full_top, false, force_field, use_tmp_dir, formatted_itp_paths)
+
+      console.log("CONECT OUTPUT", conectOutput)
+
     } catch (e) {
       logger.warn("[MOLECULE-ORGANIZER] Unable to create full PDB with GROMACS. Provided files might be incorrects.");
 
@@ -355,14 +368,32 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     // @ts-ignore
     logger.debug("[MOLECULE-ORGANIZER] CONECT-ed PDB created: " + path.basename(conectOutput.pdb) + ".");
-    console.log(conectOutput);
 
     // Compressing and saving
     const save_id = generateSnowflake();
     const zip_name = this.getFilenameFor(save_id);
     const info_name = this.getInfoFilenameFor(save_id);
 
-    const top_name = path.basename(top_path);
+    const top_name = path.basename(top_file.path);
+    const final_pdb = conectOutput.pdb
+    const final_itps = await Promise.all(itp_files.map(async(itp) => {
+      const symlink_path = use_tmp_dir + "/" + path.basename(itp.originalname)
+      await FsPromise.symlink(itp.path, symlink_path)
+      return symlink_path
+      }))
+    
+    const final_maps = await Promise.all(map_files.map(async(map) => {
+        const symlink_path = use_tmp_dir + "/" + path.basename(map.originalname)
+        await FsPromise.symlink(map.path, symlink_path)
+        return symlink_path
+    }))
+
+    console.log("final_itps", final_itps)
+    
+    const final_top = top_file.originalname.endsWith('.top') ?use_tmp_dir + "/" + path.basename(top_file.originalname) : use_tmp_dir + "/" + path.basename(top_file.originalname) + ".top"
+    console.log("final_top", final_top)
+
+    await FsPromise.symlink(top_file.path, final_top)    
 
     // Compress and get save data
     const {
@@ -371,12 +402,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       itp_files_info,
       map_files_info
     } = await this.zipFromPaths(
-      itps_path,
-      maps_path,
-      // @ts-ignore
+      final_itps,
+      final_maps,
       conectOutput.pdb,
-      // @ts-ignore
-      conectOutput.top,
+      final_top,
       top_name,
       zip_name
     );
