@@ -25,5 +25,9 @@ echo $cmd_line
 
 $cmd_line 2> martinize_redirect.stderr 
 
+chmod g+r *.itp
+chmod g+r *.pdb
+chmod g+r *.top
+
 { grep "WARNING" martinize_redirect.stderr > $MARTINIZE_WARN || true; }
 
