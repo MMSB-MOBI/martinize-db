@@ -73,6 +73,11 @@
       "name" : "Small molecule",
       "dir" : "small molecule",
       "children" : {}
-    }  
+    },
+    "MC:0013" : {
+      "name" : "Proteins",
+      "dir" : "proteins",
+      "children" : {}
+    }    
   }
 }
