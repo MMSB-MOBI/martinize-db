@@ -112,6 +112,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         }
         catch (e) {
             //Socket emit
+            socket.emit("error_itp", e)
             throw new Error(`Error with job manager : ${e}`)
         }
 
@@ -175,6 +176,7 @@ ${name} ${numberpolymer}
             resultatGro = stdout
         }
         catch (e) {
+            socket.emit("error_gro", e)
             throw new Error(`Error with job manager : ${e}`)
         }
 
