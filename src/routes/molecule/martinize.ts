@@ -28,7 +28,7 @@ type MartinizeRunFailedPayload = {
   type: string,
   stdout?: string,
   stderr?: string,
-  dir: string,
+  items: string[],
   code: ErrorType,
   message: string,
 };
@@ -209,6 +209,8 @@ async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: strin
       elastic_bonds
     };
   } catch (e) {
+    console.log("martinize.ts ERROR")
+    console.log(e); 
     if (e instanceof ApiError) {
       logger.error("Martinize Error.");
       logger.error(e.stack!);
@@ -385,17 +387,18 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
       console.error("ERROR", e)
       if (e instanceof ApiError) {
         if (e.code === ErrorType.MartinizeRunFailed) {
-          const { error, type, dir } = e.data as MartinizeRunFailedPayload;
+          const { error, type, items } = e.data as MartinizeRunFailedPayload;
+          console.log(error, type)
 
           // Compress the directory
-          const compressed_run = await Martinizer.zipDirectory(dir);
+          //const compressed_run = await Martinizer.zipDirectory(dir);
 
           socket.emit('martinize error', {
             id: run_id,
             error,
             type,
             stack: e.stack,
-          }, compressed_run);
+          });
         }
         else {
           const { error } = e.data

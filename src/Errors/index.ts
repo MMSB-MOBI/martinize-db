@@ -53,7 +53,10 @@ export enum ErrorType {
 
   /** MARTINIZE Errors */
   MartinizeRunFailed = 401,
-  MartinizeNoOutput,
+  MartinizeNoOutput, //402
+  ContactMapFailed, //403
+  GOComputationFailed, //404
+  ElasticNetworkFailed, //405
 
   /** JM Error */
   JMError = 501,
@@ -96,6 +99,9 @@ const ErrorsToText = {
   [ErrorType.InvalidMethod]: [405, "Method not allowed"],
   [ErrorType.MartinizeRunFailed]: [400, "Martinize run failed"],
   [ErrorType.MartinizeNoOutput] : [404, "No output created by martinize"],
+  [ErrorType.ContactMapFailed] : [404, "Computation of contact map failed"],
+  [ErrorType.GOComputationFailed] : [404, "Computation of GO model failed"],
+  [ErrorType.ElasticNetworkFailed] : [404, "Computation of elastic network failed"],
   [ErrorType.IncorrectItpName]: [400, "The itp file name could not be parsed, please check the syntax"],
   [ErrorType.MissingTopFiles]: [400, "Missing files attached to request, there must be one top file for each itp"],
   [ErrorType.JMError] : [400, "Error with Job manager"],
@@ -128,8 +134,11 @@ export default new class Errors {
    * If you're in a promise, make sure the error is correctly catched and sent !
    */
   throw(code: ErrorType, additionnal?: object) : never {
+    console.log("THROW ERROR")
     const [http_code, message] = ErrorsToText[code] as [number, string];
-
+    console.log("http", "message", http_code, message)
+    console.log("code", code)
+    console.log(additionnal)
     throw new ApiError(String(http_code), {
       code,
       message,
