@@ -225,13 +225,18 @@ export const HistoryOrganizer = new class HistoryOrganizer {
     async saveToHistoryFromPolyply(job: any, itp: string, gro: string, top: string, pdb: string) {
         console.log("saveToHistoryFromPolyply", job)
         return new Promise((res, rej) => {
-            this._saveToFileSystemFromString(job, itp, gro, top, pdb).then((job_new) => {
-                console.log("new job", job_new)
-                this.saveToCouch(job_new).then(() => res(job_new.jobId)).catch(e => {
-                    this.deleteFromFileSystem(job_new.jobId)
-                    rej(e)
+            if (job.userId === undefined) rej("userId is undefined")
+            this._saveToFileSystemFromString(job, itp, gro, top, pdb)
+                .then((job_new) => {
+                    console.log("new job", job_new)
+                    this.saveToCouch(job_new)
+                        .then(() => res(job_new.jobId))
+                        .catch(e => {
+                            this.deleteFromFileSystem(job_new.jobId)
+                            rej(e)
+                        })
                 })
-            }).catch(e => rej(e))
+                .catch(e => rej(e))
         })
     }
 

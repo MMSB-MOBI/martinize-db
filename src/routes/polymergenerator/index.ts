@@ -80,10 +80,17 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
             for (let itpname of Object.keys(dataFromClient['customITP'])) {
+                console.log( "################", dataFromClient['customITP'][itpname])
                 additionalfile = additionalfile + dataFromClient['customITP'][itpname]
                 additionalfile = additionalfile + ";NEWITP\n"
             }
         }
+
+        let coordfile = ""
+        if (dataFromClient['proteinGRO'] !== "") {
+            coordfile = dataFromClient['proteinGRO']
+        }
+
 
         let ffpath = ''
         if (ff == "martini2") {
@@ -135,13 +142,23 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     socket.on("run_gro_generation", async (data) => {
         console.log("Let's GrOOOO")
 
+        let coordfile = ""
+        if (data['proteinGRO'] !== "") {
+            coordfile = data['proteinGRO']
+        }
+
+
         //Get forcefield 
         const ff = data['polymer']['forcefield']
         const name = data['name']
         const boxsize = data['box']
         const numberpolymer = data['number']
         const itp = data['itp']
-
+        
+        let inputpdb = ""
+        if (data['inputpdb'] !== undefined) {
+            inputpdb = data['inputpdb']
+        }
         let ffpath = ''
         if (ff == "martini2") {
             ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.3P.itp"
@@ -165,6 +182,7 @@ ${name} ${numberpolymer}
         }
 
         const inputs = {
+            "coord.gro": str_to_stream(coordfile),
             "polymere.itp": str_to_stream(itp),
             "martiniForceField": ffpath,
             "system.top": str_to_stream(topfilestr)
@@ -175,8 +193,9 @@ ${name} ${numberpolymer}
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             resultatGro = stdout
         }
-        catch (e) {
-            socket.emit("error_gro", e)
+        catch (e : any) {
+            console.log("A l'aide je veux mourir", e)
+            socket.emit("error_gro", e.stderr)
             throw new Error(`Error with job manager : ${e}`)
         }
 
@@ -195,6 +214,8 @@ ${name} ${numberpolymer}
             socket.emit("gro_top", { gro: gro, top: topfilestr });
         }
     })
+
+
     socket.on("run_pdb_generation", async (data) => {
         console.log('Convert and minimize GRO to PDB')
         const exportVar = {
@@ -240,10 +261,10 @@ ${name} ${numberpolymer}
             name: name,
 
         }
-        let savedToHistory = false;
+         
         try {
-            await HistoryOrganizer.saveToHistoryFromPolyply(job, itp, gro, top, pdb)
-            savedToHistory = true;
+            const reponse = await HistoryOrganizer.saveToHistoryFromPolyply(job, itp, gro, top, pdb)
+            console.log( "je log ici", reponse)
             socket.emit("add_to_history_answer", true)
         } catch (e) {
             logger.warn("error save to history", e)

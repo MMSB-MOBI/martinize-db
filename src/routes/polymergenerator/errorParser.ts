@@ -4,6 +4,7 @@
 // WARNING - general - Missing link between residue 1 SER and residue 4 SER
 
 interface ErrorToClient {
+    boxerror: boolean;
     ok: boolean,
     disjoint: boolean,
     errorlinks: any[],
@@ -16,7 +17,7 @@ export default checkError;
 
 function checkError(output: string) {
     //Init dico error
-    let dicErreur: ErrorToClient = { ok: true, disjoint: false, message: [], errorlinks: [] }
+    let dicErreur: ErrorToClient = { boxerror: false, ok: true, disjoint: false, message: [], errorlinks: [] }
     let pythonerror: boolean = false
     let oserror: boolean = false
     //Parse every line 
@@ -35,6 +36,12 @@ function checkError(output: string) {
             console.log("error disconnected parts", l)
             dicErreur.ok = false
             pythonerror = true
+        }
+
+        if ((l.includes('Some input data are greater than the size of the periodic box'))) {
+            console.log("Box size problem", l)
+            dicErreur.ok = false
+            dicErreur.boxerror = true
         }
 
         if ((l.includes('disconnected parts. ')) || (l.includes('disjoint parts'))) {
