@@ -11,6 +11,7 @@ interface WorkerSendMessage {
 interface WorkerStartTask extends WorkerSendMessage {
   query: nano.MangoQuery;
   as_all?: boolean;
+  stashed?: boolean;
 }
 
 interface WorkerResult {
@@ -32,6 +33,7 @@ export const SearchWorker = new class SearchWorker {
           stopOnNoTask: MINUTES_BEFORE_WORKER_KILL * 60 * 1000,
           workerData: {
             molecule_collection: CouchHelper.MOLECULE_COLLECTION,
+            molecule_stashed_collection : CouchHelper.STASHED_MOLECULE_COLLECTION,
             couch_url: URLS.COUCH,
           },
         }
@@ -41,11 +43,12 @@ export const SearchWorker = new class SearchWorker {
     return this._pool;
   }
 
-  async query(query: nano.MangoQuery, send_all = false) {
+  async query(query: nano.MangoQuery, send_all = false, stashed = false) {
     const task: WorkerStartTask = {
       type: 'new_search',
       query,
-      as_all: send_all
+      as_all: send_all,
+      stashed
     };
 
     return this.pool.run(task);
