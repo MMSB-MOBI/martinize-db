@@ -15,8 +15,12 @@ insaneHackAfter=$2
 inputFile=$3
 shift 3
 
+insaneArgs=$@
+
+echo Launch : python3 $insaneHackBefore $inputFile output-insane-hack.pdb hacked-atoms.txt > cmd.txt
 python3 $insaneHackBefore $inputFile output-insane-hack.pdb hacked-atoms.txt
-
-$insane_path $@
-
+insaneArgs2=`echo $insaneArgs | perl -pe 's/^(.*\-f\s)([\S]+)(.*)$/${1}output-insane-hack.pdb${3}/'`
+echo Launch : $insane_path $insaneArgs2 >> cmd.txt
+$insane_path $insaneArgs2 1> insane_redirect.stdout 2> insane_redirect.stderr
+echo Launch : python3 $insaneHackAfter system.gro system-insane-hack.gro hacked-atoms.txt >> cmd.txt
 python3 $insaneHackAfter system.gro system-insane-hack.gro hacked-atoms.txt
