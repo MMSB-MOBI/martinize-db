@@ -28,6 +28,8 @@ interface Filters {
   combine?: "0" | "false" | "1" | "true";
   skip?: string;
   limit?: string;
+  from_stashed?: "true" | "false"
+
 }
 
 ListMoleculeRouter.get('/', (req, res) => {
@@ -38,13 +40,13 @@ ListMoleculeRouter.get('/', (req, res) => {
     } else {
       const query: nano.MangoQuery = { selector: {}, limit: 25, skip: 0 };
 
-      const {
-        force_fields,
-        version,
-        q: free_text,
-        author,
+      const { 
+        force_fields, 
+        version, 
+        q: free_text, 
+        author, 
         owner,
-        categories,
+        categories, 
         is_regex,
         create_ways,
         name: molecule_name,
@@ -52,11 +54,14 @@ ListMoleculeRouter.get('/', (req, res) => {
         combine: __as_version_tree__,
         skip,
         limit,
+        from_stashed
       } = req.query as Partial<Filters>;
-
+  
+      console.log("from_stashed", from_stashed)
       const with_regex = is_regex === "true" || is_regex === "1";
       const bulk_request = __as_version_tree__ === "false" || __as_version_tree__ === "0";
-
+      const search_in_stashed =  from_stashed === "true"
+  
       const selectors: any[] = [];
       if (force_fields) {
         const ff = force_fields.split(',');
@@ -68,7 +73,7 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (create_ways) {
         const vers = create_ways.split(',');
-
+  
         selectors.push({
           create_way: {
             $in: vers
@@ -87,8 +92,23 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (alias) {
         selectors.push({
-          alias: withRegex(alias, with_regex)
-        });
+          $or : [ 
+            {alias : withRegex(alias, with_regex)},
+            {alternative_alias : {
+              $elemMatch : withRegex(alias, with_regex)
+            }}
+          ]
+        })
+        // selectors.push({
+        //   alias: withRegex(alias, with_regex)
+        // });
+        // selectors.push({
+        //   alternative_alias : {
+        //     $elemMatch : {
+        //       $eq : withRegex(alias, with_regex)
+        //     }
+        //   }
+        // })
       }
       if (author) {
         const users_that_match_query = await Database.user.find({
@@ -101,9 +121,9 @@ ListMoleculeRouter.get('/', (req, res) => {
             ]
           }
         }) as User[];
-
+  
         const users_id = users_that_match_query.map(u => u.id);
-
+  
         selectors.push({
           owner: { $in: users_id }
         });
@@ -126,7 +146,7 @@ ListMoleculeRouter.get('/', (req, res) => {
         const search_obj = {
           $regex: '(?i)' + search_text
         };
-
+  
         selectors.push({
           $or: [
             { category: search_obj },
@@ -135,14 +155,15 @@ ListMoleculeRouter.get('/', (req, res) => {
             { alias: search_obj },
             { command_line: search_obj },
             { force_field: search_obj },
+            { alternative_alias : {$elemMatch : search_obj}}
           ]
         });
       }
-
+      
       if (selectors.length) {
         query.selector = { $and: selectors };
       }
-
+  
       if (skip) {
         if (Number(skip) > 0) {
           query.skip = Number(skip);
@@ -150,7 +171,7 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (limit) {
         const l = Number(limit);
-
+  
         if (l > 0 && l <= 200) {
           query.limit = l;
         }
