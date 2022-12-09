@@ -50,6 +50,7 @@ export interface BaseMolecule extends BaseCouchDocument {
   owner: string;
   /** ID of related file containing `.itp` and `.gro`/`.pdb` files */
   files: string;
+  alternative_alias : string[]; 
 }
 
 export interface Molecule extends BaseMolecule {
