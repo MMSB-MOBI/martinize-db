@@ -261,13 +261,13 @@ export const HistoryOrganizer = new class HistoryOrganizer {
                 else rej(e)
             }
         })
-
     }
 
     async readFiles(jobId: string, files: JobFilesNames): Promise<JobReadedFiles> {
         return new Promise(async (res, rej) => {
             console.log("hellllo", files)
             let readedFiles = {
+                gro: await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.gro}`),
                 all_atom: (Object.keys(files).includes('all_atom')) ? await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.all_atom}`) : { name: jobId, type: "", content: "" },
                 top_file: await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.top_file}`),
                 coarse_grained: await getFormattedFile(`${HISTORY_ROOT_DIR}/${jobId}/${files.coarse_grained}`),

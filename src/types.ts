@@ -49,7 +49,8 @@ export interface CategoryTree {
   };
 }
 
-export interface JobFilesNames { // just job files names or job files content
+export interface JobFilesNames {
+  gro: any; // just job files names or job files content
   all_atom: string
   coarse_grained: string
   itp_files: string[][]
@@ -57,7 +58,8 @@ export interface JobFilesNames { // just job files names or job files content
   warnings: string
 }
 
-export interface JobReadedFiles { // just job files names or job files content
+export interface JobReadedFiles {
+  gro: ReadedFile
   all_atom?: ReadedFile
   coarse_grained: ReadedFile
   itp_files: ReadedFile[][]

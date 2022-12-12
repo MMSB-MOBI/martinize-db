@@ -18,7 +18,8 @@ GetItpHistoryRouter.get('/:job_id', async (req, res) => {
   // raise exception on empty results ^^
   const { files } = job_details;
   HistoryOrganizer.readFiles(job_id, files).then(readedFiles => {
-    res.json(readedFiles.itp_files[0][0].content)
+
+    res.json( {itp : readedFiles.itp_files[0][0].content , gro : readedFiles.gro })
   }).catch(e => {
     if (e === "not_found") sendError(Errors.make(ErrorType.HistoryFilesNotFound), res)
     else sendError(Errors.make(ErrorType.Server, e), res)

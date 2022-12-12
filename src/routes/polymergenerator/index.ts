@@ -60,15 +60,14 @@ router.get("/fastaconversion", (req, res) => {
 
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     console.log("je suis dans SocketIoPolymerizer ")
-    socket.on("get_polyply_data", () => {
-        if (Object.keys(polyplyData).length === 0) get_truc()
+    socket.on("get_polyply_data", async () => {
+        if (Object.keys(polyplyData).length === 0) await get_truc()
         console.log("Sending forcefields and residues data")
         //Select only martini forcefield
         let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
         socket.emit("polyply_data", MARTINIpolyplyData);
     }
     )
-
 
     socket.on("run_itp_generation", async (dataFromClient: any) => {
         console.log("Run polyply gen itp", dataFromClient['name'])
@@ -193,7 +192,7 @@ ${name} ${numberpolymer}
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             resultatGro = stdout
         }
-        catch (e : any) {
+        catch (e  ) {
             console.log("A l'aide je veux mourir", e)
             socket.emit("error_gro", e.stderr)
             throw new Error(`Error with job manager : ${e}`)
