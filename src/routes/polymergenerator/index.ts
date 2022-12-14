@@ -79,7 +79,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
             for (let itpname of Object.keys(dataFromClient['customITP'])) {
-                console.log( "################", dataFromClient['customITP'][itpname])
+                console.log("################", dataFromClient['customITP'][itpname])
                 additionalfile = additionalfile + dataFromClient['customITP'][itpname]
                 additionalfile = additionalfile + ";NEWITP\n"
             }
@@ -153,7 +153,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         const boxsize = data['box']
         const numberpolymer = data['number']
         const itp = data['itp']
-        
+
         let inputpdb = ""
         if (data['inputpdb'] !== undefined) {
             inputpdb = data['inputpdb']
@@ -192,7 +192,7 @@ ${name} ${numberpolymer}
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             resultatGro = stdout
         }
-        catch (e  ) {
+        catch (e) {
             console.log("A l'aide je veux mourir", e)
             socket.emit("error_gro", e.stderr)
             throw new Error(`Error with job manager : ${e}`)
@@ -260,11 +260,11 @@ ${name} ${numberpolymer}
             name: name,
 
         }
-         
+
         try {
-            const reponse = await HistoryOrganizer.saveToHistoryFromPolyply(job, itp, gro, top, pdb)
-            console.log( "je log ici", reponse)
-            socket.emit("add_to_history_answer", true)
+            await HistoryOrganizer.saveToHistoryFromPolyply(job, itp, gro, top, pdb)
+            console.log("job.jobId", job.jobId)
+            socket.emit("add_to_history_answer", job.jobId)
         } catch (e) {
             logger.warn("error save to history", e)
             socket.emit("add_to_history_answer", false)
