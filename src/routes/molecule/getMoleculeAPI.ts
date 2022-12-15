@@ -34,18 +34,21 @@ function readStreamsPromises(streams: NodeJS.ReadableStream[]): Promise<string>[
 
 
 //If format isnt provided give the last update of this model 
-GetMoleculeAPI.get('/:id.:format?/:forcefield/:version?', (req, res) => {
+GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
   (async () => {
     console.log("GetMoleculeAPI.get() ", req.params)
-    const molecule = await MoleculeOrganizer.getInfo(req.params.id)
+    const molcouch = await Database.molecule.find({ selector: { alias: req.params.id } })
 
-    // File does not exists or does not have a pdb file attached
-    if (!molecule || !molecule.itp.length) {
+    console.log( molcouch)
+    // File does not exists
+    if ( molcouch.length === 0) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
 
+    const molecule = await MoleculeOrganizer.getInfo( molcouch[0].files);
+
     const zip = new NodeStreamZip({
-      file: MoleculeOrganizer.getFilenameFor(req.params.id),
+      file: MoleculeOrganizer.getFilenameFor(molcouch[0].files),
       storeEntries: true
     });
 
@@ -55,12 +58,12 @@ GetMoleculeAPI.get('/:id.:format?/:forcefield/:version?', (req, res) => {
     });
 
     if (req.params.format === "itp") {
-      const itp_streams = await Promise.all(molecule.itp.map(itp_file => getReadableStream(itp_file.name, zip)))
+      const itp_streams = await Promise.all(molecule!.itp.map(itp_file => getReadableStream(itp_file.name, zip)))
       const itp_finals = await Promise.all(readStreamsPromises(itp_streams))
       res.send(itp_finals[0]);
     }
     else if (req.params.format === "pdb") {
-      const pdb_stream = await getReadableStream(molecule.pdb!.name, zip)
+      const pdb_stream = await getReadableStream(molecule!.pdb!.name, zip)
       const pdb_final = await Promise.all(readStreamsPromises([pdb_stream]))
       res.send(pdb_final[0]);
     }
