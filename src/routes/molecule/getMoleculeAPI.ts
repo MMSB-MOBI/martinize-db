@@ -7,6 +7,7 @@ import { BaseMolecule } from '../../Entities/entities';
 // @ts-ignore 
 import NodeStreamZip from 'node-stream-zip';
 import JSZip from 'jszip';
+import { MangoQuery } from 'nano';
 
 // Get a pdb from a file ID
 const GetMoleculeAPI = Router();
@@ -37,15 +38,20 @@ function readStreamsPromises(streams: NodeJS.ReadableStream[]): Promise<string>[
 GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
   (async () => {
     console.log("GetMoleculeAPI.get() ", req.params)
-    const molcouch = await Database.molecule.find({ selector: { alias: req.params.id } })
+    const selectruc: MangoQuery = { selector: { alias: req.params.id, forcefield: req.params.forcefield } }
+    if (req.params.version) {
+      selectruc.selector["version"] = req.params.version
+    }
 
-    console.log( molcouch)
+    const molcouch = await Database.molecule.find(selectruc)
+
+    console.log(molcouch)
     // File does not exists
-    if ( molcouch.length === 0) {
+    if (molcouch.length === 0) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
 
-    const molecule = await MoleculeOrganizer.getInfo( molcouch[0].files);
+    const molecule = await MoleculeOrganizer.getInfo(molcouch[0].files);
 
     const zip = new NodeStreamZip({
       file: MoleculeOrganizer.getFilenameFor(molcouch[0].files),
