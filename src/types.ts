@@ -8,7 +8,7 @@ export const GoTerms = {
   "MC:0004": "",
 };
 
-export type UserRole = "admin" | "curator";
+export type UserRole = "admin" | "curator" | "dev";
 
 export interface JSONWebTokenPartial {
   /** Issued at */

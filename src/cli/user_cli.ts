@@ -65,6 +65,24 @@ USER_CLI.command('revoke', async rest => {
   return `User ${user.name} has been successfully updated.`;
 });
 
+
+USER_CLI.command('todev', async rest => {
+  if (!rest) {
+    return "Please enter a user ID. You can search users with lookup.";
+  }
+
+  try {
+    var user = await Database.user.get(rest);
+  } catch {
+    return "User not found.";
+  }
+
+  user.role = 'dev';
+  await Database.user.save(user);
+
+  return `User ${user.name} has been successfully updated to Dev.`;
+});
+
 USER_CLI.command('lookup', async rest => {
   if (!rest) {
     return "Please enter a query.";
@@ -167,14 +185,14 @@ USER_CLI.command('create', async () => {
 
   // Role
   while (true) {
-    role = await CLI.question("New user role. Available roles: \"curator\" or \"admin\": ");
+    role = await CLI.question("New user role. Available roles: \"dev\" or \"curator\" or \"admin\": ");
 
     if (role === ".exit") {
       return "User creation exited.";
     }
 
-    if (role !== "admin" && role !== "curator") {
-      console.log("Role is not correct. Available roles: \"curator\" or \"admin\". To exit user creation: .exit");
+    if (role !== "admin" && role !== "curator" && role !== "dev") {
+      console.log("Role is not correct. Available roles: \"dev\" or \"curator\" or \"admin\". To exit user creation: .exit");
       continue;
     }
 
