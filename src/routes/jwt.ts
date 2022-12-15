@@ -23,7 +23,7 @@ export default jwt({
     getUserFromToken(payload.jti)
       .then(user => {
         req.full_user = user;
-        
+
         if (!user) {
           // Token is orphan !
           logger.error("Orphan token ! This should not happen. ", payload);
@@ -40,27 +40,29 @@ export default jwt({
       .catch(() => done(null, true));
   }
 }).unless(
-  { path: [
-    "/api/molecule/list", 
-    "/api/user/login", 
-    "/api/user/create", 
-    "/api/user/lost_password", 
-    "/api/user/change_password", 
-    "/api", 
-    { url: "/api/settings", methods: ['GET'] },
-    "/api/settings/lipids",
-    "/api/molecule",
-    "/api/molecule/download",
-    "/api/molecule/get",
-    "/api/molecule/martinize",
-    "/api/molecule/membrane_builder",
-    "/api/user/contact",
-    "/api/force_fields/list",
-    "/api/force_fields/download",
-    "/api/polymergenerator/hello",
-    "/api/polymergenerator/data",
-    /^\/api\/molecule\/representation\/.+$/,
-  ] }
+  {
+    path: [
+      "/api/molecule/list",
+      "/api/user/login",
+      "/api/user/create",
+      "/api/user/lost_password",
+      "/api/user/change_password",
+      "/api",
+      { url: "/api/settings", methods: ['GET'] },
+      "/api/settings/lipids",
+      "/api/molecule",
+      "/api/molecule/download",
+      "/api/molecule/martinize",
+      "/api/molecule/membrane_builder",
+      "/api/molecule/get",
+      "/api/user/contact",
+      "/api/force_fields/list",
+      "/api/force_fields/download",
+      "/api/polymergenerator/data",
+      /^\/api\/molecule\/representation\/.+$/,
+      /^\/api\/molecule\/get\/.+$/
+    ]
+  }
 );
 
 // Extends Express request

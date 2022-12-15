@@ -149,6 +149,7 @@ app.use('/api', ApiRouter);
 
 // Catch API errors
 app.use('/api', (err: any, req: express.Request, res: express.Response, next: Function) => {
+  console.log("api error :", err)
   if (res.headersSent) {
     next(err);
     return;
