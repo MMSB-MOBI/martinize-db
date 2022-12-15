@@ -42,18 +42,19 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
     if (req.params.version) {
       selectruc.selector["version"] = req.params.version
     }
-
-    console.log( selectruc)
+ 
     const molcouch = await Database.molecule.find(selectruc)
 
-    console.log(molcouch)
+    
     // File does not exists
     if (molcouch.length === 0) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
 
+    console.log(molcouch)
     const molecule = await MoleculeOrganizer.getInfo(molcouch[0].files);
 
+    console.log( "molcouch[0].files" ,molcouch[0].files)
     const zip = new NodeStreamZip({
       file: MoleculeOrganizer.getFilenameFor(molcouch[0].files),
       storeEntries: true
@@ -78,7 +79,7 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       console.log("gro")
     }
     else if ((req.params.format === undefined) || (req.params.format === "zip")) {
-      const filename = MoleculeOrganizer.getFilenameFor(req.params.id);
+      const filename = MoleculeOrganizer.getFilenameFor(molcouch[0].files);
       res.download(filename);
     }
     else {
