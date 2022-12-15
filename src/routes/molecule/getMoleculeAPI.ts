@@ -38,7 +38,7 @@ function readStreamsPromises(streams: NodeJS.ReadableStream[]): Promise<string>[
 GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
   (async () => {
     console.log("GetMoleculeAPI.get() ", req.params)
-    const selectruc: MangoQuery = { selector: { alias: req.params.id, forcefield: req.params.forcefield } }
+    const selectruc: MangoQuery = { selector: { alias: req.params.id, force_field: req.params.forcefield } }
     if (req.params.version) {
       selectruc.selector["version"] = req.params.version
     }
