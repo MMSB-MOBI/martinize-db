@@ -43,6 +43,7 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       selectruc.selector["version"] = req.params.version
     }
 
+    console.log( selectruc)
     const molcouch = await Database.molecule.find(selectruc)
 
     console.log(molcouch)
