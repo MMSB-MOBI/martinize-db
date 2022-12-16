@@ -353,7 +353,13 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         formatted_itp_paths[path.basename(itpPath)] = itpPath
       }
 
-      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, "pdb", full_top, false, force_field, use_tmp_dir, formatted_itp_paths)
+      const extension = pdb_file.originalname.split('.').pop()
+      let extToGive : "pdb" | "gro"; 
+      if (extension === "pdb") extToGive = "pdb"
+      else if (extension === "gro") extToGive = "gro"
+      else throw new Error("Invalid extension for input file : " + extension)
+
+      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, extToGive, full_top, false, force_field, use_tmp_dir, formatted_itp_paths)
 
       console.log("CONECT OUTPUT", conectOutput)
 
