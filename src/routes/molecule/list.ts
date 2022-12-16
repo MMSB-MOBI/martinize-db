@@ -40,13 +40,13 @@ ListMoleculeRouter.get('/', (req, res) => {
     } else {
       const query: nano.MangoQuery = { selector: {}, limit: 25, skip: 0 };
 
-      const { 
-        force_fields, 
-        version, 
-        q: free_text, 
-        author, 
+      const {
+        force_fields,
+        version,
+        q: free_text,
+        author,
         owner,
-        categories, 
+        categories,
         is_regex,
         create_ways,
         name: molecule_name,
@@ -56,12 +56,12 @@ ListMoleculeRouter.get('/', (req, res) => {
         limit,
         from_stashed
       } = req.query as Partial<Filters>;
-  
+
       console.log("from_stashed", from_stashed)
       const with_regex = is_regex === "true" || is_regex === "1";
       const bulk_request = __as_version_tree__ === "false" || __as_version_tree__ === "0";
-      const search_in_stashed =  from_stashed === "true"
-  
+      const search_in_stashed = from_stashed === "true"
+
       const selectors: any[] = [];
       if (force_fields) {
         const ff = force_fields.split(',');
@@ -73,7 +73,7 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (create_ways) {
         const vers = create_ways.split(',');
-  
+
         selectors.push({
           create_way: {
             $in: vers
@@ -92,11 +92,13 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (alias) {
         selectors.push({
-          $or : [ 
-            {alias : withRegex(alias, with_regex)},
-            {alternative_alias : {
-              $elemMatch : withRegex(alias, with_regex)
-            }}
+          $or: [
+            { alias: withRegex(alias, with_regex) },
+            {
+              alternative_alias: {
+                $elemMatch: withRegex(alias, with_regex)
+              }
+            }
           ]
         })
         // selectors.push({
@@ -121,9 +123,9 @@ ListMoleculeRouter.get('/', (req, res) => {
             ]
           }
         }) as User[];
-  
+
         const users_id = users_that_match_query.map(u => u.id);
-  
+
         selectors.push({
           owner: { $in: users_id }
         });
@@ -146,7 +148,7 @@ ListMoleculeRouter.get('/', (req, res) => {
         const search_obj = {
           $regex: '(?i)' + search_text
         };
-  
+
         selectors.push({
           $or: [
             { category: search_obj },
@@ -155,15 +157,15 @@ ListMoleculeRouter.get('/', (req, res) => {
             { alias: search_obj },
             { command_line: search_obj },
             { force_field: search_obj },
-            { alternative_alias : {$elemMatch : search_obj}}
+            { alternative_alias: { $elemMatch: search_obj } }
           ]
         });
       }
-      
+
       if (selectors.length) {
         query.selector = { $and: selectors };
       }
-  
+
       if (skip) {
         if (Number(skip) > 0) {
           query.skip = Number(skip);
@@ -171,36 +173,40 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (limit) {
         const l = Number(limit);
-  
+
         if (l > 0 && l <= 200) {
           query.limit = l;
         }
       }
+
 
       const response = await SearchWorker.query(query, bulk_request);
       response.molecules = response.molecules.map(e => sanitize(e));
 
 
       // GET ITP FILE IN STRING
-      const file_id = response.molecules[0]["files"]
+      if (response.length !== 0) {
+        const file_id = response.molecules[0]["files"]
 
-      const zipname = MOLECULE_ROOT_DIR + file_id + ".zip"
-      fs.readFile(zipname, function (err, data) {
-        if (err) throw err;
-        JSZip.loadAsync(data).then(function (zip) {
-          console.log(Object.keys(zip.files))
-          const itpname = Object.keys(zip.files).filter((e) => e.endsWith(".itp"))[0]
-          if (itpname !== null) {
-            zip.file(itpname)!.async("string").then(function (data) {
-              // data is a string
-              // TODO your code goes here, this is just an example
-              //console.log("blabla", data);
-            })
-          }
-          else console.log(itpname, "NUUUL")
+        const zipname = MOLECULE_ROOT_DIR + file_id + ".zip"
+        fs.readFile(zipname, function (err, data) {
+          if (err) throw err;
+          JSZip.loadAsync(data).then(function (zip) {
+            console.log(Object.keys(zip.files))
+            const itpname = Object.keys(zip.files).filter((e) => e.endsWith(".itp"))[0]
+            if (itpname !== null) {
+              zip.file(itpname)!.async("string").then(function (data) {
+                // data is a string
+                // TODO your code goes here, this is just an example
+                //console.log("blabla", data);
+              })
+            }
+            else console.log(itpname, "NUUUL")
 
+          });
         });
-      });
+      }
+
 
       res.json(response);
     }
