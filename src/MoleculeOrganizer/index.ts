@@ -230,12 +230,13 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
    * @param zip_destination_path ZIP path destination
    */
   async zipFromPaths(
+    original_molecule : {name: string, path : string},
     itps_path: string[],
     maps_path: string[],
     conect_pdb: string,
-    full_top: string,
-    top_name: string,
+    full_top: {name : string, path: string},
     zip_destination_path: string,
+    converted_gro? : string,
   ) {
     // Create ZIP
     const zip = new JSZip();
@@ -260,11 +261,19 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       }
     }
 
-    const top_content = await FsPromise.readFile(full_top);
-    zip.file(top_name, top_content);
+    const original_content = await FsPromise.readFile(original_molecule.path)
+    zip.file(original_molecule.name, original_content)
+
+    const top_content = await FsPromise.readFile(full_top.path);
+    zip.file(full_top.name, top_content);
 
     const pdb_content = await FsPromise.readFile(conect_pdb);
     zip.file(path.basename(conect_pdb), pdb_content);
+
+    if(converted_gro) {
+      const gro_content = await FsPromise.readFile(converted_gro)
+      zip.file(path.basename(converted_gro), gro_content)
+    }
 
     logger.debug("[MOLECULE-ORGANIZER] Saving in-memory ZIP file to disk.");
 
@@ -342,7 +351,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Extended TOP file created");
 
-    let conectOutput: {pdb: string }; 
+    let conectOutput: {pdb: string, gro?: string }; 
     logger.debug("[MOLECULE-ORGANIZER] Creating PDB with CONECT entries for " + pdb_file.originalname + ".");
     try {
 
@@ -359,7 +368,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       else if (extension === "gro") extToGive = "gro"
       else throw new Error("Invalid extension for input file : " + extension)
 
-      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, extToGive, full_top, false, force_field, use_tmp_dir, formatted_itp_paths)
+      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, extToGive, full_top, false, force_field, use_tmp_dir, formatted_itp_paths, true)
 
       console.log("CONECT OUTPUT", conectOutput)
 
@@ -380,8 +389,6 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const zip_name = this.getFilenameFor(save_id);
     const info_name = this.getInfoFilenameFor(save_id);
 
-    const top_name = path.basename(top_file.path);
-    const final_pdb = conectOutput.pdb
     const final_itps = await Promise.all(itp_files.map(async(itp) => {
       const symlink_path = use_tmp_dir + "/" + path.basename(itp.originalname)
       await FsPromise.symlink(itp.path, symlink_path)
@@ -393,11 +400,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
         await FsPromise.symlink(map.path, symlink_path)
         return symlink_path
     }))
-
-    console.log("final_itps", final_itps)
     
     const final_top = top_file.originalname.endsWith('.top') ?use_tmp_dir + "/" + path.basename(top_file.originalname) : use_tmp_dir + "/" + path.basename(top_file.originalname) + ".top"
-    console.log("final_top", final_top)
+    const top = {name : top_file.originalname, path : final_top}
+    const original_file = {name : pdb_file.originalname, path : pdb_file.path}
 
     await FsPromise.symlink(top_file.path, final_top)    
 
@@ -408,12 +414,13 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       itp_files_info,
       map_files_info
     } = await this.zipFromPaths(
+      original_file,
       final_itps,
       final_maps,
       conectOutput.pdb,
-      final_top,
-      top_name,
-      zip_name
+      top,
+      zip_name,
+      conectOutput.gro
     );
 
     logger.debug("[MOLECULE-ORGANIZER] Computing MD5 hash of ZIP file.");
@@ -431,7 +438,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       },
       top: {
         size: top_length,
-        name: top_name,
+        name: top.name,
       },
       itp: itp_files_info,
       map: map_files_info,

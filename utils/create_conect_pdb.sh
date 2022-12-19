@@ -74,6 +74,8 @@ output="output.pdb"
 
 cp input/input.top input.top #Qu'est-ce qui pourrait mal se passer ?
 
+
+
 if [ $DEL_WATER_BOOL == "YES" ]
 then
   # do nothing, they're already a box
@@ -119,4 +121,9 @@ else
   echo launch : gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect
   gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin >6.trjconv-conect.stdout 2> 6.trjconv-conect.stderr
   echo "File $output_conect has been written."
+fi
+
+if [[ $FROM_CREATION == "true" && $INPUT_TYPE == "pdb" ]]; then
+  echo "Keep gro box for $pdb to input.gro"
+  cp $gro_box input.gro
 fi
