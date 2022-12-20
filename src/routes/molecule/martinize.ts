@@ -198,7 +198,7 @@ async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: strin
   }, parameters);
 
   try {
-    const { pdb, itps, top, warns, jobId, elastic_bonds } = await Martinizer.run(martinizeSettings, path, onStep );
+    const { pdb, itps, top, warns, jobId, elastic_bonds, final_gro } = await Martinizer.run(martinizeSettings, path, onStep );
 
     return {
       pdb,
@@ -206,7 +206,8 @@ async function martinizeRun(parameters: ClientSettingsMartinize, pdb_path: strin
       top,
       warns,
       jobId,
-      elastic_bonds
+      elastic_bonds,
+      final_gro
     };
   } catch (e) {
     console.log("martinize.ts ERROR")
@@ -300,7 +301,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
 
       await FsPromise.writeFile(INPUT, file);
 
-      const { pdb, itps, top, warns, jobId, elastic_bonds } = await martinizeRun(
+      const { pdb, itps, top, warns, jobId, elastic_bonds, final_gro } = await martinizeRun(
         validatedParams,
         INPUT,
         tmp_dir,
@@ -324,6 +325,14 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
         name: path.basename(pdb),
         type: 'chemical/x-pdb'
       });
+
+      if(final_gro) {
+        await sendFile(final_gro, {
+          name : path.basename(final_gro),
+          type : 'chemical/x-gro'
+        }) 
+      }
+      
 
       for (const [mol, itp_files] of itps.entries()) {
         for (const itp of itp_files) {
@@ -359,7 +368,8 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
           coarse_grained: path.basename(pdb),
           itp_files: itps.map(mol_itps => mol_itps.map(itp => path.basename(itp))),
           top_file: path.basename(top),
-          warnings: path.basename(warns)
+          warnings: path.basename(warns),
+          gro : final_gro ? path.basename(final_gro) : undefined
         },
         settings: validatedParams, //To avoid class into class that create conflicts for plainToInstance later (why ??)
         radius,
@@ -368,7 +378,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
 
       let savedToHistory = false;
       try {
-        await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps.flat(), warns])
+        await HistoryOrganizer.saveToHistory(job, [INPUT, top, pdb, ...itps.flat(), warns, final_gro!])
         savedToHistory = true;
       } catch (e) {
         logger.warn("error save to history", e)

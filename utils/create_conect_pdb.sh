@@ -123,7 +123,7 @@ else
   echo "File $output_conect has been written."
 fi
 
-if [[ $FROM_CREATION == "true" && $INPUT_TYPE == "pdb" ]]; then
-  echo "Keep gro box for $pdb to input.gro"
-  cp $gro_box input.gro
+if [[ $INPUT_TYPE == "pdb" ]]; then
+  echo "Keep gro box for $pdb to final_output.gro"
+  cp $gro_box final_output.gro
 fi

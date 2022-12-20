@@ -368,7 +368,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       else if (extension === "gro") extToGive = "gro"
       else throw new Error("Invalid extension for input file : " + extension)
 
-      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, extToGive, full_top, false, force_field, use_tmp_dir, formatted_itp_paths, true)
+      conectOutput = await Martinizer.createPdbWithConectFromStream(pdb_file.path, extToGive, full_top, false, force_field, use_tmp_dir, formatted_itp_paths)
 
       console.log("CONECT OUTPUT", conectOutput)
 
