@@ -82,7 +82,7 @@ export default new class JMSurcouche {
         logger.debug('Launch job : ' + what_to_launch + ' with mode ' + this.mode)
         
         jmClient.start(JOB_MANAGER_SETTINGS.address, JOB_MANAGER_SETTINGS.port)
-        console.log( "############################ ", args)
+        //console.log( "############################ ", args)
         return await jmClient.pushFS(args)
 
     }

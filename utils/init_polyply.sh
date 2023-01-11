@@ -8,10 +8,7 @@ then
     source $venv
 fi
 
-polyply -list-lib > res
-
-
-for ff in $(grep "^  [0-9]" res | cut -d'.' -f2);
+for ff in $(echo $forcefields | sed -n 1'p' | tr ',' '\n');
 do
     echo FORCEFIELD :$ff
     polyply -list-blocks $ff | grep -v "INFO" | grep -v "The following"

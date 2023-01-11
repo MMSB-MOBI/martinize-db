@@ -9,8 +9,6 @@ import HistoryOrganizer from '../../HistoryOrganizer';
 import logger from '../../logger';
 import { PolyplyJobToSave } from '../molecule/molecule.types';
 import { dateFormatter, generateSnowflake } from '../../helpers';
-import { ClientSettingsMartinize } from '../molecule/molecule.dto';
-import { NONAME } from 'dns';
 
 
 const router = Router();
@@ -19,7 +17,8 @@ let polyplyData: any = {}
 const f = async () => {
     console.log("JMSurcouche.mode", JMSurcouche.mode)
     console.log("init residue avaible")
-    const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: {}, inputs: {} })
+    let ff = ["martini2", "martini3"]
+    const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: { forcefields: ff.toString() }, inputs: {} })
     return stdout
 }
 
@@ -42,7 +41,7 @@ router.get('/data', async (req, res) => {
     if (Object.keys(polyplyData).length === 0) get_truc()
     console.log("Sending forcefields and residues data")
     //Select only martini forcefield
-    let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
+    let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData));
     res.send(MARTINIpolyplyData);
 });
 
@@ -79,7 +78,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         let additionalfile = ""
         if (dataFromClient['customITP'] !== undefined) {
             for (let itpname of Object.keys(dataFromClient['customITP'])) {
-                console.log("################", dataFromClient['customITP'][itpname])
+                //console.log("################", dataFromClient['customITP'][itpname])
                 additionalfile = additionalfile + dataFromClient['customITP'][itpname]
                 additionalfile = additionalfile + ";NEWITP\n"
             }
@@ -93,7 +92,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
         let ffpath = ''
         if (ff == "martini2") {
-            ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.3P.itp"
+            ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.1-dna.itp"
         }
         else ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v3.0.0.itp"
 
@@ -116,11 +115,12 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             result = stdout
         }
-        catch (e) {
+        catch (e : any) {
             //Socket emit
-            socket.emit("error_itp", e)
+            socket.emit("error_itp", e.toString())
             throw new Error(`Error with job manager : ${e}`)
         }
+
 
         const itp = result.split("STOP\n")[0]
         const error = result.split("STOP\n")[1]
@@ -158,13 +158,17 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
         if (data['inputpdb'] !== undefined) {
             inputpdb = data['inputpdb']
         }
+
+        let exportVar = {}
+        let inputs = {}
+        let topfilestr = ''
         let ffpath = ''
         if (ff == "martini2") {
-            ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.3P.itp"
+            ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v2.1-dna.itp"
         }
         else ffpath = POLYPLYPATHDATA + "/" + ff + "/martini_v3.0.0.itp"
 
-        const topfilestr = `
+        topfilestr = `
 #include "${ffpath}"
 #include "polymere.itp"
 [ system ]
@@ -174,13 +178,13 @@ mylovelypolymer
 ; name  number
 ${name} ${numberpolymer}
 `
-        const exportVar = {
+        exportVar = {
             box: boxsize,
             name: name,
             action: "gro"
         }
 
-        const inputs = {
+        inputs = {
             "coord.gro": str_to_stream(coordfile),
             "polymere.itp": str_to_stream(itp),
             "martiniForceField": ffpath,
@@ -192,7 +196,7 @@ ${name} ${numberpolymer}
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             resultatGro = stdout
         }
-        catch (e) {
+        catch (e: any) {
             console.log("A l'aide je veux mourir", e)
             socket.emit("error_gro", e.stderr)
             throw new Error(`Error with job manager : ${e}`)
@@ -205,6 +209,7 @@ ${name} ${numberpolymer}
 
         const errorParsed = checkError(error)
         if (errorParsed.ok !== true) {
+            
             console.log("######## Error GRO ##########", errorParsed)
             socket.emit("oups", errorParsed)
         }
@@ -250,13 +255,23 @@ ${name} ${numberpolymer}
         const itp = d["itp"]
         const name = d["name"]
 
+        console.log(d["polymer"]["forcefield"])
+
+        let settings
+        if (d["polymer"]["forcefield"] === "martini3") settings = { ff: "martini3001", position: "none", cter: "COOH-ter", nter: "NH2-ter", sc_fix: false, cystein_bridge: "auto", builder_mode: "classic", send_mail: false, user_id: d["userId"] }
+        else if (d["polymer"]["forcefield"] === "martini2") settings = { ff: "martini22", position: "none", cter: "COOH-ter", nter: "NH2-ter", sc_fix: false, cystein_bridge: "auto", builder_mode: "classic", send_mail: false, user_id: d["userId"] }
+        else {
+            console.log("Hello sir, Il y a une erreur ici avec le forcefield !", d["polymer"]["forcefield"])
+            settings = { ff: "martini3001", position: "none", cter: "COOH-ter", nter: "NH2-ter", sc_fix: false, cystein_bridge: "auto", builder_mode: "classic", send_mail: false, user_id: d["userId"] }
+        }
 
         const job: PolyplyJobToSave = {
             jobId: generateSnowflake(),
             userId: d["userId"],
             type: "polyply",
             date: dateFormatter("Y-m-d H:i"),
-            settings: { ff: "martini3001", position: "none", cter: "COOH-ter", nter: "NH2-ter", sc_fix: false, cystein_bridge: "auto", builder_mode: "classic", send_mail: false, user_id: d["userId"] },
+            //@ts-ignore
+            settings,
             name: name,
 
         }
