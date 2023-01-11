@@ -252,7 +252,7 @@ export const Martinizer = new class Martinizer {
       );
       
       try {
-        pdbStream = await jobFS.readToStream("pouet")
+        pdbStream = await jobFS.readToStream("output.pdb")
         await jobFS.copy(OUTPUT_PDB, pdb_path)
 
       } catch(e) {
@@ -424,11 +424,13 @@ export const Martinizer = new class Martinizer {
     logger.debug("[MARTINIZER-RUN] Creating PDB with CONECT entries for Martinize built molecule.");
     onStep?.(this.STEP_MARTINIZE_GROMACS);
     let pdb_with_conect;
+    let final_gro; 
     try {
       //TAKE ELASTIC TOP IF ELASTIC IS DONE
       const to_use_top = elasticTop ? elasticTop : full_top
-      const { pdb } = await this.createPdbWithConectFromStream(pdbStream, "pdb", to_use_top, false, settings.ff, path, itpContents);
+      const { pdb, gro } = await this.createPdbWithConectFromStream(pdbStream, "pdb", to_use_top, false, settings.ff, path, itpContents);
       pdb_with_conect = pdb
+      final_gro = gro
     } catch {
       throw new Error('Creation of full pdb with gromacs failed')
     }
@@ -452,6 +454,7 @@ export const Martinizer = new class Martinizer {
       itps: sortedItps,
       top: final_top_path,
       warns: warn_path,
+      final_gro,
       jobId,
       //dir: dir,
       elastic_bonds: elasticBounds,
@@ -953,7 +956,7 @@ export const Martinizer = new class Martinizer {
 
   }
 
-  async createPdbWithConectFromStream(inputStreamOrString: Readable | string, inputType: "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps: { [name: string]: Readable | string }) {
+  async createPdbWithConectFromStream(inputStreamOrString : Readable|string, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps: {[name: string] : Readable | string}) {
     // let groups_to_del = 17;
     // if (lipids) {
     //   groups_to_del += lipids.length * 2;
@@ -968,7 +971,8 @@ export const Martinizer = new class Martinizer {
     const command = {
       exportVar: {
         "DEL_WATER_BOOL": remove_water ? "YES" : "NO",
-        "INPUT_NAME": inputName
+        "INPUT_NAME": inputName,
+        "INPUT_TYPE" : inputType
       },
       inputs: {
         [inputName]: inputStreamOrString,
@@ -990,7 +994,8 @@ export const Martinizer = new class Martinizer {
       console.log("JOB end !!!", jobFS.job.id)
       const pdb_out = await jobFS.list("output-conect.pdb")
       const top_out = await jobFS.list('input.top')
-
+      const gro_out = await jobFS.list('final_output.gro')
+      
       if (pdb_out.length !== 1) {
         throw new Error(`PDB could not be created for an unknown reason (or more than 1 output exists)`);
       }
@@ -1000,12 +1005,18 @@ export const Martinizer = new class Martinizer {
       }
 
       await jobFS.copy('output-conect.pdb', final_pdb)
-      if (remove_water) {
+
+      if(remove_water){
         const final_no_w_pdb = tmp_dir + "/output-conect-no-w.pdb"
         await jobFS.copy('output-conect-no-w.pdb', final_no_w_pdb)
         return { pdb: final_pdb, no_water_pdb: final_no_w_pdb };
       }
-      //await jobFS.copy('input.top', final_top)
+      
+      if(gro_out.length === 1){
+        const final_gro = tmp_dir + '/final_output.gro'
+        await jobFS.copy('final_output.gro', final_gro)
+        return {pdb : final_pdb, gro : final_gro}
+      }
 
       return { pdb: final_pdb };
 

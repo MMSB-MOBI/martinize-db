@@ -28,6 +28,8 @@ interface Filters {
   combine?: "0" | "false" | "1" | "true";
   skip?: string;
   limit?: string;
+  from_stashed?: "true" | "false"
+
 }
 
 ListMoleculeRouter.get('/', (req, res) => {
@@ -52,10 +54,13 @@ ListMoleculeRouter.get('/', (req, res) => {
         combine: __as_version_tree__,
         skip,
         limit,
+        from_stashed
       } = req.query as Partial<Filters>;
 
+      console.log("from_stashed", from_stashed)
       const with_regex = is_regex === "true" || is_regex === "1";
       const bulk_request = __as_version_tree__ === "false" || __as_version_tree__ === "0";
+      const search_in_stashed = from_stashed === "true"
 
       const selectors: any[] = [];
       if (force_fields) {
@@ -87,8 +92,25 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
       if (alias) {
         selectors.push({
-          alias: withRegex(alias, with_regex)
-        });
+          $or: [
+            { alias: withRegex(alias, with_regex) },
+            {
+              alternative_alias: {
+                $elemMatch: withRegex(alias, with_regex)
+              }
+            }
+          ]
+        })
+        // selectors.push({
+        //   alias: withRegex(alias, with_regex)
+        // });
+        // selectors.push({
+        //   alternative_alias : {
+        //     $elemMatch : {
+        //       $eq : withRegex(alias, with_regex)
+        //     }
+        //   }
+        // })
       }
       if (author) {
         const users_that_match_query = await Database.user.find({
@@ -135,6 +157,7 @@ ListMoleculeRouter.get('/', (req, res) => {
             { alias: search_obj },
             { command_line: search_obj },
             { force_field: search_obj },
+            { alternative_alias: { $elemMatch: search_obj } }
           ]
         });
       }
@@ -156,30 +179,34 @@ ListMoleculeRouter.get('/', (req, res) => {
         }
       }
 
+
       const response = await SearchWorker.query(query, bulk_request);
       response.molecules = response.molecules.map(e => sanitize(e));
 
 
       // GET ITP FILE IN STRING
-      const file_id = response.molecules[0]["files"]
+      if (response.length !== 0) {
+        const file_id = response.molecules[0]["files"]
 
-      const zipname = MOLECULE_ROOT_DIR + file_id + ".zip"
-      fs.readFile(zipname, function (err, data) {
-        if (err) throw err;
-        JSZip.loadAsync(data).then(function (zip) {
-          console.log(Object.keys(zip.files))
-          const itpname = Object.keys(zip.files).filter((e) => e.endsWith(".itp"))[0]
-          if (itpname !== null) {
-            zip.file(itpname)!.async("string").then(function (data) {
-              // data is a string
-              // TODO your code goes here, this is just an example
-              //console.log("blabla", data);
-            })
-          }
-          else console.log(itpname, "NUUUL")
+        const zipname = MOLECULE_ROOT_DIR + file_id + ".zip"
+        fs.readFile(zipname, function (err, data) {
+          if (err) throw err;
+          JSZip.loadAsync(data).then(function (zip) {
+            console.log(Object.keys(zip.files))
+            const itpname = Object.keys(zip.files).filter((e) => e.endsWith(".itp"))[0]
+            if (itpname !== null) {
+              zip.file(itpname)!.async("string").then(function (data) {
+                // data is a string
+                // TODO your code goes here, this is just an example
+                //console.log("blabla", data);
+              })
+            }
+            else console.log(itpname, "NUUUL")
 
+          });
         });
-      });
+      }
+
 
       res.json(response);
     }

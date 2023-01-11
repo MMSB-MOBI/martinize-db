@@ -15,6 +15,7 @@ interface MartinizeFilesPath {
     itp_files : string[][]
     top_file: string
     warnings: string;
+    gro? : string; 
     
 }
 

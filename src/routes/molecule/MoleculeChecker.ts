@@ -302,6 +302,7 @@ export class MoleculeChecker {
     mol.command_line = body.command_line || "";
     mol.citation = body.citation || "";
     mol.validation = body.validation || "";
+    mol.alternative_alias = body.alternative_alias || []; 
 
     // Check force field and martinize version
     this.checkCreateWay(body.create_way, settings);
