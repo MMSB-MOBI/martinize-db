@@ -115,7 +115,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             result = stdout
         }
-        catch (e : any) {
+        catch (e) {
             //Socket emit
             socket.emit("error_itp", e.toString())
             throw new Error(`Error with job manager : ${e}`)
@@ -196,7 +196,7 @@ ${name} ${numberpolymer}
             const { stdout, jobFS } = await JMSurcouche.run('polyply', { exportVar, inputs })
             resultatGro = stdout
         }
-        catch (e: any) {
+        catch (e) {
             console.log("A l'aide je veux mourir", e)
             socket.emit("error_gro", e.stderr)
             throw new Error(`Error with job manager : ${e}`)
@@ -209,7 +209,7 @@ ${name} ${numberpolymer}
 
         const errorParsed = checkError(error)
         if (errorParsed.ok !== true) {
-            
+
             console.log("######## Error GRO ##########", errorParsed)
             socket.emit("oups", errorParsed)
         }
