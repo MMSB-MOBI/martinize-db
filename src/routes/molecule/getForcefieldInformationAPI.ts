@@ -26,6 +26,7 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
     console.log(molcouch)
     let reponse: any = {}
 
+    
     for (let i in Object.keys(molcouch)) {
       const alias: string = molcouch[i].alias
       if (Object.keys(reponse).includes(alias)) {
@@ -34,12 +35,28 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
       else {
         reponse[alias] = {
           "name": molcouch[i].name,
+          "citation" : molcouch[i].citation,
+          "category": molcouch[i].category,
           "version": [molcouch[i].version],
         }
       }
 
     }
-    res.send(reponse);
+
+    //transform le dico
+    let reponse2 : any = {}
+    let c = 0
+    for (let i of Object.keys(reponse)) {
+      reponse2[c] = {
+        "alias" : i,
+        "name" : reponse[i].name,
+        "citation" : reponse[i].citation,
+        "category": reponse[i].category,
+        "version" : reponse[i].version
+      }
+    }
+
+    res.send(reponse2);
   })().catch(errorCatcher(res));
 });
 
