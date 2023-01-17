@@ -21,9 +21,7 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
     // File does not exists
     if (molcouch.length === 0) {
       res.send({ "Error": "forcefield not found" });
-    }
-
-    console.log(molcouch)
+    } 
     let reponse: any = {}
 
     
@@ -54,6 +52,7 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
         "category": reponse[i].category,
         "version" : reponse[i].version
       }
+      c++
     }
 
     res.send(reponse2);
