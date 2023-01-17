@@ -6,6 +6,7 @@ import { Database } from '../../Entities/CouchHelper';
 import { BaseMolecule } from '../../Entities/entities';
 import JSZip from 'jszip';
 import { MangoQuery } from 'nano';
+import {decodeCategory } from "../../routes/molecule/parser/parser_files";
 
 // Get a pdb from a file ID
 const GetForcefieldInformationAPI = Router();
@@ -49,7 +50,7 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
         "alias" : i,
         "name" : reponse[i].name,
         "citation" : reponse[i].citation,
-        "category": reponse[i].category,
+        "category": decodeCategory(reponse[i].category[0]),
         "version" : reponse[i].version
       }
       c++
