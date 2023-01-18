@@ -1,27 +1,23 @@
 import { Router } from 'express';
-import { errorCatcher } from '../../helpers';
-import MoleculeOrganizer from '../../MoleculeOrganizer';
-import Errors, { ErrorType } from '../../Errors';
-import { Database } from '../../Entities/CouchHelper';
-import { BaseMolecule } from '../../Entities/entities';
-import JSZip from 'jszip';
+import { errorCatcher } from '../../helpers'; 
+import { Database } from '../../Entities/CouchHelper'; 
 import { MangoQuery } from 'nano';
-import {decodeCategory } from "../../routes/molecule/parser/parser_files";
+import {decodeCategory } from "./parser/parser_files";
 
 // Get a pdb from a file ID
-const GetForcefieldInformationAPI = Router();
+const GetCategoryInformationAPI = Router();
 
 
 //If format isnt provided give the last update of this model 
-GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
+GetCategoryInformationAPI.get('/:category', (req, res) => {
   (async () => {
-    console.log("GetForcefieldInformationAPI.get() ", req.params)
-    const selectruc: MangoQuery = { selector: { force_field: req.params.forcefield } }
+    console.log("GetcategoryInformationAPI.get() ", req.params)
+    const selectruc: MangoQuery = { selector: { force_field: req.params.category } }
     const molcouch = await Database.molecule.find(selectruc)
 
     // File does not exists
     if (molcouch.length === 0) {
-      res.send({ "Error": "forcefield not found" });
+      res.send({ "Error": "category not found" });
     } 
     let reponse: any = {}
 
@@ -35,8 +31,8 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
         reponse[alias] = {
           "name": molcouch[i].name,
           "citation" : molcouch[i].citation,
-          "forcefield": molcouch[i].force_field,
           "category": molcouch[i].category,
+          "forcefield": molcouch[i].force_field,
           "version": [molcouch[i].version],
         }
       }
@@ -51,8 +47,8 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
         "alias" : i,
         "name" : reponse[i].name,
         "citation" : reponse[i].citation,
-        "forcefield": reponse[i].forcefield,
         "category": decodeCategory(reponse[i].category[0]),
+        "forcefield": reponse[i].forcefield,
         "version" : reponse[i].version
       }
       c++
@@ -62,4 +58,4 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
   })().catch(errorCatcher(res));
 });
 
-export default GetForcefieldInformationAPI;
+export default GetCategoryInformationAPI;
