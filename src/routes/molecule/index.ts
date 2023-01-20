@@ -9,7 +9,7 @@ import PdbGetterRouter from './pdb';
 import MartinizerRouter from './martinize';
 import MembraneBuilderRouter from './membrane_builder';
 import GetMoleculeAPI from './getMoleculeAPI';
-import GetForcefieldInformationAPI from './getForcefieldInformationAPI';
+import GetInformationAPI from './getInformationAPI';
 
 const MoleculeRouter = Router();
 
@@ -23,6 +23,6 @@ MoleculeRouter.use('/martinize', MartinizerRouter);
 MoleculeRouter.use('/membrane_builder', MembraneBuilderRouter);
 MoleculeRouter.use('/', GetMoleculeRouter);
 MoleculeRouter.use('/get', GetMoleculeAPI);
-MoleculeRouter.use('/get', GetForcefieldInformationAPI);
+MoleculeRouter.use('/get', GetInformationAPI);
 
 export default MoleculeRouter;
