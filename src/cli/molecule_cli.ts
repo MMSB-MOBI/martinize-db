@@ -12,6 +12,7 @@ import { ErrorType } from "../Errors";
 import { GoTerms } from "../types";
 import { CONNECTED_USER_CLI } from "./user_cli";
 import { correctVersions} from '../routes/molecule/tmp_version'
+import { addGroFromBatch } from "../routes/molecule/add_gro";
 const fs = require('fs');
 
 const MOLECULE_CLI = new CliListener(
@@ -25,7 +26,8 @@ const MOLECULE_CLI = new CliListener(
       'load <path>': 'Load in memory all the molecules in the directory to insert them in the database',
       'push <log_path>': 'Insert the molecules in memory in the database, write recap in log_path',
       'top <path>': 'Create top files for all the molecules in the directory',
-      'itp <path>' : 'Modify itp to include more informations. Only work with a specific directory organization.'
+      'itp <path>' : 'Modify itp to include more informations. Only work with a specific directory organization.',
+      'addgro <log_path>' : 'Add gro to existing entries after molecule load'
     },
     onNoMatch: "Command is incorrect. Type \"molecule\" for help.",
   })
@@ -284,6 +286,32 @@ MOLECULE_CLI.command('itp', path =>  {
   }
 }, {
   onSuggest: cliFileSuggestor,
+})
+
+MOLECULE_CLI.command('addgro', async logfile => {
+  logfile = logfile.trim();
+  let logged = ''
+  if(! logfile) {
+    logger.warn("No log file to write insertion recap")
+  }
+  else {
+    logged = "# MAD molecule add gro recap"
+  }
+
+  if (!CONNECTED_USER_CLI) {
+    return 'Please connect before using this command by using user connect';
+  } 
+  
+  if (! BATCH_MOLECULES) {
+    return 'Missing molecules in memory. Please insert them by using molecule load.'
+  }
+
+  await addGroFromBatch(BATCH_MOLECULES)
+
+
+
+
+
 })
 
 export default MOLECULE_CLI;
