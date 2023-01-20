@@ -31,6 +31,7 @@ type MartinizeRunFailedPayload = {
   items: string[],
   code: ErrorType,
   message: string,
+  dir: any
 };
 
 interface ClientSettings {
@@ -397,18 +398,27 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
       console.error("ERROR", e)
       if (e instanceof ApiError) {
         if (e.code === ErrorType.MartinizeRunFailed) {
-          const { error, type, items } = e.data as MartinizeRunFailedPayload;
+          const { error, type, dir } = e.data as MartinizeRunFailedPayload;
           console.log(error, type)
 
           // Compress the directory
           //const compressed_run = await Martinizer.zipDirectory(dir);
 
-          socket.emit('martinize error', {
-            id: run_id,
-            error,
-            type,
-            stack: e.stack,
-          });
+          const chunksArray: Uint8Array[] = [];
+          dir.on('data', (chunk: Uint8Array) => {
+            chunksArray.push(chunk)
+          })
+          dir.on('end', () => {
+            const chunkArray = Buffer.concat(chunksArray)
+            socket.emit('martinize error', {
+              id: run_id,
+              error,
+              type,
+              stack: e.stack,
+            }, chunkArray);
+          })
+
+          
         }
         else {
           const { error } = e.data
