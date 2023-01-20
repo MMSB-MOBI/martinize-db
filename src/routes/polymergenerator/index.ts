@@ -240,7 +240,7 @@ ${name} ${numberpolymer}
         }
         catch (e) {
             console.log('ERROR WITH GMX CONVERSION', e)
-            socket.emit("oups", { ok: false, message: 'ERROR WITH GMX CONVERSION', errorlinks: [] })
+            socket.emit("oups", { ok: false, message: 'Error during Gromacs convertion. Please try to increase the box size.', errorlinks: [] })
             throw new Error(`Error with job manager : ${e}`)
         }
 
