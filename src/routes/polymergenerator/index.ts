@@ -16,7 +16,7 @@ const router = Router();
 let polyplyData: any = {}
 const f = async () => {
     console.log("JMSurcouche.mode", JMSurcouche.mode)
-    console.log("init residue avaible")
+    console.log("Init residue available")
     let ff = ["martini2", "martini3"]
     const { stdout, jobFS } = await JMSurcouche.run("get_residue_avaible", { exportVar: { forcefields: ff.toString() }, inputs: {} })
     return stdout

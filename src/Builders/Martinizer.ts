@@ -18,7 +18,7 @@ import JSZip from 'jszip';
 import JMSurcouche, { JobInputs } from './JMSurcouche';
 import { pathsToInputs, str_to_stream } from './JMSurcouche';
 import { Readable } from 'stream';
-import { JobStderrNotEmptyFS } from 'ms-jobmanager/errors/client'
+// import { JobStderrNotEmptyFS } from 'ms-jobmanager/errors/client'
 
 /**
  * Tuple of two integers: [{from} atom index, {to} atom index]
@@ -292,16 +292,12 @@ export const Martinizer = new class Martinizer {
       await jobFS.copy(MARTINIZE_WARN, warn_path)
     
     } catch (e) {
-      if (e instanceof JobStderrNotEmptyFS) {
-        const jobFS = e.jobFS;
-        const items = await jobFS.list();
-        return Errors.throw(ErrorType.MartinizeRunFailed, 
-          {error: "Martinize has failed with an non-zero exit code.",
-          type : 'non-zero', 
-          })
-      }
-      console.log(e)
-      return Errors.throw(ErrorType.MartinizeRunFailed, {error : e.message})
+  
+      console.error(e)
+      const jobFS = e.jobFS
+      const zipArchiveStream = await jobFS.zap()
+      return Errors.throw(ErrorType.MartinizeRunFailed, {error : e.message, stdout: jobFS.stdout, stderr: jobFS.stderr, dir : zipArchiveStream})
+     
     }
 
 

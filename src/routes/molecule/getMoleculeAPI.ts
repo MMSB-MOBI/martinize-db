@@ -83,10 +83,8 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       res.download(filename);
     }
     else {
-      console.log(req.params.format)
+      res.send( { "error" : "Format ."+req.params.format+ " unkown."})
     }
-
-
   })().catch(errorCatcher(res));
 });
 
