@@ -9,13 +9,13 @@ import { MangoQuery } from 'nano';
 import {decodeCategory } from "../../routes/molecule/parser/parser_files";
 
 // Get a pdb from a file ID
-const GetForcefieldInformationAPI = Router();
+const GetInformationAPI = Router();
 
 
 //If format isnt provided give the last update of this model 
-GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
+GetInformationAPI.get('/:forcefield', (req, res) => {
   (async () => {
-    console.log("GetForcefieldInformationAPI.get() ", req.params)
+    console.log("GetInformationAPI.get() ", req.params)
     const selectruc: MangoQuery = { selector: { force_field: req.params.forcefield } }
     const molcouch = await Database.molecule.find(selectruc)
 
@@ -62,4 +62,4 @@ GetForcefieldInformationAPI.get('/:forcefield', (req, res) => {
   })().catch(errorCatcher(res));
 });
 
-export default GetForcefieldInformationAPI;
+export default GetInformationAPI;
