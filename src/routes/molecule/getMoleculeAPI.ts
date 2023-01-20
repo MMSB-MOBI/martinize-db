@@ -12,7 +12,7 @@ import { MangoQuery } from 'nano';
 // Get a pdb from a file ID
 const GetMoleculeAPI = Router();
 
-async function getReadableStream(name: string, zip: NodeStreamZip) {
+export async function getReadableStream(name: string, zip: NodeStreamZip) {
   return new Promise((resolve, reject) => {
     zip.stream(name, (err: any, stm: any) => {
       if (err)
