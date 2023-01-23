@@ -42,19 +42,18 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
     if (req.params.version) {
       selectruc.selector["version"] = req.params.version
     }
- 
+
     const molcouch = await Database.molecule.find(selectruc)
 
-    
+
     // File does not exists
     if (molcouch.length === 0) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
-
-    console.log(molcouch)
+ 
     const molecule = await MoleculeOrganizer.getInfo(molcouch[0].files);
 
-    console.log( "molcouch[0].files" ,molcouch[0].files)
+    console.log("molcouch[0].files", molcouch[0].files)
     const zip = new NodeStreamZip({
       file: MoleculeOrganizer.getFilenameFor(molcouch[0].files),
       storeEntries: true
@@ -76,14 +75,23 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       res.send(pdb_final[0]);
     }
     else if (req.params.format === "gro") {
-      console.log("gro")
+      console.log( molecule )
+      if (molecule!.gro) {
+        const gro_stream = await getReadableStream(molecule!.gro!.name, zip)
+        const gro_final = await Promise.all(readStreamsPromises([gro_stream]))
+        res.send(gro_final[0]);
+      }
+      else {
+        res.send({ "error": ".gro not found." })
+      }
+
     }
     else if ((req.params.format === undefined) || (req.params.format === "zip")) {
       const filename = MoleculeOrganizer.getFilenameFor(molcouch[0].files);
       res.download(filename);
     }
     else {
-      res.send( { "error" : "Format ."+req.params.format+ " unkown."})
+      res.send({ "error": "Format ." + req.params.format + " unkown." })
     }
   })().catch(errorCatcher(res));
 });
