@@ -28,6 +28,10 @@ const addOneGro = async(molecule : InfosJson, tmpDir : string) => {
         //const { pdb_stream } = await Martinizer.createPdbWithConect(version.gro.path, readFileSync(version.top.path).toString(), false, version.force_field)
 
         //console.log(pdb_stream); 
+
+        if(inDb.length > 1) {
+            throw new ItpNumberError()
+        }
         
         for (const version2 of inDb) {
             console.log('# Entry', version2.alias, version2.force_field, version2.version)
@@ -45,10 +49,12 @@ const addOneGro = async(molecule : InfosJson, tmpDir : string) => {
 
             console.log('db itp md5', dbItpMd5)
 
-            
+            if (currentItpMd5 !== dbItpMd5) throw new DifferentItpError()
 
         }
 
+        //Try to create output-connect ??
+        
         
         
         
@@ -56,3 +62,6 @@ const addOneGro = async(molecule : InfosJson, tmpDir : string) => {
     }    
     
 }
+
+class ItpNumberError extends Error {}
+class DifferentItpError extends Error {}
