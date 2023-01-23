@@ -10,7 +10,6 @@ import { SettingsJson, CategoryTree } from '../../types';
 import MoleculeOrganizer, { MoleculeSave } from '../../MoleculeOrganizer';
 import logger from '../../logger';
 import { SimuFile, SimuRequest } from './CreateMoleculeJson';
-import { cpuUsage } from 'process';
 
 
 type File = Express.Multer.File;
@@ -186,12 +185,13 @@ export class MoleculeChecker {
 
     // Get the PDB files
     const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
-    const is_pdb = !!this.req.files.pdb;
-
+    
     if (pdb_files.length !== 1) {
       return Errors.throw(ErrorType.TooManyFiles);
     }
 
+    const extension = pdb_files[0].originalname.split('.').pop()
+    const is_pdb = extension === "pdb" ? true : false
     const map_files: (File | SimuFile)[] = this.req.files.map || [];
 
     // Find if top files are present
