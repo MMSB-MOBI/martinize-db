@@ -50,7 +50,7 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
     if (molcouch.length === 0) {
       return Errors.throw(ErrorType.ElementNotFound);
     }
- 
+
     const molecule = await MoleculeOrganizer.getInfo(molcouch[0].files);
 
     console.log("molcouch[0].files", molcouch[0].files)
@@ -75,14 +75,14 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       res.send(pdb_final[0]);
     }
     else if (req.params.format === "gro") {
-      console.log( molecule )
+      console.log(molecule)
       if (molecule!.gro) {
         const gro_stream = await getReadableStream(molecule!.gro!.name, zip)
         const gro_final = await Promise.all(readStreamsPromises([gro_stream]))
         res.send(gro_final[0]);
       }
       else {
-        res.send({ "error": ".gro not found." })
+        res.status(404).json({ "error": ".gro not found." });
       }
 
     }
