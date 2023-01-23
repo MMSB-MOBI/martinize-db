@@ -270,10 +270,11 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     const pdb_content = await FsPromise.readFile(conect_pdb);
     zip.file(path.basename(conect_pdb), pdb_content);
 
-    if(converted_gro) {
-      const gro_content = await FsPromise.readFile(converted_gro)
+    const gro_content = converted_gro ? await FsPromise.readFile(converted_gro) : undefined
+    if(gro_content && converted_gro) {
       zip.file(path.basename(converted_gro), gro_content)
     }
+    
 
     logger.debug("[MOLECULE-ORGANIZER] Saving in-memory ZIP file to disk.");
 
@@ -290,8 +291,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     });
 
     return {
+      original_length : original_content.length,
       pdb_length: pdb_content.length,
       top_length: top_content.length,
+      gro_length : gro_content ? gro_content.length : 0,
       itp_files_info,
       map_files_info,
     }
@@ -409,8 +412,10 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     // Compress and get save data
     const {
+      original_length, 
       pdb_length,
       top_length,
+      gro_length, 
       itp_files_info,
       map_files_info
     } = await this.zipFromPaths(
@@ -423,6 +428,8 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       conectOutput.gro
     );
 
+
+
     logger.debug("[MOLECULE-ORGANIZER] Computing MD5 hash of ZIP file.");
 
     // Calculate hash
@@ -430,6 +437,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     // TODO write better infos of the ZIP in the JSON
     // Send the save data
+
     const infos: MoleculeSaveInfo = {
       pdb: {
         size: pdb_length,
@@ -445,6 +453,23 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
       hash,
       force_field
     };
+
+    const ext = original_file.name.split('.').pop()
+    if(ext === "gro" && conectOutput.gro) throw new Error('Original file is gro and a gro has been created from pdb')
+    
+    if(ext === "gro") {
+      infos['gro'] = {
+        size : original_length,
+        name: original_file.name
+      }
+    }
+
+    if(conectOutput.gro) {
+      infos['gro'] = {
+        size : gro_length,
+        name: path.basename(conectOutput.gro)
+      }
+    }
 
     await FsPromise.writeFile(info_name, JSON.stringify(infos));
 
@@ -472,6 +497,7 @@ export interface MoleculeSaveInfo {
   map: FileSaveInfo[];
   hash: string;
   force_field: string;
+  gro?: FileSaveInfo; 
 }
 
 export interface MoleculeSave {
