@@ -360,13 +360,19 @@ export const MembraneBuilder = new class MembraneBuilder {
     let pdbs = {water:'', no_water:''}
     try {
       const to_use_top = prepared_top_wo_elastic ? prepared_top_wo_elastic : prepared_top
-
       
       
       if(molecule_itps !== undefined){
         for (const itp_path of molecule_itps){
           const name = path.basename(itp_path)
           //fs.copyFileSync(itp_path, workdir + "/" + name);
+          formattedItps[name] = itp_path
+        }
+      }
+
+      if(itps_without_elastic.length > 0){
+        for(const itp_path of itps_without_elastic){
+          const name = path.basename(itp_path)
           formattedItps[name] = itp_path
         }
       }
