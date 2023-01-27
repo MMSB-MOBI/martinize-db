@@ -20,7 +20,7 @@ insane_path="insane"
 
 INPUT=input/input.pdb
 
-if [[ ! -z $INPUT ]]; then 
+if [[ -f $INPUT ]]; then 
     echo "input pdb so use insane hack"
     echo Launch : python3 $insaneHackBefore $INPUT output-insane-hack.pdb hacked-atoms.txt
     python3 $insaneHackBefore $INPUT output-insane-hack.pdb hacked-atoms.txt

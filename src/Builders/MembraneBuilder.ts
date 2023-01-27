@@ -230,7 +230,6 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     logger.debug("[INSANE] Command line: " + command_line);
     logger.debug(`[INSANE] Running INSANE with given settings.`);
-    console.log("molecule_pdb", molecule_pdb)
 
     let jobOpt: JobInputs = {
       "exportVar": {
@@ -239,11 +238,11 @@ export const MembraneBuilder = new class MembraneBuilder {
         "insaneHackBefore": INSANE_HACK_SCRIPT.BEFORE,
         "insaneHackAfter": INSANE_HACK_SCRIPT.AFTER,
       },
-      "inputs": {
-        'input.pdb' : molecule_pdb
-      }
+      "inputs": {}
     };
 
+    if(molecule_pdb) jobOpt['inputs'] = { 'input.pdb' : molecule_pdb }
+    
     // Start insane
     let insane_top_content: string; 
     let gro_results_stream : Readable; 
