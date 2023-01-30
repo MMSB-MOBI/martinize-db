@@ -5,6 +5,7 @@ import { USERNAME_REGEX, EMAIL_REGEX } from "../constants";
 import { generateSnowflake, withRegex } from "../helpers";
 import { UserRole } from "../types";
 import { CLI } from "./cli";
+const fs = require('fs');
 
 let USER_CLI = new CliListener(
   CliHelper.formatHelp("user", {
@@ -16,6 +17,7 @@ let USER_CLI = new CliListener(
       'revoke <id>': 'Make user <id> a curator',
       'wipe <id>/all': 'Delete registred user <id> / all users',
       'lookup <username>/<email>': 'Find user(s) with the following username/email',
+      'emails <file>' : 'List all users email in a text file'
     },
     onNoMatch: "Command is incorrect. Type \"user\" for help.",
   })
@@ -315,6 +317,23 @@ USER_CLI.command('connect', async () => {
       return 'Incorrect username';
     }
     return 'Successfully connected';
+})
+
+USER_CLI.command('emails', async rest => {
+  rest = rest.trim()
+  if (!rest) {
+    return `Please specify a file.`;
+  }
+
+  const users = await Database.user.all();
+  let emails : string = ''
+
+  for(const user of users){
+    emails = emails + user.email + "\n"
+  }
+
+  fs.writeFileSync(rest, emails)
+
 })
 
 
