@@ -13,13 +13,11 @@ GetStashedRouter.get('/', (req, res) => {
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    const { version } = req.query;
+    const { id } = req.query;
 
     const selector: any = {};
 
-    if (version) {
-      selector.id = version;
-    }
+    selector.id = id
 
     const query: nano.MangoQuery = { selector };
 
