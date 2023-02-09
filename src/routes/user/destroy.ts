@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Errors, { ErrorType } from '../../Errors';
 import { errorCatcher, methodNotAllowed, deleteMolecule } from '../../helpers';
 import { Database } from '../../Entities/CouchHelper';
+import Mailer from '../../Mailer/Mailer';
 
 const DestroyUserRouter = Router();
 
@@ -43,6 +44,18 @@ DestroyUserRouter.delete('/', (req, res) => {
     await Promise.all(molecule_for_user.map(s => deleteMolecule(s.id, req.full_user!, false, false)));
 
     await Database.user.delete(user);
+
+    if(! user.approved) {
+      await Mailer.send({ 
+        to: user.email, 
+        subject: "MArtini Database - " + user.name + ": Your account has been rejected" 
+      }, 'mail_rejected', { 
+        title: user.name + ": Your account has been rejected",
+        new_user: {
+          name: user.name,
+        },
+      });
+    }
 
     res.json({
       deleted: true

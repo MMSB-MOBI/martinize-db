@@ -15,6 +15,7 @@ let USER_CLI = new CliListener(
       'get <id>/all': 'Get details about user <id> / about all users',
       'grant <id>': 'Make user <id> an administrator',
       'revoke <id>': 'Make user <id> a curator',
+      'todev <id>' : 'Make user <id> a dev', 
       'wipe <id>/all': 'Delete registred user <id> / all users',
       'lookup <username>/<email>': 'Find user(s) with the following username/email',
       'emails <file>' : 'List all users email in a text file'
