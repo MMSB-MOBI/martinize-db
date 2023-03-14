@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import SocketIo from 'socket.io';
-import { POLYPLYPATHDATA } from "../../constants";
+import { POLYPLYPATHDATA, POLYPLY_VERSION } from "../../constants";
 import checkError from './errorParser';
 import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
 import JMSurcouche from '../../Builders/JMSurcouche';
@@ -38,13 +38,13 @@ const get_truc = async () => {
 }
 
 router.get('/data', async (req, res) => {
+    console.log("WESHH")
     if (Object.keys(polyplyData).length === 0) get_truc()
     console.log("Sending forcefields and residues data")
     //Select only martini forcefield
     let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData));
     res.send(MARTINIpolyplyData);
 });
-
 
 router.get("/fastaconversion", (req, res) => {
     const fasta = {
@@ -59,6 +59,12 @@ router.get("/fastaconversion", (req, res) => {
 
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     console.log("je suis dans SocketIoPolymerizer ")
+
+    socket.on('version', () => {
+        console.log(POLYPLY_VERSION)
+        socket.emit("version_answer", POLYPLY_VERSION)
+    })
+
     socket.on("get_polyply_data", async () => {
         if (Object.keys(polyplyData).length === 0) await get_truc()
         console.log("Sending forcefields and residues data")
