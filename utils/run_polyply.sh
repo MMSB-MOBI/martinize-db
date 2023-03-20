@@ -25,7 +25,10 @@ then
         do
             mv $i $i".ff"
         done
-        
+
+        #In case of someone add  an empty file or something 
+        find *itp -type f -size -5c -delete
+
         polyply gen_params -f *custom.itp* -lib $ff -o $ITPOUT -seqf input/polymer.json -name $name > polyply.out 2> polyply.err
         
     else
