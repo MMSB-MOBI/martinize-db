@@ -41,7 +41,7 @@ export const DB_PREFIX = process.env.DB_PREFIX ?? ""
 
 /* - Job manager - */
 export type JobMethod = 'jm' | 'child';
-export const DEFAULT_JOB_METHOD: JobMethod = 'child';
+export const DEFAULT_JOB_METHOD: JobMethod = 'jm';
 
 /* - SEARCH WORKERS SETTINGS - */
 export const MINUTES_BEFORE_WORKER_KILL = 2;
@@ -84,11 +84,14 @@ export const CREATE_GO_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/create
 /** Link to script that can start ccmap */
 export const CREATE_MAP_PATH = path.resolve(__dirname, "../utils/get_map.sh");
 export const CREATE_MAP_PATH_JM = path.resolve(__dirname, "../utils/get_map_coreScript.sh");
+export const CREATE_MAP_RCSU_PATH = path.resolve(__dirname, "../utils/get_map_rcsu.sh"); 
 /** Associated python script to ccmap */
 export const CREATE_MAP_PY_SCRIPT_PATH = path.resolve(__dirname, "../utils/get_map.py");
 /** Link to script that can run GROMACS */
 export const CONECT_PDB_PATH = path.resolve(__dirname, "../utils/create_conect_pdb.sh");
+export const MINIMIZEPDB = path.resolve(__dirname, "../utils/minimize_and_create_pdb.sh");
 export const CONECT_PDB_PATH_JM = path.resolve(__dirname, "../utils/create_conect_pdb_coreScript.sh");
+export const MINIMIZEPDBBIS = path.resolve(__dirname, "../utils/minimize_and_create_pdb_coreScript.sh");
 /** Link to MDP file needed for GROMACS's grompp */
 export const CONECT_MDP_PATH = process.env.CONECT_MDP_PATH ?? path.resolve(__dirname, "../force_fields/run.mdp");
 /** Link to Python 3 binary */
@@ -96,6 +99,13 @@ export const PYTHON_3_PATH = "python";
 /** Path to script that starts martinize2 */
 export const MARTINIZE_PATH = path.resolve(__dirname, "../utils/martinize.sh");
 export const MARTINIZE_PATH_JM = process.env.MARTINIZE_PATH_JM ?? path.resolve(__dirname, "../utils/martinize_coreScript.sh"); //need to provide a script with chmod hack for old infra
+
+
+export const RUN_POLYPLY_PATH = path.resolve(__dirname, "../utils/run_polyply.sh");
+export const INIT_POLYPLY_PATH = path.resolve(__dirname, "../utils/init_polyply.sh");
+export const POLYPLY_VENV = process.env.POLYPLY_VENV ?? path.resolve(__dirname, "/polyply_1.0/venv/bin/activate");
+export const POLYPLYPATHDATA  = process.env.POLYPLYPATHDATA ?? path.resolve(__dirname, "../data"); 
+
 /* - Membrane builder constants - */
 /** Full path to insane start script */
 export const INSANE_PATH = path.resolve(__dirname, "../utils/insane.sh");
@@ -105,9 +115,14 @@ export const INSANE_HACK_SCRIPT = {
   AFTER: path.resolve(__dirname, "../utils/insane_hack_reverse.py")
 } //scripts to hack pdb coordinates when we have nan atoms
 
+
+
 //Venv for local computation
 export const MARTINIZE_VENV = process.env.MARTINIZE_VENV ?? path.resolve(__dirname, "../martinize2venv/bin/activate");
 export const INSANE_VENV = process.env.INSANE_VENV ?? path.resolve(__dirname, "../insanevenv/bin/activate")
+
+export const RCSU_PATH = process.env.RCSU_PATH
+
 
 /**
  * Default URLs.
@@ -131,4 +146,9 @@ export const SLURM_PROFILES = {
 
 export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"
 
+//martinize-db/data/polyply-env$ polyply -V
+export const POLYPLY_VERSION = "1.5.0"
+
 export const SEND_COMPLETION_MAIL = process.env.SEND_COMPLETION_MAIL === 'false' ? false : true; 
+
+export const MAINTENANCE = {mode : false}; 

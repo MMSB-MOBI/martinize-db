@@ -5,6 +5,7 @@ import { USERNAME_REGEX, EMAIL_REGEX } from "../constants";
 import { generateSnowflake, withRegex } from "../helpers";
 import { UserRole } from "../types";
 import { CLI } from "./cli";
+const fs = require('fs');
 
 let USER_CLI = new CliListener(
   CliHelper.formatHelp("user", {
@@ -14,8 +15,10 @@ let USER_CLI = new CliListener(
       'get <id>/all': 'Get details about user <id> / about all users',
       'grant <id>': 'Make user <id> an administrator',
       'revoke <id>': 'Make user <id> a curator',
+      'todev <id>' : 'Make user <id> a dev', 
       'wipe <id>/all': 'Delete registred user <id> / all users',
       'lookup <username>/<email>': 'Find user(s) with the following username/email',
+      'emails <file>' : 'List all users email in a text file'
     },
     onNoMatch: "Command is incorrect. Type \"user\" for help.",
   })
@@ -63,6 +66,24 @@ USER_CLI.command('revoke', async rest => {
   await Database.user.save(user);
 
   return `User ${user.name} has been successfully updated.`;
+});
+
+
+USER_CLI.command('todev', async rest => {
+  if (!rest) {
+    return "Please enter a user ID. You can search users with lookup.";
+  }
+
+  try {
+    var user = await Database.user.get(rest);
+  } catch {
+    return "User not found.";
+  }
+
+  user.role = 'dev';
+  await Database.user.save(user);
+
+  return `User ${user.name} has been successfully updated to Dev.`;
 });
 
 USER_CLI.command('lookup', async rest => {
@@ -167,14 +188,14 @@ USER_CLI.command('create', async () => {
 
   // Role
   while (true) {
-    role = await CLI.question("New user role. Available roles: \"curator\" or \"admin\": ");
+    role = await CLI.question("New user role. Available roles: \"dev\" or \"curator\" or \"admin\": ");
 
     if (role === ".exit") {
       return "User creation exited.";
     }
 
-    if (role !== "admin" && role !== "curator") {
-      console.log("Role is not correct. Available roles: \"curator\" or \"admin\". To exit user creation: .exit");
+    if (role !== "admin" && role !== "curator" && role !== "dev") {
+      console.log("Role is not correct. Available roles: \"dev\" or \"curator\" or \"admin\". To exit user creation: .exit");
       continue;
     }
 
@@ -297,6 +318,23 @@ USER_CLI.command('connect', async () => {
       return 'Incorrect username';
     }
     return 'Successfully connected';
+})
+
+USER_CLI.command('emails', async rest => {
+  rest = rest.trim()
+  if (!rest) {
+    return `Please specify a file.`;
+  }
+
+  const users = await Database.user.all();
+  let emails : string = ''
+
+  for(const user of users){
+    emails = emails + user.email + "\n"
+  }
+
+  fs.writeFileSync(rest, emails)
+
 })
 
 

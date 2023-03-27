@@ -9,7 +9,7 @@ import { promises as FsPromise } from 'fs';
 const DownloadForceFieldRoute = Router();
 
 DownloadForceFieldRoute.get('/list', (_, res) => {
-  res.json(Object.keys(RadiusDatabase.FORCE_FIELD_TO_FILE_NAME).filter(e => e.startsWith('martini')));
+  res.json(Object.keys(RadiusDatabase.FORCE_FIELD_TO_FILE_NAME).filter(e => !(e.startsWith('simple'))));
 });
 
 DownloadForceFieldRoute.get('/download', (req, res) => {

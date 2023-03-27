@@ -4,6 +4,7 @@ import { Database } from '../../Entities/CouchHelper';
 import nano = require('nano');
 import { User } from '../../Entities/entities';
 import SearchWorker from '../../search_worker';
+import { MAINTENANCE } from '../../constants';
 
 const ListMoleculeRouter = Router();
 
@@ -24,11 +25,17 @@ interface Filters {
   combine?: "0" | "false" | "1" | "true";
   skip?: string;
   limit?: string;
+  from_stashed?: "true" | "false"
+
 }
 
 ListMoleculeRouter.get('/', (req, res) => {
   (async () => {
-    const query: nano.MangoQuery = { selector: {}, limit: 25, skip: 0 };
+   
+    if(MAINTENANCE.mode) {
+      res.json({'maintenance': true})
+    } else {
+      const query: nano.MangoQuery = { selector: {}, limit: 25, skip: 0 };
 
     const { 
       force_fields, 
@@ -44,10 +51,13 @@ ListMoleculeRouter.get('/', (req, res) => {
       combine: __as_version_tree__,
       skip,
       limit,
+      from_stashed
     } = req.query as Partial<Filters>;
 
+    console.log("from_stashed", from_stashed)
     const with_regex = is_regex === "true" || is_regex === "1";
     const bulk_request = __as_version_tree__ === "false" || __as_version_tree__ === "0";
+    const search_in_stashed =  from_stashed === "true"
 
     const selectors: any[] = [];
     if (force_fields) {
@@ -79,8 +89,23 @@ ListMoleculeRouter.get('/', (req, res) => {
     }
     if (alias) {
       selectors.push({
-        alias: withRegex(alias, with_regex)
-      });
+        $or : [ 
+          {alias : withRegex(alias, with_regex)},
+          {alternative_alias : {
+            $elemMatch : withRegex(alias, with_regex)
+          }}
+        ]
+      })
+      // selectors.push({
+      //   alias: withRegex(alias, with_regex)
+      // });
+      // selectors.push({
+      //   alternative_alias : {
+      //     $elemMatch : {
+      //       $eq : withRegex(alias, with_regex)
+      //     }
+      //   }
+      // })
     }
     if (author) {
       const users_that_match_query = await Database.user.find({
@@ -127,6 +152,7 @@ ListMoleculeRouter.get('/', (req, res) => {
           { alias: search_obj },
           { command_line: search_obj },
           { force_field: search_obj },
+          { alternative_alias : {$elemMatch : search_obj}}
         ]
       });
     }
@@ -148,10 +174,14 @@ ListMoleculeRouter.get('/', (req, res) => {
       }
     }
 
-    const response = await SearchWorker.query(query, bulk_request);
+    const response = await SearchWorker.query(query, bulk_request, search_in_stashed);
     response.molecules = response.molecules.map(e => sanitize(e));
 
+    console.log(response.molecules)
+
     res.json(response);
+    }
+    
   })().catch(errorCatcher(res));
 });
 

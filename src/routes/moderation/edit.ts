@@ -42,29 +42,32 @@ EditStashedRouter.post('/', Uploader.fields([
   // Saving the file
   // @ts-ignore
 
+  req.body.category = typeof req.body.category === 'string' ? [req.body.category] : req.body.category
+
   //Validate file names and length
     //TO DO : factorize this, it's also used in create.ts
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
-    if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
-    const validatedPdb = plainToInstance(FileDto, files.pdb[0])
-    const validatedTop = plainToInstance(FileDto, files.top[0])
-    const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
-    const validatedMaps = files.map ? files.map.map(map => plainToInstance(FileDto, map)) : undefined
+    // const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    // console.log(files); 
+    // if(files.pdb.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    // if(files.top.length > 1) return Errors.throw(ErrorType.TooManyFiles)
+    // const validatedPdb = plainToInstance(FileDto, files.pdb[0])
+    // const validatedTop = plainToInstance(FileDto, files.top[0])
+    // const validatedItps = files.itp.map(itp => plainToInstance(FileDto, itp))
+    // const validatedMaps = files.map ? files.map.map(map => plainToInstance(FileDto, map)) : undefined
 
     
 
   const logged_user = req.full_user! as User;
   (async () => {
-    try {
-      await validateOrReject(validatedPdb); 
-      await validateOrReject(validatedTop); 
-      await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
-      if(validatedMaps) await Promise.all(validatedMaps.map(dto => validateOrReject(dto)))
-    } catch(e) {
-      res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
-      return; 
-    }
+    // try {
+    //   await validateOrReject(validatedPdb); 
+    //   await validateOrReject(validatedTop); 
+    //   await Promise.all(validatedItps.map(dto => validateOrReject(dto)))
+    //   if(validatedMaps) await Promise.all(validatedMaps.map(dto => validateOrReject(dto)))
+    // } catch(e) {
+    //   res.status(400).json({ error: true, statusCode: 400, errorCode: 'PARAMS_VALIDATION_ERROR', e })
+    //   return; 
+    // }
 
     if (logged_user.role !== "admin") {
       return Errors.throw(ErrorType.Forbidden);

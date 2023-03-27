@@ -1,6 +1,6 @@
 import { Molecule } from "./entities";
 import AbstractDatabase from "./AbstractDatabase";
-import MoleculeVersionTree from "./MoleculeVersionTree";
+import CompleteMoleculeVersionTree from "./MoleculeVersionTree";
 import nano = require("nano");
 import SearchWorker from "../search_worker";
 
@@ -14,7 +14,7 @@ export default class MoleculeDatabase extends AbstractDatabase<Molecule> {
     const mols = await this.find({ limit: 999999, selector: { tree_id } });
 
     if (mols.length) {
-      return new MoleculeVersionTree(mols);
+      return new CompleteMoleculeVersionTree(mols);
     }
   }
 
@@ -52,17 +52,38 @@ export default class MoleculeDatabase extends AbstractDatabase<Molecule> {
     return super.delete(element);
   }
 
+  async getVersionsFromAlias(alias: string) {
+    const mols = await this.find({ limit: 999999, selector: { alias } });
+    return mols
+  }
+
   async stats(){
     SearchWorker.clearCache();
     const mols = await this.all()
+    const aliased: {[alias: string]: Molecule[]} = {}
     let byCategories: any = {}
     let byForceField: any = {}
     for (const mol of mols){
-      if(!(mol.category in byCategories)) byCategories[mol.category] = []
-      if(!(mol.force_field in byForceField)) byForceField[mol.force_field] = []
-      byCategories[mol.category].push(mol)
-      byForceField[mol.force_field].push(mol)
+      if(!(mol.alias in aliased)) aliased[mol.alias] = []
+      aliased[mol.alias].push(mol)
+    }     
+    for (const alias in aliased){
+      const mols = aliased[alias]
+      const ffs = new Set(mols.map(mol => mol.force_field))
+      const cats = new Set(mols.map(mol => mol.category).flat())
+      if(alias === "ALA"){
+        console.log("FFS", ffs)
+        console.log("CATS", cats)
+      }
+      for (const ff of ffs){
+        if(!(ff in byForceField)) byForceField[ff] = 0
+        byForceField[ff] += 1
+      }
+      for (const cat of cats){
+        if(!(cat in byCategories)) byCategories[cat] = 0
+        byCategories[cat] += 1
+      }
     }
-    return({byCategories, byForceField, all:mols})
+    return({byCategories, byForceField, all:aliased})
   }
 }

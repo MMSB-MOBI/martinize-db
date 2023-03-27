@@ -24,7 +24,7 @@ const TEST_CLI = new CliListener(CliHelper.formatHelp('test', {
 
 TEST_CLI.command('map', rest => Martinizer.getMap(rest));
 
-TEST_CLI.command('ccmap', rest => Martinizer.getCcMap(rest));
+//TEST_CLI.command('ccmap', rest => Martinizer.getCcMap(rest));
 
 TEST_CLI.command('elastic-bonds', async rest => {
   const itps: string[] = [];
@@ -294,36 +294,36 @@ TER     156      ALA A  20
 END
 `;
 
-TEST_CLI.command('dry-run', async () => {
-  // Martinize the KWALP (with Go sites, use GROMACS)
-  const pdb_dir = await TmpDirHelper.get();
+// TEST_CLI.command('dry-run', async () => {
+//   // Martinize the KWALP (with Go sites, use GROMACS)
+//   const pdb_dir = await TmpDirHelper.get();
 
-  // Save the pdb
-  await FsPromise.writeFile(pdb_dir + '/test.pdb', KWALP_TEST_PDB);
+//   // Save the pdb
+//   await FsPromise.writeFile(pdb_dir + '/test.pdb', KWALP_TEST_PDB);
 
-  const { pdb, itps, top } = await Martinizer.run({
-    input: pdb_dir + '/test.pdb',
-    ff: 'martini304',
-    position: 'backbone',
-    use_go_virtual_sites: true,
-  });
+//   const { pdb, itps, top } = await Martinizer.run({
+//     input: pdb_dir + '/test.pdb',
+//     ff: 'martini304',
+//     position: 'backbone',
+//     use_go: true,
+//   });
 
-  // Insert in INSANE
-  const insane = await MembraneBuilder.run({
-    force_field: 'martini304',
-    molecule_pdb: pdb,
-    molecule_itps: itps.flat(),
-    molecule_top: top,
-    lipids: [['DLPC', 4], ['DPPC', 1]],
-    upper_leaflet: [['DLPC', 1]],
-    settings: {
-      box: [7, 7, 9],
-    }
-  });
+//   // Insert in INSANE
+//   const insane = await MembraneBuilder.run({
+//     force_field: 'martini304',
+//     molecule_pdb: pdb,
+//     molecule_itps: itps.flat(),
+//     molecule_top: top,
+//     lipids: [['DLPC', 4], ['DPPC', 1]],
+//     upper_leaflet: [['DLPC', 1]],
+//     settings: {
+//       box: [7, 7, 9],
+//     }
+//   });
 
-  await TmpDirHelper.revoke(pdb_dir);
+//   await TmpDirHelper.revoke(pdb_dir);
 
-  const dir = path.dirname(insane.top);
+//   const dir = path.dirname(insane.top);
 
-  return `Run end successfully, you can inspect out files in ${dir}.`;
-});
+//   return `Run end successfully, you can inspect out files in ${dir}.`;
+// });

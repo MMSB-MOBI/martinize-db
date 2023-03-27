@@ -11,6 +11,8 @@ import cliFileSuggestor from '@interactive-cli-helper/file-suggestor';
 import { ErrorType } from "../Errors";
 import { GoTerms } from "../types";
 import { CONNECTED_USER_CLI } from "./user_cli";
+import { correctVersions} from '../routes/molecule/tmp_version'
+import { addGroFromBatch } from "../routes/molecule/add_gro";
 const fs = require('fs');
 
 const MOLECULE_CLI = new CliListener(
@@ -24,7 +26,8 @@ const MOLECULE_CLI = new CliListener(
       'load <path>': 'Load in memory all the molecules in the directory to insert them in the database',
       'push <log_path>': 'Insert the molecules in memory in the database, write recap in log_path',
       'top <path>': 'Create top files for all the molecules in the directory',
-      'itp <path>' : 'Modify itp to include more informations. Only work with a specific directory organization.'
+      'itp <path>' : 'Modify itp to include more informations. Only work with a specific directory organization.',
+      'addgro <log_path>' : 'Add gro to existing entries after molecule load'
     },
     onNoMatch: "Command is incorrect. Type \"molecule\" for help.",
   })
@@ -81,16 +84,16 @@ MOLECULE_CLI.command('get', async rest => {
 
 MOLECULE_CLI.command('stats', async () => {
   const {byCategories, byForceField, all} = await Database.molecule.stats()
-  const molCount = `# Number of molecules : ${all.length}`
+  const molCount = `# Number of molecules : ${Object.keys(all).length}`
   const categories = `# ${Object.keys(byCategories).length} categories :`
   let categoriesPrint = ''
   for (const cat in byCategories){
-    categoriesPrint += `${decodeCategory(cat)} : ${byCategories[cat].length}\n`
+    categoriesPrint += `${decodeCategory(cat)} : ${byCategories[cat]}\n`
   }
   const ffHeader = `# ${Object.keys(byForceField).length} force fields :`
   let ffPrint = ''
   for (const ff in byForceField){
-    ffPrint += `${ff} : ${byForceField[ff].length}\n`
+    ffPrint += `${ff} : ${byForceField[ff]}\n`
   }
   return(`${molCount}\n\n${categories}\n${categoriesPrint}\n${ffHeader}\n${ffPrint}`)
 })
@@ -187,6 +190,10 @@ MOLECULE_CLI.command('load', rest => {
   onSuggest: cliFileSuggestor,
 });
 
+MOLECULE_CLI.command('tmpversion', async () => {
+  await correctVersions()
+
+})
 
 
 MOLECULE_CLI.command('push', async rest => {
@@ -206,18 +213,31 @@ MOLECULE_CLI.command('push', async rest => {
     if (BATCH_MOLECULES) {
       try {
         const recapInsertion = await CreateMoleculeFromJson(BATCH_MOLECULES);
-        logger.info(`${recapInsertion.inserted.length} molecules inserted`);
-        if (logged !== '') logged += "\n## Inserted \n" + recapInsertion.inserted.join("\n")
-        logger.warn(`Molecules not inserted :`)
-        if (logged !== '') logged += "\n## Not inserted\n"
-        for(const reason in recapInsertion.not_inserted){
-          console.log('##', reason)
-          if (logged !== '') logged += `\n### ${reason}\n`
-          if(logged === '') console.log(recapInsertion.not_inserted[reason].join("\n"))
-          else {
-            console.log(recapInsertion.not_inserted[reason].length)
-            logged += recapInsertion.not_inserted[reason].join("\n")
+        const nbMol = Object.keys(recapInsertion.inserted).length
+        logger.info(`${nbMol} molecules inserted`);
+        if(logged !== '' && nbMol > 0){
+          logged += '\n## Inserted \n'
+          for(const inserted in recapInsertion.inserted){
+            logged += inserted + "\t" + recapInsertion.inserted[inserted].name + "\t" + recapInsertion.inserted[inserted].versions.map(v => v.force_field + ";" + v.number + ";" + v.directory).join("\t") + "\n"
           }
+        }
+       
+        logger.warn(`Molecules not inserted :`)
+        if (logged !== '') logged += "\n## Not inserted"
+        for(const reason in recapInsertion.not_inserted){
+          const nbMol = Object.keys(recapInsertion.not_inserted[reason]).length
+          if (nbMol > 0){
+            console.log('##', reason, nbMol)
+            if (logged !== '') logged += `\n### ${reason}\n`
+            for(const alias in recapInsertion.not_inserted[reason]){
+              const mol = recapInsertion.not_inserted[reason][alias]
+              if(logged === '') console.log(alias + "\t" + mol.name + '\t' + mol.versions.map(v => v.force_field + ";" + v.number + ";" + v.directory).join("\t"))
+              else {
+                logged += alias + "\t" + mol.name + '\t' + mol.versions.map(v => v.force_field + ";" + v.number + ";" + v.directory).join("\t") + "\n"
+              }
+            }
+          }
+          
         }
 
         if(logged !== '') fs.writeFileSync(rest, logged)
@@ -225,6 +245,7 @@ MOLECULE_CLI.command('push', async rest => {
         //logger.debug(Excel.text);
         //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
       } catch (e) {
+        console.error(e)
         logger.warn(e.data !== undefined ? e.data.message : e);
       }
     } else {
@@ -265,6 +286,32 @@ MOLECULE_CLI.command('itp', path =>  {
   }
 }, {
   onSuggest: cliFileSuggestor,
+})
+
+MOLECULE_CLI.command('addgro', async logfile => {
+  logfile = logfile.trim();
+  let logged = ''
+  if(! logfile) {
+    logger.warn("No log file to write insertion recap")
+  }
+  else {
+    logged = "# MAD molecule add gro recap"
+  }
+
+  if (!CONNECTED_USER_CLI) {
+    return 'Please connect before using this command by using user connect';
+  } 
+  
+  if (! BATCH_MOLECULES) {
+    return 'Missing molecules in memory. Please insert them by using molecule load.'
+  }
+
+  await addGroFromBatch(BATCH_MOLECULES)
+
+
+
+
+
 })
 
 export default MOLECULE_CLI;

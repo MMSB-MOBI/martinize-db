@@ -21,7 +21,7 @@ export class MoleculeChecker {
    * Check a molecule about to be published to {Molecule} database
    */
   public async check() {
-    const molecule = await this.checker(false, false) as Molecule;
+    const molecule = await this.checker(false, false, this.req.body.fromVersion ? true : false) as Molecule;
 
     molecule.last_update = molecule.created_at;
     molecule.approved_by = this.req.full_user!.id;
@@ -33,7 +33,7 @@ export class MoleculeChecker {
    * Check a molecule about to be edited in {Molecule} database
    */
   public async checkEdition() {
-    const molecule = await this.checker(false, true) as Molecule;
+    const molecule = await this.checker(false, true, this.req.body.fromVersion ? true : false) as Molecule;
 
     molecule.last_update = new Date().toISOString();
     molecule.approved_by = this.req.full_user!.id;
@@ -45,7 +45,7 @@ export class MoleculeChecker {
    * Check a molecule about to be published to {Stashed} database
    */
   public async checkStashed() {
-    const molecule = await this.checker(true, false) as StashedMolecule;
+    const molecule = await this.checker(true, false, this.req.body.fromVersion ? true : false) as StashedMolecule;
     
     return molecule;
   }
@@ -54,12 +54,12 @@ export class MoleculeChecker {
    * Check a molecule about to be edited in {Stashed} database
    */
   public async checkStashedEdition() {
-    const molecule = await this.checker(true, true) as StashedMolecule;
+    const molecule = await this.checker(true, true, this.req.body.fromVersion ? true : false) as StashedMolecule;
 
     return molecule;
   }
 
-  protected async checker(stashed: boolean, edition: boolean) {
+  protected async checker(stashed: boolean, edition: boolean, fromVersion: boolean) {
     let actual_version: BaseMolecule | undefined = undefined;
 
     
@@ -80,8 +80,7 @@ export class MoleculeChecker {
         return Errors.throw(ErrorType.MoleculeNotFound);
       }
     }
-    const molecule = await this.constructBaseMoleculeFromRequest(actual_version);
-
+    const molecule = await this.constructBaseMoleculeFromRequest(fromVersion, actual_version);
     // Must set the following fields: files, created_at, hash
 
     // Test if files are attached to the request
@@ -186,12 +185,13 @@ export class MoleculeChecker {
 
     // Get the PDB files
     const pdb_files: (File | SimuFile)[] = this.req.files.pdb;
-    const is_pdb = !!this.req.files.pdb;
-
+    
     if (pdb_files.length !== 1) {
       return Errors.throw(ErrorType.TooManyFiles);
     }
 
+    const extension = pdb_files[0].originalname.split('.').pop()
+    const is_pdb = extension === "pdb" ? true : false
     const map_files: (File | SimuFile)[] = this.req.files.map || [];
 
     // Find if top files are present
@@ -212,7 +212,7 @@ export class MoleculeChecker {
    * 
    * MISSING : files, created_at, hash, <last_update>, <approved_by>
    */
-  protected async constructBaseMoleculeFromRequest(actual_version?: BaseMolecule) : Promise<Partial<BaseMolecule>> {
+  protected async constructBaseMoleculeFromRequest(fromVersion: boolean, actual_version?: BaseMolecule) : Promise<Partial<BaseMolecule>> {
     const nullOrString = (str?: string | null) => {
       if (!str || str === undefined || str === null || str === 'null') {
         return null;
@@ -251,21 +251,27 @@ export class MoleculeChecker {
     // Set the right parent
     if (!mol.parent) {
       mol.parent = null;
+      mol.tree_id = body.tree_id
       if (!mol.tree_id) {
         mol.tree_id = generateSnowflake();
       }
     }
 
+    //Assign force field here to check if the molecule already exists
+    this.checkForceField(body.force_field, settings);
+    mol.force_field = body.force_field; 
     // Check the parent-linked fields (copy from them only if molecule is not parented)
     if (!parent) {
       if (!body.name || !body.alias || !body.category) {
         return Errors.throw(ErrorType.MissingParameters);
       }
 
-      await this.checkName(body.name, mol.tree_id!);
+      const ff = fromVersion ?? mol.force_field! 
+
+      await this.checkName(body.name, mol.tree_id!, fromVersion ? mol.force_field! : undefined); //Not force field if we are from base
       mol.name = body.name;
 
-      await this.checkAlias(body.alias, mol.tree_id!);
+      await this.checkAlias(body.alias, mol.tree_id!, mol.force_field!); //Not force field if we are from base
       mol.alias = body.alias;
 
       // TODO introduce check
@@ -286,8 +292,8 @@ export class MoleculeChecker {
     this.checkVersion(body.version);
     mol.version = body.version;
 
-    // Check if version exists in tree_id
-    if (await this.versionExistsInTreeId(mol.tree_id!, mol.version!, mol.id!)) {
+    // Check if version already exists
+    if (await this.versionExistsInTreeIdAndFf(mol.tree_id!, mol.version!, mol.id!, mol.force_field!)) {
       return Errors.throw(ErrorType.VersionAlreadyExists);
     }
 
@@ -296,12 +302,11 @@ export class MoleculeChecker {
     mol.command_line = body.command_line || "";
     mol.citation = body.citation || "";
     mol.validation = body.validation || "";
+    mol.alternative_alias = body.alternative_alias || []; 
 
     // Check force field and martinize version
     this.checkCreateWay(body.create_way, settings);
-    this.checkForceField(body.force_field, settings);
 
-    mol.force_field = body.force_field;
     mol.create_way = body.create_way;
 
     return mol;
@@ -317,12 +322,19 @@ export class MoleculeChecker {
   }
 
   // changed from protected to public
-  public async checkName(name: string, tree_id: string) {
+  public async checkName(name: string, tree_id: string, force_field?: string) {
     if (!name.match(NAME_REGEX)) {
       return Errors.throw(ErrorType.InvalidName);
     }
 
-    const mols = await Database.molecule.find({ limit: 99999, selector: { name } });
+    let selector = {}
+    if(force_field){
+      selector = {name, force_field}
+    } else {
+      selector = {name}
+    }
+
+    const mols = await Database.molecule.find({ limit: 99999, selector });
 
     for (const mol of mols) {
       if (mol.tree_id !== tree_id) {
@@ -330,13 +342,21 @@ export class MoleculeChecker {
       }
     }
   }
+  
 
-  protected async checkAlias(name: string, tree_id: string) {
+  protected async checkAlias(name: string, tree_id: string, force_field: string) {
     if (!name.match(ALIAS_REGEX)) {
       return Errors.throw(ErrorType.InvalidAlias);
     }
 
-    const mols = await Database.molecule.find({ limit: 99999, selector: { alias: name } });
+    let selector = {}
+    if(force_field){
+      selector = {alias : name, force_field}
+    } else {
+      selector = {alias : name}
+    }
+
+    const mols = await Database.molecule.find({ limit: 99999, selector });
 
     for (const mol of mols) {
       if (mol.tree_id !== tree_id) {
@@ -345,11 +365,27 @@ export class MoleculeChecker {
     }
   }
 
+
+
   protected checkVersion(v: string) {
     if (!v.match(VERSION_REGEX)) {
       return Errors.throw(ErrorType.InvalidVersion);
     }
   }
+
+  /*protected async checkExists(name:string, alias: string) {
+    if (!name.match(NAME_REGEX)) {
+      return Errors.throw(ErrorType.InvalidName);
+    }
+    
+    let mols = await Database.molecule.find({ limit: 99999, selector: { name } });
+    if(mols.length === 0) mols = await Database.molecule.find({ limit: 99999, selector: { alias } });
+    if(mols.length === 0) return undefined
+
+    const treeIds = new Set(mols.map(mol => mol.tree_id))
+    if(treeIds.size !== 1) return Errors.throw(ErrorType.ConsistencyVersionTree)
+
+  }*/
 
   protected checkCategory(cat: string[], settings: SettingsJson) {
     // todo
@@ -386,9 +422,8 @@ export class MoleculeChecker {
     }
   }
 
-  protected async versionExistsInTreeId(tree_id: string, version: string, current_id: string) {
-    const versions = await Database.molecule.find({ limit: 20, selector: { tree_id, version } });
-
+  protected async versionExistsInTreeIdAndFf(tree_id: string, version: string, current_id: string, force_field: string) {
+    const versions = await Database.molecule.find({ limit: 20, selector: { tree_id, version, force_field } });
     for (const v of versions) {
       if (v.id !== current_id) {
         return true;
@@ -397,4 +432,5 @@ export class MoleculeChecker {
 
     return false;
   }
+
 }

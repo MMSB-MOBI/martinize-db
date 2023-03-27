@@ -19,7 +19,7 @@ export enum ErrorType {
 
   /** CLIENT ERRORS: Bad Request */
   Format = 301,
-  MissingParameters,
+  MissingParameters, 
   UsernameExists,
   EmailExists,
   InvalidMethod,
@@ -27,8 +27,6 @@ export enum ErrorType {
   FileTooLarge,
   InvalidMoleculeFiles,
   MissingFiles,
-  IncorrectItpName,
-  MissingTopFiles,
 
   /** When add molecule errors */
   UnknownParent,
@@ -47,16 +45,22 @@ export enum ErrorType {
   InvalidUsername,
   InvalidEmail,
 
-  /** MARTINIZE Errors */
-  MartinizeRunFailed = 401,
-
-  /** JM Error */
-  JMError,
-
+  IncorrectItpName,
+  MissingTopFiles,
+  ConsistencyVersionTree,
   HistoryNotFound,
   HistoryFilesNotFound, 
-  JobNotFound, 
 
+  /** MARTINIZE Errors */
+  MartinizeRunFailed = 401,
+  MartinizeNoOutput, //402
+  ContactMapFailed, //403
+  GOComputationFailed, //404
+  ElasticNetworkFailed, //405
+
+  /** JM Error */
+  JMError = 501,
+  JobNotFound, 
   UserNotProvided,
   JobNotProvided
 }
@@ -94,6 +98,10 @@ const ErrorsToText = {
   [ErrorType.EmailExists]: [409, "Email already exists"],
   [ErrorType.InvalidMethod]: [405, "Method not allowed"],
   [ErrorType.MartinizeRunFailed]: [400, "Martinize run failed"],
+  [ErrorType.MartinizeNoOutput] : [404, "No output created by martinize"],
+  [ErrorType.ContactMapFailed] : [404, "Computation of contact map failed"],
+  [ErrorType.GOComputationFailed] : [404, "Computation of GO model failed"],
+  [ErrorType.ElasticNetworkFailed] : [404, "Computation of elastic network failed"],
   [ErrorType.IncorrectItpName]: [400, "The itp file name could not be parsed, please check the syntax"],
   [ErrorType.MissingTopFiles]: [400, "Missing files attached to request, there must be one top file for each itp"],
   [ErrorType.JMError] : [400, "Error with Job manager"],
@@ -102,6 +110,8 @@ const ErrorsToText = {
   [ErrorType.JobNotProvided] : [400, "Job not provided to server"], 
   [ErrorType.HistoryFilesNotFound] : [404, "Job result files not found on distant file system", "HistoryFileNotFound"], 
   [ErrorType.JobNotFound] : [404, "Job doesn't exist in database", "JobNotFound"], 
+  [ErrorType.ConsistencyVersionTree] : [400, "Several tree version for this molecule", "ConsistencyVersionTree"]
+  
 };
 
 export default new class Errors {
@@ -124,8 +134,11 @@ export default new class Errors {
    * If you're in a promise, make sure the error is correctly catched and sent !
    */
   throw(code: ErrorType, additionnal?: object) : never {
+    console.log("THROW ERROR")
     const [http_code, message] = ErrorsToText[code] as [number, string];
-
+    console.log("http", "message", http_code, message)
+    console.log("code", code)
+    console.log(additionnal)
     throw new ApiError(String(http_code), {
       code,
       message,

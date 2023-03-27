@@ -18,9 +18,9 @@ DestroyMoleculeRouter.delete('/:id', (req, res) => {
       return Errors.throw(ErrorType.Forbidden);
     }
 
-    await deleteMolecule(id, user, false, true);
+    const delResp = await deleteMolecule(id, user, false, true);
 
-    res.send();
+    res.send(delResp);
   })().catch(errorCatcher(res));
 });
 

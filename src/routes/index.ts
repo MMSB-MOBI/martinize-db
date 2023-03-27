@@ -10,6 +10,7 @@ import SettingsRouter from './settings';
 import ModerationRouter from './moderation';
 import DownloadForceFieldRoute from './force_fields/download';
 import HistoryRouter from './history'
+import polymer from './polymergenerator';
 
 const ApiRouter = Router();
 ApiRouter.use(cors());
@@ -26,6 +27,7 @@ ApiRouter.use('/settings', SettingsRouter);
 ApiRouter.use('/moderation', ModerationRouter);
 ApiRouter.use('/force_fields', DownloadForceFieldRoute);
 ApiRouter.use('/history', HistoryRouter)
+ApiRouter.use('/polymergenerator', polymer)
 
 // Catch all API invalid routes
 ApiRouter.use(() => {

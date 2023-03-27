@@ -15,12 +15,21 @@ interface MartinizeFilesPath {
     itp_files : string[][]
     top_file: string
     warnings: string;
+    gro? : string; 
     
 }
+
 
 export interface MartinizeJobToSave extends JobToSave {
     name?: string; //pdb name
     settings: ClientSettingsMartinize
     files: MartinizeFilesPath
     radius : {[bead: string]: number}
+}
+
+export interface PolyplyJobToSave extends JobToSave {
+    name?: string; //pdb name
+    settings: ClientSettingsMartinize
+     
+     
 }

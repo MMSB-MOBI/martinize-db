@@ -5,14 +5,18 @@ import readline from 'readline';
 import { FORCE_FIELD_DIR } from "../constants";
 
 export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> {
-  static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string | string[] } = {
+  static readonly FORCE_FIELD_TO_FILE_NAME: { [ff: string]: string[] } = {
     martini3001 : ['martini_v3.0.0.itp', 'martini_v3.0.0_ions_v1.itp', 'martini_v3.0.0_solvents_v1.itp'],
+    simple_martini3001: ['martini_v3.0.0.itp'], 
     elnedyn22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     elnedyn22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     elnedyn: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
     martini22: ['martini_v2.2.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    simple_martini22: ['martini_v2.2.itp'], 
     martini22p: ['martini_v2.2P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
-    martini23p: ['martini_v2.3P.itp', 'martini_v2.0_ions.itp', 'martini_v2.0_solvents.itp'],
+    simple_martini22p: ['martini_v2.2P.itp'],
+    martini23_CNP: ['martini_v2.3_CNP.itp', 'martini_v2.0_ions.itp'],
+    simple_martini23_CNP : ['martini_v2.3_CNP.itp']
   };
 
   static readonly FORCE_FIELD_TO_MARTINI_VERSION: { [ff: string]: string } = {
@@ -21,8 +25,11 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     elnedyn22: '2_2',
     elnedyn: '2_2',
     martini22: '2_2',
+    simple_martini22 : '2_2', 
     martini22p: '2_2',
-    martini23p: '2_3',
+    simple_martini22p : '2_2',
+    martini23p: '2_2',
+    martini23_CNP : '2_2'
   };
 
   static getFilesForForceField(name: string) {
@@ -36,6 +43,29 @@ export default class RadiusDatabase extends AbstractDatabase<VanDerWaalsRadius> 
     }
     return files;
   }
+
+  static getCompleteFilesForForceField(name : string) {
+    if (!(name in this.FORCE_FIELD_TO_FILE_NAME)) {
+      return [];
+    }
+
+    const files = this.FORCE_FIELD_TO_FILE_NAME[name];
+
+    return files.map(f => FORCE_FIELD_DIR + "/" + f) 
+  }
+
+  /*static getFilesForForceFieldObj(name : string) : {[file_name : string] : string} {
+    const filesObj : {[file_name : string] : string}  = {}
+    if (!(name in this.FORCE_FIELD_TO_FILE_NAME)) {
+      return {};
+    }
+
+    const files = this.FORCE_FIELD_TO_FILE_NAME[name];
+    for (const f of files){
+      filesObj[f] = FORCE_FIELD_DIR + "/" + f
+    }
+    return filesObj;
+  }*/
 
   /**
    * Create a new set a custom atoms for {force_field}.

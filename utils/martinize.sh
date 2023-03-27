@@ -5,15 +5,29 @@
 # Place here commands to load the virtual env that contains martinize2
 # path
 
+if [ ! -z "$SLURM_SUBMIT_DIR" ]
+then
+    cd $SLURM_SUBMIT_DIR
+fi
+
+
 if [ ! -z "$venv" ]
 then
   source $venv
 fi
 
 martinize2_path="martinize2"
+input="input/input.pdb"
 
-#echo run : $martinize2_path $@ -maxwarn 100000
+cmd_line="$martinize2_path -f $input $COMMAND_LINE -maxwarn 9999"
 
-$martinize2_path $@ -maxwarn 100000 2> martinize_redirect.stderr
-{ grep "WARNING" martinize_redirect.stderr > martinize_warnings.log || true; }
+echo $cmd_line
+
+$cmd_line 2> martinize_redirect.stderr 
+
+chmod g+r *.itp
+chmod g+r *.pdb
+chmod g+r *.top
+
+{ grep "WARNING" martinize_redirect.stderr > $MARTINIZE_WARN || true; }
 

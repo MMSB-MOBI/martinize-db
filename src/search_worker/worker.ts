@@ -7,6 +7,7 @@ import { Molecule } from '../Entities/entities';
 
 interface WorkerInitData {
   molecule_collection: string;
+  molecule_stashed_collection: string; 
   couch_url: string;
 }
 
@@ -18,6 +19,7 @@ interface WorkerResult {
 interface WorkerStartTask {
   query: nano.MangoQuery;
   as_all?: boolean;
+  stashed? : boolean; 
 }
 
 interface MoleculeResultTree {
@@ -30,16 +32,18 @@ interface MoleculeResultTree {
 // Init variables
 const CONSTANTS = {
   molecule_db: '',
+  molecule_stashed_db : '',
   couch: '',
   query_limit: 999999999,
 };
 
-function getDb() {
+function getDb(stashed = false) {
   // Create couch connection
+  const db_to_connect = stashed ? CONSTANTS.molecule_stashed_db : CONSTANTS.molecule_db
   return nano({ 
     url: CONSTANTS.couch, 
     requestDefaults: { proxy: null } 
-  }).use<Molecule>(CONSTANTS.molecule_db);
+  }).use<Molecule>(db_to_connect);
 }
 
 // Create cache
@@ -63,6 +67,7 @@ async function onTask(data: WorkerStartTask) {
   const query_hash = md5(JSON.stringify(data.query));
 
   const db = getDb();
+  const db_stashed = data.stashed ? getDb(true) : undefined; 
 
   // Do the search
   let molecule_tree: MoleculeResultTree;
@@ -76,8 +81,9 @@ async function onTask(data: WorkerStartTask) {
     query.skip = 0;
 
     const molecules = await db.find(query);
+    const molecules_stashed = db_stashed ? await db_stashed.find(query) : undefined
 
-    if (!molecules) {
+    if (!molecules && !molecules_stashed) {
       return {
         molecules: [],
         length: 0,
@@ -94,6 +100,18 @@ async function onTask(data: WorkerStartTask) {
         molecule_tree[mol.tree_id] = [mol];
       }
     }
+    if(molecules_stashed){
+      for (const mol of molecules_stashed.docs){
+        const new_mol = {...mol, from_stashed : true}
+        if (new_mol.tree_id in molecule_tree) {
+          molecule_tree[new_mol.tree_id].push(new_mol);
+        }
+        else {
+          molecule_tree[new_mol.tree_id] = [new_mol];
+        }
+      }
+    }
+   
 
     // Sort every molecule in created at date, the lastest the first
     for (const tree_id in molecule_tree) {
@@ -136,6 +154,7 @@ async function onTask(data: WorkerStartTask) {
 function onStartup(data: WorkerInitData) {
   CONSTANTS.couch = data.couch_url;
   CONSTANTS.molecule_db = data.molecule_collection;
+  CONSTANTS.molecule_stashed_db = data.molecule_stashed_collection
 }
 
 function onMessage(data: { type: string }) {
