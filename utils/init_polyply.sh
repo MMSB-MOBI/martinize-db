@@ -8,6 +8,8 @@ then
     source $venv
 fi
 
+echo VERSION :$( polyply -V | grep '^polyply')
+
 for ff in $(echo $forcefields | sed -n 1'p' | tr ',' '\n');
 do
     echo FORCEFIELD :$ff

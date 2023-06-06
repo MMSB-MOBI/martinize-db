@@ -147,7 +147,7 @@ export const SLURM_PROFILES = {
 export const MARTINIZE_VERSION = process.env.MARTINIZE_VERSION ?? "unknown"
 
 //martinize-db/data/polyply-env$ polyply -V
-export const POLYPLY_VERSION = "1.5.0"
+// export const POLYPLY_VERSION = "1.5.0"
 
 export const SEND_COMPLETION_MAIL = process.env.SEND_COMPLETION_MAIL === 'false' ? false : true; 
 
