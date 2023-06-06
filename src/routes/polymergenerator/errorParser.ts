@@ -8,6 +8,7 @@ interface ErrorToClient {
     ok: boolean,
     disjoint: boolean,
     errorlinks: any[],
+    linksnotapplied : any[]
     message: string[],
     itp? : string,
 }
@@ -17,7 +18,14 @@ export default checkError;
 
 function checkError(output: string) {
     //Init dico error
-    let dicErreur: ErrorToClient = { boxerror: false, ok: true, disjoint: false, message: [], errorlinks: [] }
+    let dicErreur: ErrorToClient = {
+        boxerror: false, 
+        ok: true, 
+        disjoint: false, 
+        message: [], 
+        errorlinks: [],
+        linksnotapplied: []
+    }
     let pythonerror: boolean = false
     let oserror: boolean = false
     //Parse every line 
@@ -64,14 +72,26 @@ function checkError(output: string) {
         // WARNING - general - Missing link between residue 1 SER and residue 4 SER
 
         if (l.includes('Missing link')) {
-            console.log("error", l)
+            console.log("error Missing link", l)
             let splitline = l.split(' ')
             let resname1 = splitline[9]
             let idname1 = parseInt(splitline[8]) - 1
             let resname2 = splitline[13]
             let idname2 = parseInt(splitline[12]) - 1
             dicErreur.errorlinks.push([resname1, idname1, resname2, idname2])
-            console.log(splitline)
+            
+        }
+
+        
+        if (l.includes('not applied')) {
+            console.log( l )
+            dicErreur.ok = false
+            let splitline = l.split(' ')
+            let resname1 = splitline[8]
+            let idname1 = parseInt(splitline[7]) - 1
+            let resname2 = splitline[12]
+            let idname2 = parseInt(splitline[11]) - 1
+            dicErreur.linksnotapplied.push([resname1, idname1, resname2, idname2])
         }
 
         if (l.includes('OSError:')) {

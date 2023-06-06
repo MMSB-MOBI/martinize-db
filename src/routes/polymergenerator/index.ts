@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import SocketIo from 'socket.io';
-import { POLYPLYPATHDATA, POLYPLY_VERSION } from "../../constants";
+import { POLYPLYPATHDATA } from "../../constants";
 import checkError from './errorParser';
 import { JOB_MANAGER_SETTINGS, CONECT_MDP_PATH, CREATE_MAP_PY_SCRIPT_PATH, CREATE_GO_PY_SCRIPT_PATH, DSSP_PATH } from '../../constants';
 import JMSurcouche from '../../Builders/JMSurcouche';
@@ -27,8 +27,11 @@ const get_truc = async () => {
     let tempff = ''
 
     for (let line of res.split("\n")) {
-
-        if (line.startsWith("FORCEFIELD :")) {
+        if (line.startsWith("VERSION :")) {
+            polyplyData['version'] = line.replace("VERSION :", "").replace("polyply version", "")
+            console.log('version', line.replace("VERSION :", ""))
+        }
+        else if (line.startsWith("FORCEFIELD :")) {
             tempff = line.replace("FORCEFIELD :", "")
             polyplyData[tempff] = []
         }
@@ -37,14 +40,6 @@ const get_truc = async () => {
 
 }
 
-router.get('/data', async (req, res) => {
-    console.log("WESHH")
-    if (Object.keys(polyplyData).length === 0) get_truc()
-    console.log("Sending forcefields and residues data")
-    //Select only martini forcefield
-    let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData));
-    res.send(MARTINIpolyplyData);
-});
 
 router.get("/fastaconversion", (req, res) => {
     const fasta = {
@@ -60,17 +55,15 @@ router.get("/fastaconversion", (req, res) => {
 export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
     console.log("je suis dans SocketIoPolymerizer ")
 
-    socket.on('version', () => {
-        console.log(POLYPLY_VERSION)
-        socket.emit("version_answer", POLYPLY_VERSION)
-    })
-
     socket.on("get_polyply_data", async () => {
         if (Object.keys(polyplyData).length === 0) await get_truc()
         console.log("Sending forcefields and residues data")
         //Select only martini forcefield
-        let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
-        socket.emit("polyply_data", MARTINIpolyplyData);
+        // let MARTINIpolyplyData = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('martini')));
+        // let version = Object.fromEntries(Object.entries(polyplyData).filter(([key]) => key.includes('version')));
+        // var out = Object.assign({}, MARTINIpolyplyData, version);
+
+        socket.emit("polyply_data", polyplyData);
     }
     )
 
@@ -133,6 +126,7 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
         const errorParsed = checkError(error)
 
+        console.log(errorParsed)
         if (errorParsed.ok !== true) {
             console.log("######## Error ITP ##########", errorParsed)
             errorParsed['itp'] = itp
@@ -238,7 +232,9 @@ ${name} ${numberpolymer}
             "file.gro": str_to_stream(data['gro']),
             "file.top": str_to_stream(data['top']),
         }
+        console.log("helo", data, exportVar, inputs)
         try {
+
             const { stdout, jobFS } = await JMSurcouche.run('convert', { exportVar, inputs })
             const fileContent = await jobFS.readToString('output-conect.pdb');
             console.log("Good job Sir! PDB done")
