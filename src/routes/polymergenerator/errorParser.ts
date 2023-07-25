@@ -52,11 +52,11 @@ function checkError(output: string) {
             dicErreur.boxerror = true
         }
 
-        if ((l.includes('disconnected parts. ')) || (l.includes('disjoint parts'))) {
-            console.log("error disconnected parts", l)
-            dicErreur.disjoint = true
-            dicErreur.ok = false
-        }
+        // if ((l.includes('disconnected parts. ')) || (l.includes('disjoint parts'))) {
+        //     console.log("error disconnected parts", l)
+        //     dicErreur.disjoint = true
+        //     dicErreur.ok = false
+        // }
 
         if ((l.includes('unrecognized arguments'))) {
             console.log("unrecognized arguments", l)
@@ -64,11 +64,11 @@ function checkError(output: string) {
             dicErreur.ok = false
         }
 
-        if (l.includes('disjoint parts')) {
-            console.log("error disjoint parts", l)
-            dicErreur.disjoint = true
-            dicErreur.ok = false
-        }
+        // if (l.includes('disjoint parts')) {
+        //     console.log("error disjoint parts", l)
+        //     dicErreur.disjoint = true
+        //     dicErreur.ok = false
+        // }
         // WARNING - general - Missing link between residue 1 SER and residue 4 SER
 
         if (l.includes('Missing link')) {
@@ -83,8 +83,8 @@ function checkError(output: string) {
         }
 
         
-        if (l.includes('not applied')) {
-            console.log( l )
+        if (l.includes('not applied') && l.includes("WARNING - general - Link between")) {
+            console.log( "not applied" , l )
             dicErreur.ok = false
             let splitline = l.split(' ')
             let resname1 = splitline[8]

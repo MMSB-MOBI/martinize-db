@@ -9,6 +9,7 @@ import HistoryOrganizer from '../../HistoryOrganizer';
 import logger from '../../logger';
 import { PolyplyJobToSave } from '../molecule/molecule.types';
 import { dateFormatter, generateSnowflake } from '../../helpers';
+import ItpFile from 'itp-parser-forked';
 
 
 const router = Router();
@@ -139,20 +140,19 @@ export async function SocketIoPolymerizer(socket: SocketIo.Socket) {
 
     })
     socket.on("run_gro_generation", async (data) => {
-        console.log("Let's GrOOOO")
+        console.log("Let's GrOOOO", data)
 
         let coordfile = ""
         if (data['proteinGRO'] !== "") {
             coordfile = data['proteinGRO']
         }
 
-
         //Get forcefield 
         const ff = data['polymer']['forcefield']
         const name = data['name']
         const boxsize = data['box']
         const numberpolymer = data['number']
-        const itp = data['itp']
+        let itp = data['itp']
 
         let inputpdb = ""
         if (data['inputpdb'] !== undefined) {
@@ -184,11 +184,55 @@ ${name} ${numberpolymer}
             action: "gro"
         }
 
-        inputs = {
-            "coord.gro": str_to_stream(coordfile),
-            "polymere.itp": str_to_stream(itp),
-            "martiniForceField": ffpath,
-            "system.top": str_to_stream(topfilestr)
+        if (data["list_graph_component"].length > 1) {
+            //Need to add fake links 
+            //console.log("MULTI POLYMERE", data["list_graph_component"])
+            //init
+            let previous_res = data["list_graph_component"][0][0]
+            let itpparsed = ItpFile.readFromString(itp);
+            const atoms = itpparsed.getField('atoms', true)
+
+            const splititp = itp.split("[ bonds ]")
+            let itpSTART = splititp[0] + "[ bonds ]\n"
+
+            for (let i of data["list_graph_component"].slice(1)) {
+                let next_res = i[0]
+                console.log("need to link", previous_res, next_res)
+                let previousbead = ''
+                let nextbead = ''
+                for (let i of atoms) {
+                    if (i.split(' ').filter((e) => { return e !== "" })[2] == previous_res) {
+                        previousbead = i.split(' ').filter((e) => { return e !== "" })[0]
+                    }
+                    if (i.split(' ').filter((e) => { return e !== "" })[2] == next_res) {
+                        //console.log( "nextbead", i.split(' ').filter((e) => { return e !== "" })[0] )
+                        nextbead = i.split(' ').filter((e) => { return e !== "" })[0]
+                    }
+                }
+                //console.log(i)
+                //1  3 1 0.350 4000
+                //create a new link 
+                let new_link = previousbead + ' ' + nextbead + ' 6 1 1000 ;FAKE LINK\n'
+                console.log("new_link",new_link)
+                itpSTART = itpSTART + new_link
+
+                previous_res = next_res
+            }
+            let copy_itp = itpSTART + splititp[1]
+            inputs = {
+                "coord.gro": str_to_stream(coordfile),
+                "polymere.itp": str_to_stream(copy_itp),
+                "martiniForceField": ffpath,
+                "system.top": str_to_stream(topfilestr)
+            }
+        }
+        else {
+            inputs = {
+                "coord.gro": str_to_stream(coordfile),
+                "polymere.itp": str_to_stream(itp),
+                "martiniForceField": ffpath,
+                "system.top": str_to_stream(topfilestr)
+            }
         }
 
         let resultatGro = ""
@@ -203,6 +247,7 @@ ${name} ${numberpolymer}
         }
 
         const gro = resultatGro.split("STOP\n")[0]
+
         const error = resultatGro.split("STOP\n")[1]
 
         /////////CHECK IF GRO IS EMPTY 
