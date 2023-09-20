@@ -26,6 +26,7 @@ import TmpDirHelper from './TmpDirHelper';
 import TEST_CLI from './cli/test.cli';
 import { SocketIoMartinizer } from './routes/molecule/martinize';
 import { SocketIoPolymerizer } from './routes/polymergenerator';
+import { SocketIoMembranizer } from './routes/molecule/membrane_builder_socket';
 import http from 'http';
 import JMSurcouche from './Builders/JMSurcouche';
 import fs from 'fs';
@@ -186,6 +187,7 @@ io.on('connection', (socket: Socket) => {
   console.log( "Well connected")
   SocketIoMartinizer(socket);
   SocketIoPolymerizer(socket);
+  SocketIoMembranizer_test(socket);
 })
   /* -------------------------- */
   /* - COMMAND LINE INTERFACE - */

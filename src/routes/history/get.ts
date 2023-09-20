@@ -13,7 +13,7 @@ GetHistoryRouter.get('/', async (req, res) => {
     HistoryOrganizer.getJob(jobId).then(job => {
 
       const { files, ...jobBase } = job
-      console.log( "encore des files de merde", files)
+      //console.log( "encore des files de merde", files)
       HistoryOrganizer.readFiles(jobId, files).then(readedFiles => {
         const readedJob: ReadedJob = {
           ...jobBase,
