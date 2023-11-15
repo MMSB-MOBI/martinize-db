@@ -53,12 +53,13 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
     });
 
     await new Promise((resolve, reject) => {
+      //@ts-ignore
       zip.on('ready', resolve);
       zip.on('error', reject);
     });
 
     function extract(input: string, output: string) {
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         zip.extract(input, in_directory + "/" + output, (err: any) => {
           if (err) reject(err);
           resolve();
@@ -278,7 +279,7 @@ export const MoleculeOrganizer = new class MoleculeOrganizer {
 
     logger.debug("[MOLECULE-ORGANIZER] Saving in-memory ZIP file to disk.");
 
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       zip
         .generateNodeStream({ streamFiles: true, compression: "DEFLATE", compressionOptions: { level: 6 } })
         .pipe(fs.createWriteStream(zip_destination_path))

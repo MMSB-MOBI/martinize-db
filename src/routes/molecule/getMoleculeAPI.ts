@@ -5,14 +5,14 @@ import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
 import { BaseMolecule } from '../../Entities/entities';
 // @ts-ignore 
-import NodeStreamZip from 'node-stream-zip';
+import StreamZip from 'node-stream-zip';
 import JSZip from 'jszip';
 import { MangoQuery } from 'nano';
 
 // Get a pdb from a file ID
 const GetMoleculeAPI = Router();
 
-export async function getReadableStream(name: string, zip: NodeStreamZip) {
+export async function getReadableStream(name: string, zip: StreamZip) {
   return new Promise((resolve, reject) => {
     zip.stream(name, (err: any, stm: any) => {
       if (err)
@@ -54,13 +54,13 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
     const molecule = await MoleculeOrganizer.getInfo(molcouch[0].files);
 
     console.log("molcouch[0].files", molcouch[0].files)
-    const zip = new NodeStreamZip({
+    const zip = new StreamZip({
       file: MoleculeOrganizer.getFilenameFor(molcouch[0].files),
       storeEntries: true
     });
-
+    
     await new Promise((resolve, reject) => {
-      zip.on('ready', resolve);
+      zip.on('ready', ()=> resolve);
       zip.on('error', reject);
     });
 

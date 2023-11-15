@@ -56,9 +56,19 @@ MOLECULE_CLI.command('longlist', async () => {
     return `This server does not contain any molecule.`;
   }
 
+  /*
   const normal = `Available molecules are \n- ${mols.map(m => 'id: ' + m._id + ', name: ' + m.name + ', version: '+ m.version +', type: ' + m.category).join('\n- ')}`;
   const stash = `Available stashed molecules are \n- ${stashed.map(m => 'id: ' + m._id + ', name: ' + m.name+ ', version: '+ m.version +', type: ' + m.category).join('\n- ')}`;
-
+  */
+  // redefine str(m) ?
+  const normal = `Available molecules are \n- ${ 
+    mols.map((m) => `id: ${m._id} , name: ${m.name}, version: ${m.version}, type: ${m.category as string}`
+    ).join('\n- ')}`;
+  const stash = `Available stashed molecules are \n- ${ stashed.map((m) => {
+      let cat = m.category as string;
+      return 'id: ' + m._id + ', name: ' + m.name+ ', version: '+ m.version +', type: ' + cat;
+    }).join('\n- ')}`;
+  
   return (mols.length ? normal : "") + (mols.length && stashed.length ? "\n" : "") + (stashed.length ? stash : "");
 })
 
@@ -244,7 +254,7 @@ MOLECULE_CLI.command('push', async rest => {
         
         //logger.debug(Excel.text);
         //fs.writeFileSync('/home/achopin/Documents/molecules.csv', Excel.text);
-      } catch (e) {
+      } catch (e:any) {
         console.error(e)
         logger.warn(e.data !== undefined ? e.data.message : e);
       }
@@ -266,7 +276,7 @@ MOLECULE_CLI.command('top', rest => {
     try {
       create_top_in_dir(rest);
       logger.info('top files created');
-    } catch (e) {
+    } catch (e:any) {
       logger.warn(e.data);
     }
   }

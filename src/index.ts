@@ -276,7 +276,7 @@ io.on('connection', (socket: Socket) => {
   async function main() {
     try {
       await Database.ping();
-    } catch (e) {
+    } catch (e:any) {
       logger.error("CouchDB is not running or is unreachable. You must start Couch or specify a valid database URL.");
       console.log("Stack trace:", 'stack' in e ? e.stack : e);
       process.exit(2);

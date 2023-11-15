@@ -128,7 +128,7 @@ export const CreateMoleculeFromJson = async (batch : InfosJson[]) : Promise< Ins
       }
       
 
-    } catch(e) {
+    } catch(e:any) {
       logger.warn("insertion failed")
       if(e.data && e.data.message){
         if(!(e.data.message in recap.not_inserted)) recap.not_inserted[e.data.message] = {}

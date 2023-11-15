@@ -105,7 +105,7 @@ export function sanitize(obj: any) {
 }
 
 export function signToken(payload: TokenPayload, id: string) {
-  return new Promise((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     // Signe le token
     JsonWebToken.sign(
       payload, // Données custom
@@ -118,10 +118,10 @@ export function signToken(payload: TokenPayload, id: string) {
       }, 
       (err, encoded) => { // Quand le token est généré (ou non), accepte/rejette la promesse
         if (err) reject(err);
-        else resolve(encoded);
+        else resolve(encoded as string);
       }
     );
-  }) as Promise<string>;
+  });// as Promise<string>;
 }
 
 export async function validateToken(token: string) {

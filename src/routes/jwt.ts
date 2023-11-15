@@ -1,4 +1,6 @@
-import jwt from 'express-jwt';
+//import jwt from 'express-jwt';
+//import { expressjwt, ExpressJwtRequest } from "express-jwt";
+import { expressjwt } from 'express-jwt'
 import { KEYS } from '../constants';
 import { JSONWebToken } from '../types';
 import nano from 'nano';
@@ -7,8 +9,8 @@ import logger from '../logger';
 import Errors, { ErrorType } from '../Errors';
 import { getUserFromToken } from '../helpers';
 
-export default jwt({
-  getToken: function fromHeaderOrQuerystring(req) {
+export default expressjwt({
+  getToken: function fromHeaderOrQuerystring(req:any) {
     if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
       return req.headers.authorization.split(' ')[1];
     } else if (req.cookies && req.cookies.login_token) {
@@ -17,27 +19,27 @@ export default jwt({
     return null;
   },
   secret: KEYS.PUBLIC,
+  algorithms: ["HS256"],
   credentialsRequired: true,
-  isRevoked: (req, payload, done) => {
+  isRevoked: async (req:any, payload:any) => {
+    try {
     // Get the token from string and call done(null, is_revoked)
-    getUserFromToken(payload.jti)
-      .then(user => {
-        req.full_user = user;
-
-        if (!user) {
-          // Token is orphan !
-          logger.error("Orphan token ! This should not happen. ", payload);
-          done(null, true);
-        }
-        else if (!user.approved) {
-          // User is not approved yet
-          done(Errors.make(ErrorType.UserNotApproved), true);
-        }
-        else {
-          done(null, false);
-        }
-      })
-      .catch(() => done(null, true));
+      const user = await getUserFromToken(payload.jti);
+      req.full_user = user;
+      if (!user) {
+        // Token is orphan !
+        logger.error("Orphan token ! This should not happen. ", payload);
+        return false;
+      }
+      if (!user.approved) {
+    // User is not approved yet
+        return false;
+      //done(Errors.make(ErrorType.UserNotApproved), true);
+      }
+      return false;
+    } catch (e:any){
+    return true;
+    }
   }
 }).unless(
   {

@@ -78,7 +78,7 @@ export default class CouchHelper {
     try {
       await this.link.db.use(CouchHelper.USER_COLLECTION).list();
 
-    } catch (e) {
+    } catch (e:any) {
       if (!e.message.startsWith('Database does not exist')) {
         throw e;
       }

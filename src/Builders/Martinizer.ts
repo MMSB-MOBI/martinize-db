@@ -291,7 +291,7 @@ export const Martinizer = new class Martinizer {
       }
       await jobFS.copy(MARTINIZE_WARN, warn_path)
     
-    } catch (e) {
+    } catch (e:any) {
   
       console.error(e)
       const jobFS = e.jobFS
@@ -318,7 +318,7 @@ export const Martinizer = new class Martinizer {
       onStep?.(this.STEP_MARTINIZE_GET_CONTACTS);
       try {
         map_filename = await this.getCcMapRCSU(settings.input!, path);
-      } catch (e) {
+      } catch (e:any) {
         console.log(typeof (e))
         return Errors.throw(ErrorType.ContactMapFailed, {error : e.message})
       }

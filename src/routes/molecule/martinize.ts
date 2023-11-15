@@ -393,7 +393,7 @@ export async function SocketIoMartinizer(socket: SocketIo.Socket) {
       }
 
 
-    } catch (e) {
+    } catch (e:any) {
       // Error catch, test the error :D
       console.error("ERROR", e)
       if (e instanceof ApiError) {

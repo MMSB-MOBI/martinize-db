@@ -258,7 +258,7 @@ export const MembraneBuilder = new class MembraneBuilder {
       console.log("job end", jobFS.job.id)
       console.log("list dir", await jobFS.list('*'))
       //await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir, "insane");
-    } catch (e) {
+    } catch (e:any) {
       console.log(e)
       // Handle error and throw the right error
       console.error("ShellManager.run crash");
@@ -313,7 +313,7 @@ export const MembraneBuilder = new class MembraneBuilder {
         wo_elastic_top = top;
       }
 
-    } catch (e) {
+    } catch (e:any) {
       throw new InsaneError('top_file_crash', e.stack);
     }
 
@@ -394,7 +394,7 @@ export const MembraneBuilder = new class MembraneBuilder {
       
 
       //var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
-    } catch (e) {
+    } catch (e:any) {
       throw new InsaneError('gromacs_crash', e.stack);
     }
 
