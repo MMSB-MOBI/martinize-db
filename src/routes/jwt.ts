@@ -8,7 +8,7 @@ import { User } from '../Entities/entities';
 import logger from '../logger';
 import Errors, { ErrorType } from '../Errors';
 import { getUserFromToken } from '../helpers';
-
+import { inspect } from 'util';
 export default expressjwt({
   getToken: function fromHeaderOrQuerystring(req:any) {
     if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
@@ -19,16 +19,21 @@ export default expressjwt({
     return null;
   },
   secret: KEYS.PUBLIC,
-  algorithms: ["HS256"],
+  algorithms: ["RS256"],
   credentialsRequired: true,
-  isRevoked: async (req:any, payload:any) => {
+  isRevoked: async (req:any, packet:any) => {
     try {
     // Get the token from string and call done(null, is_revoked)
-      const user = await getUserFromToken(payload.jti);
+      logger.info("Trying to getUserFromToken content from payload:")
+      logger.info(inspect(packet));
+      logger.info(":::", packet.payload.jti);
+      const user = await getUserFromToken(packet.payload.jti);
+      logger.info("getUserFromToken content:")
+      logger.info(inspect(user));
       req.full_user = user;
       if (!user) {
         // Token is orphan !
-        logger.error("Orphan token ! This should not happen. ", payload);
+        logger.error("Orphan token ! This should not happen. ", packet);
         return false;
       }
       if (!user.approved) {
@@ -36,8 +41,11 @@ export default expressjwt({
         return false;
       //done(Errors.make(ErrorType.UserNotApproved), true);
       }
+      logger.info("iSRevoked returns false!!");
       return false;
     } catch (e:any){
+      logger.warn("is Reveoked because of ")
+      logger.warn(e);
     return true;
     }
   }

@@ -4,6 +4,8 @@ import MoleculeOrganizer from '../../MoleculeOrganizer';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
 import { BaseMolecule } from '../../Entities/entities';
+import logger, { FORMAT_FILE } from '../../logger';
+
 // @ts-ignore 
 import NodeStreamZip from 'node-stream-zip';
 
@@ -37,7 +39,8 @@ PdbGetterRouter.get('/:id', (req, res) => {
     // Find/get file by ID
     const molecule = await MoleculeOrganizer.getInfo(req.params.id);
 
-    console.log("/molecule/representation", molecule?.itp)
+    
+    logger.info("/molecule/representation", molecule?.itp)
     // File does not exists or does not have a pdb file attached
     if (!molecule || !molecule.itp.length) {
       return Errors.throw(ErrorType.ElementNotFound);
@@ -65,9 +68,9 @@ PdbGetterRouter.get('/:id', (req, res) => {
       storeEntries: true
     });
 
-    await new Promise((resolve, reject) => {
-      zip.on('ready', ()=> resolve);
-      zip.on('error', reject);
+    await new Promise<void>((resolve, reject) => {
+      zip.on('ready', ()=> resolve());
+      zip.on('error', ()=> { logger.error("Ziping PDB file failed");reject();});
     });
     
     // Read every ITP in a stream

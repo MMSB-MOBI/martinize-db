@@ -16,6 +16,8 @@ import Errors, { ErrorType } from '../Errors';
 import ItpFile from 'itp-parser-forked';
 import { Readable } from 'stream';
 
+import { existsSync, readdirSync } from 'fs';
+
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
 
@@ -80,8 +82,10 @@ export const MembraneBuilder = new class MembraneBuilder {
   constructor() {
     // Init the supported lipids
     const supported_prefixes = new Set(Object.values(RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION));
-
-    for (const dir of fs.readdirSync(LIPIDS_ROOT_DIR)) {
+    logger.debug(`MembraneBuilder:: Reading lipid definitions from ${LIPIDS_ROOT_DIR}`);
+    
+    for (const dir of readdirSync(LIPIDS_ROOT_DIR)) {
+  
       if (!supported_prefixes.has(dir)) {
         continue;
       }

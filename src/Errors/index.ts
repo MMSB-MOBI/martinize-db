@@ -51,6 +51,8 @@ export enum ErrorType {
   HistoryNotFound,
   HistoryFilesNotFound, 
 
+  JWTRequestMalformed,
+  
   /** MARTINIZE Errors */
   MartinizeRunFailed = 401,
   MartinizeNoOutput, //402
@@ -82,6 +84,7 @@ const ErrorsToText = {
   [ErrorType.TooManyFiles]: [400, "Too many files specified"],
   [ErrorType.FileTooLarge]: [400, "Sended file is too large"],
   [ErrorType.UnknownParent]: [400, "Unknown molecule parent"],
+  [ErrorType.JWTRequestMalformed]: [400, "Token Validation Error"],
   [ErrorType.InvalidCategory]: [400, "Invalid category"],
   [ErrorType.InvalidName]: [400, "Invalid molecule name"],
   [ErrorType.NameAlreadyExists]: [400, "Molecule name already taken"],

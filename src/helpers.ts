@@ -145,9 +145,11 @@ export async function validateToken(token: string) {
 }
 
 export function getUserFromToken(jti: string) {
+  logger.warn('===>' + jti );
   // Get the token from string and call done(null, is_revoked)
   return Database.token.get(jti as string)
-    .then(() => Database.user.fromToken(jti as string));
+    .then(() => Database.user.fromToken(jti as string))
+    .catch((e)=> {logger.error(e); throw(`Fail to get token from database for user ${jti}`)});
 }
 
 export function methodNotAllowed(allow: string | string[]) {

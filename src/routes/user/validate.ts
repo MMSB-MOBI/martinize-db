@@ -2,13 +2,20 @@ import { Router } from 'express';
 import { errorCatcher, methodNotAllowed, sanitize } from '../../helpers';
 import Errors, { ErrorType } from '../../Errors';
 import { Database } from '../../Entities/CouchHelper';
-
+import { inspect } from 'util';
+import logger from '../../logger';
+import { expressjwt, Request as JWTRequest } from "express-jwt";
 const ValidateUserRouter = Router();
 
-ValidateUserRouter.get('/', (req, res) => {
+ValidateUserRouter.get('/', (req:JWTRequest, res) => {
   (async () => {
-    const user = await Database.user.fromToken(req.user!.jti);
-
+    logger.info( "ValidateUserRouter request Inc")
+    logger.info(inspect(req));
+    logger.info(req.user);
+    if (!req.auth?.jti)
+      //return res.sendStatus(401); 
+      return Errors.throw(ErrorType.JWTRequestMalformed);
+    const user = await Database.user.fromToken(req.auth.jti);
     if (!user) {
       return Errors.throw(ErrorType.Forbidden);
     }

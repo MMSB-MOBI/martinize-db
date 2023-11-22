@@ -54,7 +54,7 @@ ListMoleculeRouter.get('/', (req, res) => {
       from_stashed
     } = req.query as Partial<Filters>;
 
-    console.log("from_stashed", from_stashed)
+    console.log(`from_stashed : ${ from_stashed ? 'true' : 'false'}`);
     const with_regex = is_regex === "true" || is_regex === "1";
     const bulk_request = __as_version_tree__ === "false" || __as_version_tree__ === "0";
     const search_in_stashed =  from_stashed === "true"
@@ -177,7 +177,7 @@ ListMoleculeRouter.get('/', (req, res) => {
     const response = await SearchWorker.query(query, bulk_request, search_in_stashed);
     response.molecules = response.molecules.map(e => sanitize(e));
 
-    console.log(response.molecules)
+    //console.log(response.molecules)
 
     res.json(response);
     }
