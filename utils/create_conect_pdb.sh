@@ -7,11 +7,6 @@ then
     cd $SLURM_SUBMIT_DIR
 fi
 
-
-function to_stderr() {
-  >&2 echo $@
-}
-
 function index_creation(){
   echo "Index creation"
   gmx make_ndx -f "$gro_box" -o "$index_ndx" 1> makendx_dup.stdout 2> makendx_dup.stderr
@@ -52,8 +47,8 @@ function index_creation(){
 
 if [[ -z "$DEL_WATER_BOOL" ]]
 then
-  to_stderr "You need the following defined variables : <DEL_WATER_BOOL>"
-  exit 1
+  >&2 echo "You need the following defined variables : <DEL_WATER_BOOL>"
+  return
 fi
 
 pdb="input/$INPUT_NAME"
@@ -86,9 +81,14 @@ else
   gmx editconf -f "$pdb" -o "$gro_box" -box 15 15 18 -noc  > 1.editconf.stdout 2> 1.editconf.stderr
 fi
 
+# Checking gro box
+echo "#### Input is " $INPUT_NAME > gro_check.log
+head -5 "$gro_box" >> gro_check.log
+
 # Create the computed topology .tpr
 echo Create tpr : gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run"
 gmx grompp -f "$mdp" -c "$gro_box" -p "$top" -o "$tpr_run" > 2.grompp.stdout 2> 2.grompp.stderr
+[[ -f  "$tpr_run" ]] || { >&2 echo "[create_conect] Fatal: Create tpr failed"; return;}
 
 if [ $DEL_WATER_BOOL == "YES" ]
 then
@@ -96,6 +96,7 @@ then
   printf "!$sol_group_name" > $tmp_stdin
   echo "Delete water and ions (2)" : gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect
   gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_no_water" < $tmp_stdin >3.trjconv.stdout 2>3.trjconv.stderr
+  [[ -f  "$output_no_water" ]] || { >&2 echo "[trjconv:output_no_water] Fatal: Create $output_no_water failed"; return;}
   echo "File $output_no_water has been written."
   nb_atoms=$(grep -c -w ATOM $output_no_water)
   if [[ $nb_atoms -gt 99999 ]]; then
@@ -104,22 +105,30 @@ then
   else
     echo "[pdb without water] gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect"
     gmx trjconv -n "$index_ndx" -s "$tpr_run" -f "$gro_box" -o "$output_conect_no_water" -conect < $tmp_stdin >4.trjconv-connect.stdout 2>4.trjconv-connect.stderr
+    [[ -f  "$output_conect_no_water" ]] || { >&2 echo "[trjconv:output_conect_no_water] Fatal: Create $output_conect_no_water failed"; return;}
     echo "File $output_conect_no_water has been written."
   fi
 fi
 
+
 printf '0\n' > $tmp_stdin
 # Create the PDB with conect entries with water 
+echo "[Create the PDB with conect entries with water] 1/2"
 echo launch : gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output"
 gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output" < $tmp_stdin >5.trjconv.stdout 2> 5.trjconv.stderr
+[[ -f  "$output" ]] || { >&2 echo "[trjconv:5] Fatal: Create $output failed"; return;}
+    
 echo "File $output has been written."
 nb_atoms=$(grep -c -w ATOM $output)
 if [[ $nb_atoms -gt 99999 ]]; then
+  echo "[Create the PDB with conect entries with water] 2/2"
   echo "[pdb with water] Too much atoms to create connection. We use unconnected pdb"
   ln -s $output $output_conect
 else
+  echo "[Create the PDB with conect entries with water] 2/2"
   echo launch : gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect
   gmx trjconv -s "$tpr_run" -f "$gro_box" -o "$output_conect" -conect < $tmp_stdin >6.trjconv-conect.stdout 2> 6.trjconv-conect.stderr
+  [[ -f  "$output_conect" ]] || { >&2 echo "[trjconv:output_conect] Fatal: Create $output_conect failed"; return;}
   echo "File $output_conect has been written."
 fi
 
@@ -127,3 +136,5 @@ if [[ $INPUT_TYPE == "pdb" ]]; then
   echo "Keep gro box for $pdb to final_output.gro"
   cp $gro_box final_output.gro
 fi
+
+echo "create_conect_pdb done."

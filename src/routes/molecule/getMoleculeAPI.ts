@@ -8,7 +8,8 @@ import { BaseMolecule } from '../../Entities/entities';
 import StreamZip from 'node-stream-zip';
 import JSZip from 'jszip';
 import { MangoQuery } from 'nano';
-
+import logger from '../../logger';
+import { inspect } from 'util';
 // Get a pdb from a file ID
 const GetMoleculeAPI = Router();
 
@@ -37,7 +38,7 @@ function readStreamsPromises(streams: NodeJS.ReadableStream[]): Promise<string>[
 //If format isnt provided give the last update of this model 
 GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
   (async () => {
-    console.log("GetMoleculeAPI.get() ", req.params)
+    logger.info(`[GetMoleculeAPI] ${inspect(req.params)}`);
     const selectruc: MangoQuery = { selector: { alias: req.params.id, force_field: req.params.forcefield } }
     if (req.params.version) {
       selectruc.selector["version"] = req.params.version
@@ -53,7 +54,7 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
 
     const molecule = await MoleculeOrganizer.getInfo(molcouch[0].files);
 
-    console.log("molcouch[0].files", molcouch[0].files)
+    logger.info(`[GetMoleculeAPI] molcouch[0].files ${molcouch[0].files}`);
     const zip = new StreamZip({
       file: MoleculeOrganizer.getFilenameFor(molcouch[0].files),
       storeEntries: true
@@ -63,25 +64,28 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       zip.on('ready', ()=> resolve);
       zip.on('error', reject);
     });
-
+    
     if (req.params.format === "itp") {
       const itp_streams = await Promise.all(molecule!.itp.map(itp_file => getReadableStream(itp_file.name, zip)))
       const itp_finals = await Promise.all(readStreamsPromises(itp_streams))
+      logger.info(`[GetMoleculeAPI]::itp Sending ${itp_finals[0]}`);
       res.send(itp_finals[0]);
     }
     else if (req.params.format === "pdb") {
       const pdb_stream = await getReadableStream(molecule!.pdb!.name, zip)
       const pdb_final = await Promise.all(readStreamsPromises([pdb_stream]))
+      logger.info(`[GetMoleculeAPI]::pdb Sending ${pdb_final[0]}`);
       res.send(pdb_final[0]);
     }
     else if (req.params.format === "gro") {
-      console.log(molecule)
       if (molecule!.gro) {
         const gro_stream = await getReadableStream(molecule!.gro!.name, zip)
         const gro_final = await Promise.all(readStreamsPromises([gro_stream]))
+        logger.info(`[GetMoleculeAPI]::pdb Sending ${gro_final[0]}`);
         res.send(gro_final[0]);
       }
       else {
+        logger.error(`[GetMoleculeAPI]::gro \".gro not found\"`);
         res.status(404).json({ "error": ".gro not found." });
       }
 
@@ -91,6 +95,7 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
       res.download(filename);
     }
     else {
+      logger.error(`[GetMoleculeAPI] Format .${req.params.format} unkown.`);
       res.send({ "error": "Format ." + req.params.format + " unkown." })
     }
   })().catch(errorCatcher(res));

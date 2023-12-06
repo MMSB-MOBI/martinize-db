@@ -15,14 +15,15 @@ import ShellManager, { JMError } from './ShellManager';
 import Errors, { ErrorType } from '../Errors';
 import ItpFile from 'itp-parser-forked';
 import { Readable } from 'stream';
-
-import { existsSync, readdirSync } from 'fs';
+import { inspect } from 'util';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 
 export const AvailablePbcStrings = ['hexagonal', 'rectangular', 'square', 'cubic', 'optimal', 'keep'] as const;
 export type PbcString = ArrayValues<typeof AvailablePbcStrings>;
 
 export const AvailableRotateTypes = ['random', 'princ', 'angle'] as const;
 export type RotateString = ArrayValues<typeof AvailableRotateTypes>;
+
 
 export interface InsaneSettings {
   pbc: PbcString;
@@ -116,13 +117,10 @@ export const MembraneBuilder = new class MembraneBuilder {
    * - Returns TOP, PDB and ITPs file locations
    */
   async run({ force_field, molecule_pdb, molecule_top, molecule_itps, lipids, upper_leaflet = [], settings = {} }: InsaneRunnerOptions) {
-    logger.debug('INSANE RUN')
-    console.log("ff", force_field)
-    console.log("pdb", molecule_pdb)
-    console.log("top", molecule_top)
-    console.log("itps", molecule_itps)
-    console.log("lipids", lipids)
-    console.log("upper leaflet", upper_leaflet)
+    logger.info('MembraneBuilder.run: [INSANE]')
+    logger.info(`ff ${force_field}, pdb ${molecule_pdb}, top ${molecule_top}`)
+    logger.info(`itps ${molecule_itps}, lipids ${lipids}, upper leaflet ${upper_leaflet}`);
+    
     let ff_location = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
     const ff_prefix = RadiusDatabase.FORCE_FIELD_TO_MARTINI_VERSION[force_field];
     if (!ff_location || !ff_prefix) {
@@ -256,17 +254,18 @@ export const MembraneBuilder = new class MembraneBuilder {
       //   'insane', jobOpt
       // );
       // A CONTINUER !
+      logger.info("[INSANE] sent to JM ")
       const {stdout, jobFS} = await JMSurcouche.run('insane', jobOpt)
       insane_top_content = await jobFS.readToString('__insane.top')
       gro_results_stream = molecule_pdb ? await jobFS.readToStream("system-insane-hack.gro") : await jobFS.readToStream("system.gro")
-      console.log("job end", jobFS.job.id)
-      console.log("list dir", await jobFS.list('*'))
+      logger.info(`[INSANE] job ${jobFS.job.id} ended`);
+      logger.info(`jobFS list:\n${await jobFS.list('*')}`);
       //await ShellManager.run('insane', ShellManager.mode == "jm" ? jobOpt : `${INSANE_HACK_SCRIPT.BEFORE} ${INSANE_HACK_SCRIPT.AFTER} ${molecule_pdb} ${command_line}`, workdir, "insane");
     } catch (e:any) {
       console.log(e)
       // Handle error and throw the right error
-      console.error("ShellManager.run crash");
-      console.error(e.stack);
+      logger.error("[INSANE] job crash");
+      logger.error(e.stack);
       if (e instanceof JMError) return Errors.throw(ErrorType.JMError, { error: e.message })
       throw new InsaneError('insane_crash', 'error' in e ? e.error.stack : e.stack);
     }
@@ -283,11 +282,15 @@ export const MembraneBuilder = new class MembraneBuilder {
     */
 
 
-    logger.debug(`[INSANE] Creating TOP file.`);
-    //If we have a _rubber_band.itp, don't include it in the top file because it's included in molecule_x.itp. Also need to have a molecule_x.itp without this included itp to compute pdb without elastic bonds in conect fields.
+    logger.info(`[INSANE] Creating TOP file.`);
+    /*
+    If we have a _rubber_band.itp, don't include it in the top file because 
+    it's included in molecule_x.itp. Also need to have a molecule_x.itp without 
+    this included itp to compute pdb without elastic bonds in conect fields.
+    */
 
     const itps_for_top = molecule_itps?.filter(itp => !itp.includes("_rubber_band"))
-    console.log("itps", itps_for_top)
+    logger.info("itps", itps_for_top)
 
     let itps_without_elastic: string[] = [];
     if (itps_for_top && (itps_for_top?.length != molecule_itps?.length)) { //We have elastic bonds, so filter "#include" statements and write new *_without_elastic.itp
@@ -305,7 +308,7 @@ export const MembraneBuilder = new class MembraneBuilder {
 
     let wo_elastic_top = undefined;
     try {
-      var { top: full_top } = await Martinizer.createTopFile(
+      var { topologyFilePath: full_top } = await Martinizer.createTopFile(
         workdir,
         molecule_top,
         itps_for_top,
@@ -313,8 +316,8 @@ export const MembraneBuilder = new class MembraneBuilder {
         "original.top"
       );
       if (itps_without_elastic.length > 0) {
-        const { top } = await Martinizer.createTopFile(workdir, molecule_top, itps_without_elastic, force_field, "original.top")
-        wo_elastic_top = top;
+        const { topologyFilePath } = await Martinizer.createTopFile(workdir, molecule_top, itps_without_elastic, force_field, "original.top")
+        wo_elastic_top = topologyFilePath;
       }
 
     } catch (e:any) {
@@ -324,14 +327,34 @@ export const MembraneBuilder = new class MembraneBuilder {
 
 
 
-    logger.debug(`[INSANE] Reading built TOP file and INSANE generate TOP file.`);
+    logger.info(`[INSANE] Reading built TOP file at ${full_top}`);
+    logger.info(`[INSANE] Reading INSANE generate TOP following string \"${insane_top_content}\"`);
     const insane_top = await TopFile.readFromString(insane_top_content);
+    logger.info(`[INSANE] Reading INSANE generate TOP content:\n${insane_top}`);
 
+    fs.access(full_top, (error) => {
+      //  if any error
+      if (error) {
+        console.log(error);
+        return;
+      }
+    
+      logger.info(`[INSANE] TopFile ${full_top} exists`);
+      fs.readFile(full_top, (e,d)=> logger.info(`[INSANE] TopFile content is \n${d}`));
+    });
+
+
+    logger.info(`[INSANE] Calling TopFile.read(${full_top}) !!!`);
     const molecule_full_top = await TopFile.read(full_top);
+
+  
+
     const readed_wo_elastic_top = wo_elastic_top ? await TopFile.read(wo_elastic_top) : undefined
 
-
+    logger.info(`[INSANE] Base (full) topology read from ${full_top} features object:${inspect(molecule_full_top)}`);
+    logger.info(`[INSANE] top object headlines : ${molecule_full_top.headlines}`);
     if (lipids) {
+      
       // Compile the top files
       // Includes are normally all resolved in molecule_full_top (with the force field !)
       // We need to includes also the lipids ITPs
@@ -344,7 +367,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     }
 
     // Compile the top files together
-    logger.debug(`[INSANE] Writing prepared TOP file.`);
+    logger.info(`[INSANE] Writing prepared TOP file.`);
 
     const prepared_top = await this.getPreparedTopFile(insane_top, molecule_full_top);
     const prepared_top_wo_elastic = readed_wo_elastic_top ? await this.getPreparedTopFile(insane_top, readed_wo_elastic_top) : undefined
@@ -384,17 +407,23 @@ export const MembraneBuilder = new class MembraneBuilder {
         console.log("LIPIDS", lipids)
         const lipids_itps = await this.getLipidsItps(force_field, lipids, upper_leaflet);
         formattedItps = {...formattedItps, ...lipids_itps}
+        logger.info(`[INSANE] Merging itps\n\t### base ones:\n${inspect(formattedItps)}\n\t### lipid ones:\n${inspect(lipids_itps)}`);
       }
-
       
       
-      console.log("itps", formattedItps)
+      logger.info(`[INSANE] \n\t### itps ###\n${inspect(formattedItps)}\n\t### toptologies to use###\n${inspect(to_use_top)}\n`);
       const { pdb : pdb_water, no_water_pdb } = await Martinizer.createPdbWithConectFromStream(gro_results_stream, "gro", to_use_top, true, force_field, workdir, formattedItps)
-
+      logger.info(`[INSANE] PDB water:${pdb_water} no_water_pdb:${no_water_pdb}`);
+      
       pdbs.water = pdb_water
       if (no_water_pdb){
         pdbs.no_water = no_water_pdb
       }
+      
+      //pdbs.water = no_water_pdb ? no_water_pdb : pdb_water;
+      /*if (no_water_pdb){
+        pdbs.no_water = no_water_pdb
+      }*/
       
 
       //var pdbs = await Martinizer.createPdbWithConectWithoutWater(workdir + "/" + to_use_gro, to_use_top, workdir, lipids);
@@ -427,7 +456,7 @@ export const MembraneBuilder = new class MembraneBuilder {
     }
     
 
-    logger.debug(`[INSANE] Run seems to be ok :)`);
+    logger.info(`[INSANE] Run seems to be ok :)`);
 
     return {
       itps : Object.values(formattedItps),

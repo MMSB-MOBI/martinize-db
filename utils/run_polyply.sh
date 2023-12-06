@@ -44,14 +44,15 @@ fi
 if [ $action == "gro" ]
 
 then
-    cat input/polymere.itp > polymere.itp
-    cat input/system.top > system.top
-    
-    
+    #cat input/polymere.itp > polymere.itp
+    #cat input/system.top > system.top
+    #cat input/
+    #mv input/* .
+
     if [ -s input/coord.gro ]; then
-        polyply gen_coords -p system.top -c input/coord.gro -o $GROOUT -name $name -box $box $box $box > polyply2.out 2> polyply2.err
+        polyply gen_coords -p input/system.top -c input/coord.gro -o $GROOUT -name $name -box $box $box $box > polyply2.out 2> polyply2.err
     else
-        polyply gen_coords -p system.top -o $GROOUT -name $name -box $box $box $box > polyply2.out 2> polyply2.err
+        polyply gen_coords -p input/system.top -o $GROOUT -name $name -box $box $box $box > polyply2.out 2> polyply2.err
     fi
     
     [ -f $GROOUT ] && cat $GROOUT

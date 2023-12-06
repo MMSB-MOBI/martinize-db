@@ -248,6 +248,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     }
 
     try {
+
       const { pdbs: { water, no_water }, top, itps } = await MembraneBuilder.run({
         force_field,
         lipids,
@@ -255,6 +256,15 @@ MembraneBuilderRouter.post('/', Uploader.fields([
         ...molecule_entries,
         settings: opts,
       });
+      logger.info("[MembraneBuilderRouter]] service data:\n"
+             + "\ttop: " + inspect(top) + "\n\titps: " + inspect(itps) 
+             + "\n\twater: " + inspect(water) + "\n\tno_water: " + inspect(no_water)
+      );
+      logger.info("water: \n" +     inspect(await getFormattedFile(water)) +
+                  "\nno_water:\n" + inspect(await getFormattedFile(no_water)) +
+                  "\ntop:\n" +      inspect(await getFormattedFile(top)) +                  
+                  "\nitps:" +       inspect(await Promise.all(itps.map(i => getFormattedFile(i))))
+                  );
 
       res.json({
         // @ts-ignore

@@ -24,16 +24,13 @@ export default expressjwt({
   isRevoked: async (req:any, packet:any) => {
     try {
     // Get the token from string and call done(null, is_revoked)
-      logger.info("Trying to getUserFromToken content from payload:")
-      logger.info(inspect(packet));
-      logger.info(":::", packet.payload.jti);
+      logger.info(`[expressjwt::isRevoked] user request:\n${inspect(packet)}`);
       const user = await getUserFromToken(packet.payload.jti);
-      logger.info("getUserFromToken content:")
-      logger.info(inspect(user));
+      logger.info(`[expressjwt::isRevoked] getUserFromToken value:\n${inspect(user)}`);
       req.full_user = user;
       if (!user) {
         // Token is orphan !
-        logger.error("Orphan token ! This should not happen. ", packet);
+        logger.error("[expressjwt::isRevoked] Orphan token ! This should not happen. ", packet);
         return false;
       }
       if (!user.approved) {
@@ -41,12 +38,11 @@ export default expressjwt({
         return false;
       //done(Errors.make(ErrorType.UserNotApproved), true);
       }
-      logger.info("iSRevoked returns false!!");
+      logger.info("[expressjwt::isRevoked] iSRevoked returns false (access granted)");
       return false;
     } catch (e:any){
-      logger.warn("is Reveoked because of ")
-      logger.warn(e);
-    return true;
+      logger.warn(`[expressjwt::isRevoked] error (access denied) : ${e}`);
+      return true;
     }
   }
 }).unless(

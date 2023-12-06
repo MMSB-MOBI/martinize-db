@@ -1,7 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
 import { ExecException } from 'child_process';
 import FormData from 'form-data';
-import fs, { exists, promises as FsPromise } from 'fs';
+import fs, { exists, WriteStream, promises as FsPromise } from 'fs';
+import {promises as fsp } from 'fs';
 import path from 'path';
 import readline from 'readline';
 import TarStream from 'tar-stream';
@@ -17,7 +18,20 @@ import JSZip from 'jszip';
 //import ShellManager, { JobInputs, JMError } from './ShellManager';
 import JMSurcouche, { JobInputs } from './JMSurcouche';
 import { pathsToInputs, str_to_stream } from './JMSurcouche';
-import { Readable } from 'stream';
+import { Readable, PassThrough } from 'stream';
+import { inspect } from 'util';
+
+const streamToString = (stream:Readable) => {
+  const chunks:any = [];
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on('error', (err) => reject(err));
+    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+  })
+}
+
+
+
 // import { JobStderrNotEmptyFS } from 'ms-jobmanager/errors/client'
 
 /**
@@ -139,7 +153,7 @@ export const Martinizer = new class Martinizer {
       throw new Error("Invalid input file");
     }
     */
-
+    logger.warn("[DSSP] " + DSSP_PATH);
     // Check dssp ps
     // TODO: DSSP gives bad results... this should not append
     let command_line = " -x output.pdb -o system.top -ff " + full.ff + " -p " + full.position
@@ -478,16 +492,16 @@ export const Martinizer = new class Martinizer {
    * Returns new TOP filename and all the used ITPs to generate top.
    */
   async createTopFile(current_directory: string, original_top_path: string | undefined, itps_path: string[] | undefined, force_field: string, top_name: string = "full.top") {
-    logger.debug("Martinizer.ts createTopFile")
-    logger.debug('force field ' + force_field)
+    logger.info("Martinizer.ts createTopFile")
+    logger.info('force field ' + force_field)
     let itps_ff = RadiusDatabase.FORCE_FIELD_TO_FILE_NAME[force_field];
-
+    
     if (!itps_ff) {
       throw new ReferenceError("Your force field is invalid: can't find related ITPs.");
     }
 
     itps_ff = typeof itps_ff === 'string' ? [itps_ff] : itps_ff;
-
+    logger.info(`[Martinizer::createTopFile] related forcefield (${force_field}) ITPS : ${itps_ff}`)
     let itps = undefined;
     if (itps_path !== undefined) {
       itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
@@ -495,8 +509,9 @@ export const Martinizer = new class Martinizer {
     else {
       itps = [...itps_ff.map(e => FORCE_FIELD_DIR + e)];
     }
+    logger.info(`[Martinizer::createTopFile] itps : ${itps}`)
     const base_ff_itps = [] as string[];
-
+    
     // Create everysym link
     for (const itp of itps_ff) {
       const itp_path = FORCE_FIELD_DIR + itp;
@@ -519,10 +534,10 @@ export const Martinizer = new class Martinizer {
     else {
       real_itps = [...base_ff_itps];
     }
-    const top = current_directory + "/" + top_name;
+    const topologyFilePath = current_directory + "/" + top_name;
 
     const includes: string[] = [];
-
+    logger.info(`[Martinizer::createTopFile] real_itps : ${real_itps}`)
     // Define the includes
     for (const itp of real_itps) {
       // Exclude the GO ITPs, they're already included in martini_304.itp
@@ -532,8 +547,10 @@ export const Martinizer = new class Martinizer {
 
       includes.push(`#include "${itp}"`);
     }
-
-    const top_write_stream = fs.createWriteStream(top);
+    logger.info(`[Martinizer::createTopFile] itp  include statements : ${includes}`);
+    logger.info(`[Martinizer::createTopFile] original_top_path is \"${original_top_path}\"`);
+    logger.info(`[Martinizer::createTopFile] opening topology write stream at \"${topologyFilePath}\"`);
+    const top_write_stream = fs.createWriteStream(topologyFilePath);
     if (original_top_path !== "") {
       const top_read_stream = readline.createInterface({
         //@ts-ignore
@@ -542,7 +559,7 @@ export const Martinizer = new class Martinizer {
       });
 
 
-
+     
       let includes_included = false;
 
       // Remove every #include line
@@ -561,14 +578,22 @@ export const Martinizer = new class Martinizer {
       }
     }
     else {
+      logger.info("[Martinizer::createTopFile] writing following lines\n" + includes.join('\n') + '\n');
       top_write_stream.write(includes.join('\n') + '\n');
     }
-
+    const w8 = async (s:WriteStream) : Promise<void> => {
+      return new Promise( (res, rej) => {
+        s.on('finish', () => res() );
+        s.on('error', (e) => rej(e) );
+      });
+    }
     top_write_stream.close();
-
-
+    logger.info(`[Martinizer::createTopFile] Closing topology write stream at \"${topologyFilePath}\"`);
+    logger.info(`[Martinizer::createTopFile] Forcing topology file syncing"`);
+    //const _ = await fsp.lstat(topologyFilePath);
+    await w8(top_write_stream);
     return {
-      top,
+      topologyFilePath,
       itps,
     };
 
@@ -953,11 +978,6 @@ export const Martinizer = new class Martinizer {
   }
 
   async createPdbWithConectFromStream(inputStreamOrString : Readable|string, inputType : "pdb" | "gro", top_content: string, remove_water: boolean = false, force_field: string = "martini22", tmp_dir: string, itps: {[name: string] : Readable | string}) {
-    // let groups_to_del = 17;
-    // if (lipids) {
-    //   groups_to_del += lipids.length * 2;
-    // }
-
 
     const force_fields = RadiusDatabase.getCompleteFilesForForceField(force_field)
     const inputName = "input." + inputType
@@ -982,7 +1002,11 @@ export const Martinizer = new class Martinizer {
       command.inputs = { ...command.inputs, ...itps }
     }
 
-    console.log(command);
+    const stream1 = command.inputs['input.top'].pipe(new PassThrough())
+    const stream2  = command.inputs['input.top'].pipe(new PassThrough())
+    command.inputs['input.top'] = stream2;
+    logger.info(await streamToString(stream1))
+    logger.info(`[Martinizer::createPdbWithConectFromStream] inputs : ${inspect(command.inputs)}`);
 
     try {
       //@ts-ignore
