@@ -60,6 +60,7 @@ GetMoleculeAPI.get('/:forcefield/:id.:format?/:version?', (req, res) => {
     });
 
     await new Promise((resolve, reject) => {
+      //@ts-ignore
       zip.on('ready', resolve);
       zip.on('error', reject);
     });

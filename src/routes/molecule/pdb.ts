@@ -66,6 +66,7 @@ PdbGetterRouter.get('/:id', (req, res) => {
     });
 
     await new Promise((resolve, reject) => {
+      //@ts-ignore
       zip.on('ready', resolve);
       zip.on('error', reject);
     });

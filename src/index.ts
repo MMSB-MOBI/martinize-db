@@ -177,8 +177,25 @@ logger.silly("Serving static website.");
 // File should be in build/
 app.use(StaticServer);
 
-const HTTP_SERVER = http.createServer(app);
-
+let HTTP_SERVER; 
+if (process.env.CERT_KEY && process.env.CERT_FILE) {
+   logger.info('ssl certificates')
+   console.log(process.env.CERT_FILE)
+   console.log(process.env.CERT_KEY)
+   const certFile = fs.readFileSync(process.env.CERT_FILE)
+   console.log("certFile", certFile)
+   const certKey = fs.readFileSync(process.env.CERT_KEY)
+   console.log("certKey", certKey)
+   HTTP_SERVER = http.createServer({
+      //@ts-ignore
+      key: certKey,
+      cert: certFile
+   },
+   app) 
+}
+else {
+   HTTP_SERVER = http.createServer(app);
+}
 // Start socket.io
 const io = SocketIo(HTTP_SERVER);
 

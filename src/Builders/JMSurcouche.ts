@@ -40,8 +40,8 @@ const SERVER_MODULES: { [scriptName in SupportedScript]: string[] } = {
     'convert': ['gromacs'],
     'go_virt': ['mad-utils'],
     'ccmap': ['mad-utils'],
-    'insane': ['insane'],
-    'martinize': ['martinize2'],
+    'insane': ['insane_ws3'],
+    'martinize': ['martinize2_ws3'],
     'polyply': ['polyply'],
     'get_residue_avaible': ['polyply'],
     'map_rcsu': ['rcsu']

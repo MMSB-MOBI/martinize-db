@@ -56,7 +56,10 @@ MOLECULE_CLI.command('longlist', async () => {
     return `This server does not contain any molecule.`;
   }
 
+  // @ts-ignore
   const normal = `Available molecules are \n- ${mols.map(m => 'id: ' + m._id + ', name: ' + m.name + ', version: '+ m.version +', type: ' + m.category).join('\n- ')}`;
+
+  // @ts-ignore
   const stash = `Available stashed molecules are \n- ${stashed.map(m => 'id: ' + m._id + ', name: ' + m.name+ ', version: '+ m.version +', type: ' + m.category).join('\n- ')}`;
 
   return (mols.length ? normal : "") + (mols.length && stashed.length ? "\n" : "") + (stashed.length ? stash : "");

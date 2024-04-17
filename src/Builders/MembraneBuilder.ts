@@ -299,7 +299,7 @@ export const MembraneBuilder = new class MembraneBuilder {
       }
     }
 
-    let wo_elastic_top = undefined;
+    let wo_elastic_top : string | undefined = undefined;
     try {
       var { top: full_top } = await Martinizer.createTopFile(
         workdir,

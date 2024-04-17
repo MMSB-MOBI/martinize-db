@@ -117,7 +117,7 @@ export default new class ShellManager {
       },
       'martinize': {
         'script': MARTINIZE_PATH_JM,
-        'modules': ['martinize2'],
+        'modules': ['martinize2_ws3'],
         'jobProfile': SLURM_PROFILES.JOB_PROFILE,
         'sysSettingsKey': SLURM_PROFILES.SYS_SETTINGS
       },

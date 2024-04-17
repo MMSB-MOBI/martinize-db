@@ -293,7 +293,7 @@ const parseHeadlines = (headlines : string[], keys: string[]) => {
 }
 
 const flatItpField = (field: string[]) => {
-    const flatArray = []
+    const flatArray: string[] = []
     for (const line of field){
         const trimmedLine = line[0] === ";" ? line.substring(1).trim() : line.trim()
         flatArray.push(trimmedLine)

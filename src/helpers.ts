@@ -39,6 +39,7 @@ export function cleanMulterFiles(req: Express.Request) {
     }
     else {
       for (const files of Object.values(req.files)) {
+        // @ts-ignore
         for (const file of files) {
           unlink(file.path, () => {});
         }
@@ -105,7 +106,7 @@ export function sanitize(obj: any) {
 }
 
 export function signToken(payload: TokenPayload, id: string) {
-  return new Promise((resolve, reject) => {
+  return new Promise<string|undefined>((resolve, reject) => {
     // Signe le token
     JsonWebToken.sign(
       payload, // Données custom
@@ -197,7 +198,7 @@ export async function deleteMolecule(id: string, user: User, stashed = false, ch
     return []
   }
 
-  const dels = []
+  const dels: string[] = []
   if (stashed) {
     if (user.role !== "admin") {
       return Errors.throw(ErrorType.Forbidden);

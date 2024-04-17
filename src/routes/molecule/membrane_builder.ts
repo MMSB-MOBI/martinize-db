@@ -178,7 +178,7 @@ MembraneBuilderRouter.post('/', Uploader.fields([
     }
 
     let upper_leaflet: LipidMap = [];
-    let lipids = undefined;
+    let lipids: [string,number][]|undefined = undefined;
     if (validatedParams.lipids_added) {
       if (!lipids_str || !force_field) {
         return Errors.throw(ErrorType.MissingParameters);

@@ -488,7 +488,7 @@ export const Martinizer = new class Martinizer {
 
     itps_ff = typeof itps_ff === 'string' ? [itps_ff] : itps_ff;
 
-    let itps = undefined;
+    let itps : string[];
     if (itps_path !== undefined) {
       itps = [...itps_path, ...itps_ff.map(e => FORCE_FIELD_DIR + e)];
     }
@@ -512,7 +512,7 @@ export const Martinizer = new class Martinizer {
 
     }
 
-    let real_itps = undefined;
+    let real_itps: string[]; 
     if (itps_path !== undefined) {
       real_itps = [...base_ff_itps, ...itps_path.map(e => path.basename(e))];
     }
@@ -581,7 +581,7 @@ export const Martinizer = new class Martinizer {
       throw new ReferenceError("Your force field is invalid: can't find related ITPs.");
     }
 
-    let real_itps = undefined;
+    let real_itps: string[];
     if (itps_path !== undefined) {
       real_itps = [...itps_ff, ...itps_path.map(e => path.basename(e))];
     }
@@ -640,7 +640,7 @@ export const Martinizer = new class Martinizer {
 
     const base_ff_itps = [] as string[];
 
-    let real_itps = undefined;
+    let real_itps: string[];
     if (itps_path !== undefined) {
       real_itps = [...itps_ff, ...itps_path.map(e => path.basename(e))];
     }

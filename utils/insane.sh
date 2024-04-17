@@ -24,7 +24,7 @@ if [[ -f $INPUT ]]; then
     echo "input pdb so use insane hack"
     echo Launch : python3 $insaneHackBefore $INPUT output-insane-hack.pdb hacked-atoms.txt
     python3 $insaneHackBefore $INPUT output-insane-hack.pdb hacked-atoms.txt
-    insaneArgs2=`echo $insaneArgs | perl -pe 's/^(.*\-f\s)([\S]+)(.*)$/${1}output-insane-hack.pdb${3}/'`
+    insaneArgs2=`echo $insaneArgs |sed -E 's/^(.*-f\s)(\S+)(.*)$/\1output-insane-hack.pdb\3/'`
     echo Launch : $insane_path $insaneArgs2
     $insane_path $insaneArgs2 1> insane_redirect.stdout 2> insane_redirect.stderr
     echo Launch : python3 $insaneHackAfter system.gro system-insane-hack.gro hacked-atoms.txt
